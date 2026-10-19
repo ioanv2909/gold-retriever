@@ -1,0 +1,8 @@
+streamlit>=1.35
+requests
+pandas
+numpy
+yfinance
+plotly
+justetf-scraping @ https://github.com/druzsan/justetf-scraping/archive/53cca6aaba5c97068ae0b6385d28a729dfdbf2a1.zip
+openpyxl>=3.1

@@ -1,0 +1,33 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - run: pip install -r requirements.txt
+      - run: python -m compileall -q .
+      - name: Check that every import resolves
+        run: |
+          python - <<'PY'
+          import ast, glob, importlib.util, os, sys
+          local = {os.path.splitext(f)[0] for f in glob.glob("*.py")}
+          missing = set()
+          for f in glob.glob("*.py") + glob.glob("tools/*.py"):
+              tree = ast.parse(open(f, encoding="utf-8").read())
+              for n in ast.walk(tree):
+                  names = []
+                  if isinstance(n, ast.Import):
+                      names = [a.name.split(".")[0] for a in n.names]
+                  elif isinstance(n, ast.ImportFrom) and n.level == 0 and n.module:
+                      names = [n.module.split(".")[0]]
+                  for name in names:
+                      if name not in local and importlib.util.find_spec(name) is None:
+                          missing.add((f, name))
+          for f, name in sorted(missing):
+              print("unresolved import:", name, "in", f)
+          sys.exit(1 if missing else 0)
+          PY

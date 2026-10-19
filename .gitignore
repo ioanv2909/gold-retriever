@@ -1,0 +1,9 @@
+data/
+__pycache__/
+*.pyc
+.aider*
+xtb_import/
+data_backup*/
+.env
+/core
+/core.[0-9]*
