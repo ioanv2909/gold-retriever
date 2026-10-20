@@ -263,6 +263,19 @@ def render_main_view():
     detail_loading = bool(st.query_params.get("detail"))
     if st.session_state.pop("scroll_to_top_main", False):
         scroll_page_to_top()
+    try:
+        import userctx as _uc
+        _uname = _uc.current_user() or ""
+    except Exception:
+        _uname = ""
+    if _uname == "demo":
+        _ro = str(st.session_state.get("lang", "")).upper().startswith("RO")
+        st.info(
+            "Cont demo: toate datele sunt fictive (tickere și prețuri reale, achiziții inventate). Nu reprezintă sfaturi financiare."
+            if _ro else
+            "Demo account: all data is fictional (real tickers and prices, invented purchases). Nothing here is financial advice.",
+            icon="🧪",
+        )
     _c_title, _c_lang = st.columns([12, 2])
     with _c_title:
         st.title(t("app.title"))
