@@ -32,3 +32,7 @@ jobs:
               print("unresolved import:", name, "in", f)
           sys.exit(1 if missing else 0)
           PY
+      - name: Unit tests
+        run: |
+          pip install pytest
+          python -m pytest -q
