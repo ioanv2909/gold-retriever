@@ -76,3 +76,9 @@ docker run --rm --network host -v "$PWD":/w mcr.microsoft.com/playwright/python:
 MIT, see `LICENSE`. The dog in the logo is derived from Noto Emoji (Google, Apache License 2.0), see `assets/NOTICE-artwork.txt`.
 
 This is not financial advice. The project is not affiliated with Trading 212, XTB, Yahoo or justETF; check their terms before using their data.
+
+## Support
+
+GoldRetriever is free and open source. If it is useful to you, you can support its development:
+
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20the%20project-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/goldretriever)
