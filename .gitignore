@@ -8,3 +8,4 @@ data_backup*/
 /core
 /core.[0-9]*
 docker-compose.override.yml
+*~
