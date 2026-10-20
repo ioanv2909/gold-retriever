@@ -625,7 +625,12 @@ def render_main_view():
     _c_logo, _c_title, _c_lang, _c_user = st.columns([1, 13, 3, 3], vertical_alignment="center")
     with _c_logo:
         if os.path.exists("assets/icon-192.png"):
-            st.image("assets/icon-192.png", width=64)
+            import base64 as _b64
+            with open("assets/icon-192.png", "rb") as _f:
+                st.markdown(
+                    '<img src="data:image/png;base64,%s" width="64">' % _b64.b64encode(_f.read()).decode(),
+                    unsafe_allow_html=True,
+                )
     with _c_title:
         st.title(t("app.title"))
     with _c_lang:
