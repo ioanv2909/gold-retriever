@@ -1,137 +1,62 @@
-# Data Flow
+# Data flow
 
-## Overview
+## Sources -> caches -> screen
 
-This document describes how data moves through the application.
+Every external call writes into a JSON cache; the UI only reads caches. A
+refresh therefore never makes a page load slow or fail.
 
-## Input sources
+    Trading 212 API --> portfolio_cache.json, account_info_cache.json,
+                        dividends_cache.json, t212_fills.json, t212_flows.json
+    XTB xlsx upload --> xtb.json (+ xtb_prices.json from Yahoo)
+    Yahoo / justETF --> quality_cache.json, market_context_cache.json,
+                        justetf_cache.json, ratings_cache.json
+    caches ------------> app.py computes rows and totals --> screen
 
-### User-provided credentials
-Entered in the Streamlit sidebar:
+## Trading 212
 
-- API key ID
-- API secret
-- refresh interval
+1. Keys are saved per user in `config.json` (Settings -> Trading 212).
+2. A refresh calls the API and stores the snapshot: cash, positions,
+   instruments and any errors.
+3. Dividends and deposits/withdrawals come from the account history.
+4. Executed orders (`t212_fills.json`) plus Yahoo daily closes are used to
+   rebuild a daily value history (`t212_history_reconstructed.json`).
 
-### Trading212 data
-Used for:
+## XTB
 
-- account cash
-- portfolio positions
-- instrument metadata
-- dividends
+1. The user uploads an XTB xlsx report (Settings -> XTB import).
+2. `parse_xtb_file` reads Open Positions, Cash Operations and Closed
+   Positions and runs consistency checks (cash sum, total row, positions value).
+3. `import_xtb` merges it into `xtb.json`, keyed by account (currency plus a
+   short hash of the account number).
+4. Prices come from Yahoo (`xtb_prices.json`); quantity and cost come from
+   the report. History is rebuilt from purchases (`xtb_history_reconstructed.json`).
 
-### External market data
-Used for:
+## Currency
 
-- benchmark comparison
-- PEG ratio
-- symbol resolution
-- FX conversion
+Each position keeps its own currency. Cost, value, P/L and dividends are
+converted at the current rate to the chosen display currency via
+`portfolio_model.fx`: direct rate first, otherwise through USD; results are
+cached for 10 minutes. Penny currencies (GBX) are normalised to GBP.
 
-### Local caches and config
-Stored on disk for:
+## Returns
 
-- persistent config
-- cached snapshot data
-- cached dividends
-- cached ratings
-- cached quality data
-- portfolio history
-- alert dismissal state
+- Simple return: current price against average price.
+- Total return: simple return plus dividends over cost.
+- Period return: XIRR from deposits and withdrawals (`returns_summary.py`);
+  estimates for XTB and for the total.
+- Comparison with the S&P 500 over the same holding period, with an
+  annualised version.
 
-## Main flow
+## History chart
 
-### 1. App startup
-- `app.py` loads config.
-- Sidebar inputs are populated from disk.
-- Background scheduler is started.
+`portfolio_history.json` and `portfolio_history_multi.json` hold value and
+cost points over time. The reconstructed files fill the past; new points are
+recorded on refresh. The chart can start at an amount threshold and be
+filtered by period (3H, 1D, 1W, 1M, 1Y, YTD, Max).
 
-### 2. Snapshot loading
-- Cached portfolio snapshot is loaded.
-- If available, positions and cash are extracted.
-- Errors are checked before rendering.
+## Refresh
 
-### 3. Position enrichment
-The app converts raw positions into a dataframe and enriches them with:
-
-- instrument name
-- currency code
-- current price and cost basis normalization
-- FX conversion to account currency
-- dividend totals
-- recommendation labels
-- quality score and rating
-- market comparison values
-
-### 4. Metric computation
-The app computes:
-
-- invested capital
-- market value
-- unrealized P/L
-- total yield
-- total dividends
-- per-position return
-- dividend yield relative to invested capital
-- total return
-- alpha versus S&P 500
-
-### 5. Rendering
-The main view shows:
-
-- warnings and alerts
-- summary metrics
-- history chart
-- status messages
-- open positions table
-
-### 6. Detail routing
-If a position is selected:
-
-- the selected ticker and row are stored in session state
-- the detail view is rendered
-- the app switches from table view to detailed analysis
-
-## Background refresh flow
-
-Background tasks can refresh:
-
-- portfolio snapshot
-- dividends
-- ratings
-- quality data
-- market context
-
-These tasks update caches and provide status such as in-progress, done, and total.
-
-## Cache usage
-
-The app is designed to prefer cached data when possible:
-
-- faster startup
-- reduced API calls
-- smoother UI
-- background refresh without blocking
-
-## Important transformations
-
-### GBX normalization
-GBX values are converted to GBP before display and analysis so that pricing remains in a real currency unit.
-
-### FX conversion
-Instrument-currency cost basis is converted to account currency for dividend and invested-capital comparisons.
-
-### Benchmark comparison
-The app compares total position return with S&P 500 performance over the same holding period.
-
-## Output
-
-The final outputs shown to the user are:
-
-- portfolio summary cards
-- alert banners
-- status captions
-- positions table
-- optional detailed analysis view
-- portfolio history chart
+- Manual: Settings -> Updates.
+- Automatic: a background scheduler at the interval saved in the config.
+- Dividends, ratings, quality and prices run in separate threads with status
+  files, so progress can be shown and a failure in one does not block the rest.

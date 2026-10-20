@@ -1,104 +1,73 @@
 # Architecture
 
-## Overview
+GoldRetriever is a self-hosted Streamlit app that analyses a portfolio held at
+Trading 212 (API) and XTB (xlsx report import). It is multi-user, converts
+everything to a display currency of your choice and speaks Romanian and English.
 
-This application is a Streamlit-based local portfolio analyzer for Trading212. It is organized around a main UI entry point and a small set of helper modules responsible for data fetching, caching, background refreshes, and detailed position rendering.
+## Runtime
 
-## Components
+One Streamlit process (`app.py`) in one container. State lives in JSON files
+under `data/` (mounted as a volume). There is no database and no external
+service of its own; it only calls the Trading 212 API and public market data
+(Yahoo Finance via yfinance, justETF).
 
-### `app.py`
-Main Streamlit application. Responsibilities:
+    browser -> Streamlit (app.py) -> data/*.json
+                    |
+                    +-> Trading 212 API, Yahoo Finance, justETF
 
-- render the sidebar configuration UI
-- load cached configuration and data
-- trigger manual and background refreshes
-- compute and display portfolio metrics
-- build the positions table
-- route to the detailed view when a position is selected
+## Startup and routing
 
-### `core.py`
-Core persistence and business logic helpers. Responsibilities include:
+1. `app.py` calls `require_login()` (`auth.py`). Nothing else renders before login.
+2. The header shows the logo, language switch and the user menu (Settings, Log out).
+3. If the session flag `_page == "settings"`, `settings_page.render_settings()`
+   is shown and the script stops. Otherwise the main view is rendered, or the
+   detail view when a position is selected.
 
-- loading and saving config
-- tracking alerts
-- recording portfolio history
-- dismissing notifications
+## Modules
 
-### `t212_api.py`
-Trading212 API integration and cache access. Responsibilities include:
+UI
+- `app.py` - entry point, login gate, header, main view (summary, chart, positions, watchlist).
+- `auth.py` - login form, user menu, user management page.
+- `settings_page.py` - Settings tabs: Trading 212 keys, Updates, XTB import, Users (admin), About.
+- `detail_view.py` - per-position analysis page.
+- `holdings_ui.py`, `watchlist.py`, `gauges.py` - positions table, watchlist, gauge charts.
+- `i18n.py`, `descriptions.py` - RO/EN texts and tooltips.
 
-- fetching account data
-- fetching and caching portfolio snapshots
-- fetching account currency
-- fetching FX rates
-- loading cached dividend/rating/snapshot data
+Data sources
+- `t212_api.py` - Trading 212 API calls, FX rates, cached snapshot loaders.
+- `xtb.py` - parses and imports XTB xlsx reports (positions, cash operations, closed positions).
+- `xtb_positions.py`, `xtb_prices.py` - XTB rows for display and their Yahoo prices.
+- `yahoo.py`, `yf_compat.py`, `price_clean.py` - Yahoo access, price cleaning, benchmark return, PEG.
+- `justetf_data.py`, `isin_tools.py` - ETF data from justETF and ISIN validation/resolution.
 
-### `yahoo.py`
-Yahoo Finance data access. Responsibilities include:
+Calculations
+- `portfolio_model.py` - currency conversion (`fx`) and portfolio rows across sources.
+- `returns_summary.py`, `t212_history.py` - XIRR returns from deposits and withdrawals.
+- `t212_history_rebuild.py`, `xtb_history_rebuild.py`, `history_multi.py` - daily value history rebuilt from fills/purchases and Yahoo closes.
+- `scoring.py`, `risk.py`, `valuation.py`, `etf.py`, `checklist.py` - quality, risk and valuation indicators and thresholds.
 
-- resolving symbols
-- fetching PEG ratios
-- fetching benchmark returns such as S&P 500 comparison
+Infrastructure
+- `core.py` - file locations, JSON read/write with file locks, config, alerts.
+- `userctx.py` - `UPath`: resolves a file name to the current user's folder, or to the shared folder.
+- `users.py` - accounts, roles, PBKDF2 password hashing, migration of legacy single-user data.
+- `background.py` - background refresh threads and their status files.
 
-### `background.py`
-Background orchestration. Responsibilities include:
+## Users
 
-- scheduling periodic refreshes
-- tracking status for background jobs
-- starting dividend, ratings, and quality refresh tasks
-- storing market context cache
+Accounts are stored in `data/users.json` (salted PBKDF2 hashes, roles). Each
+user has an isolated folder `data/users/<name>/`. Files that do not depend on a
+user (instrument metadata, quality scores, market context) are shared. The
+first account is an admin who can create users from Settings.
 
-### `detail_view.py`
-Detailed instrument analysis UI. Responsibilities include:
+## Background work
 
-- rendering per-position detail pages
-- supporting navigation back to the main table
-- keeping the detail view scroll position usable
+Slow jobs (dividends, ratings, quality scores, XTB prices, history rebuilds)
+run in threads and write their progress to `*_status.json`. The UI reads the
+cache and reruns while a job is in progress, so the page never blocks on
+network calls.
 
-## Runtime flow
+## Quality
 
-1. The app starts and loads configuration.
-2. Background scheduling is initialized.
-3. The UI renders the main view.
-4. Cached portfolio data is loaded.
-5. Optional updates may be triggered manually or in the background.
-6. The table and summary metrics are computed from the latest cached snapshot.
-7. If a position is selected, the detail view is rendered.
-
-## Data dependencies
-
-The UI depends on multiple data sources:
-
-- Trading212 account and portfolio data
-- FX rates
-- dividend history
-- ratings and quality data
-- Yahoo Finance benchmark data
-- local caches and persisted config
-
-## UI structure
-
-The application has two main modes:
-
-- **Main portfolio view**
-  - summary metrics
-  - alerts
-  - refresh buttons
-  - open positions table
-  - history chart
-
-- **Detail view**
-  - instrument-specific performance analysis
-  - selected row data
-  - per-position insights
-
-## Background tasks
-
-Background jobs are used to avoid blocking the UI for slower refresh operations. These tasks update cached data and expose progress through status helpers.
-
-## Design goals
-
-- keep the UI responsive
-- prefer cached data for fast startup
-- isolate external API calls in helper modules
-- make portfolio analysis reproducible and local-first
+`tests/` holds unit tests (XIRR, FX conversion, number parsing). CI
+(GitHub Actions) compiles every module, checks that all imports resolve and
+runs the tests.
