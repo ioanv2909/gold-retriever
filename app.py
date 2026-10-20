@@ -92,6 +92,8 @@ except ImportError:
     YFINANCE_AVAILABLE = False
 
 st.set_page_config(page_title="GoldRetriever", layout="wide", page_icon="assets/icon-192.png" if __import__("os").path.exists("assets/icon-192.png") else "🐕")
+if __import__("os").path.exists("assets/icon-192.png"):
+    st.logo("assets/icon-192.png", size="large")
 
 os.makedirs("data", exist_ok=True)
 

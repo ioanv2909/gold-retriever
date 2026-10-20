@@ -9,6 +9,13 @@ A self-hosted portfolio analyzer for **Trading 212** and **XTB**, built with Str
   <img src="docs/screenshots/main-light.png" alt="GoldRetriever portfolio summary">
 </picture>
 
+## Screenshots
+
+| Dark | Light |
+| --- | --- |
+| <img src="docs/screenshots/main-dark.png" alt="Portfolio summary, dark theme"> | <img src="docs/screenshots/main-light.png" alt="Portfolio summary, light theme"> |
+| <img src="docs/screenshots/login-dark.png" alt="Sign in, dark theme"> | <img src="docs/screenshots/login-light.png" alt="Sign in, light theme"> |
+
 ## Features
 
 - Trading 212 (API) and XTB (xlsx report import) in one view, with any number of accounts
