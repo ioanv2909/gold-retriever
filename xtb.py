@@ -36,7 +36,7 @@ _ISIN_RE = re.compile(r"^[A-Z]{2}[A-Z0-9]{9}[0-9]$")
 
 
 def load_xtb():
-    return load_json_file(XTB_FILE, dict(_DEFAULT_XTB_DATA))
+    return load_json_file(XTB_FILE, copy.deepcopy(_DEFAULT_XTB_DATA))
 
 
 def valid_isin(s):
@@ -53,7 +53,7 @@ def save_isin(ticker, isin):
             data["isin"].pop(ticker, None)
             return data
 
-        update_json_file(XTB_FILE, dict(_DEFAULT_XTB_DATA), updater)
+        update_json_file(XTB_FILE, copy.deepcopy(_DEFAULT_XTB_DATA), updater)
         return True, "ISIN șters"
 
     if not valid_isin(normalized_isin):
@@ -64,7 +64,7 @@ def save_isin(ticker, isin):
         data["isin"][ticker] = normalized_isin
         return data
 
-    update_json_file(XTB_FILE, dict(_DEFAULT_XTB_DATA), updater)
+    update_json_file(XTB_FILE, copy.deepcopy(_DEFAULT_XTB_DATA), updater)
     return True, "ISIN salvat"
 
 
@@ -162,7 +162,7 @@ def remove_account(account_key):
         data["closed"].pop(account_key, None)
         return data
 
-    update_json_file(XTB_FILE, dict(_DEFAULT_XTB_DATA), updater)
+    update_json_file(XTB_FILE, copy.deepcopy(_DEFAULT_XTB_DATA), updater)
     return removed
 
 
@@ -306,7 +306,7 @@ def import_xtb(parsed, file_hash):
         _update_isin_map(isin_store, parsed)
         return data
 
-    update_json_file(XTB_FILE, dict(_DEFAULT_XTB_DATA), updater)
+    update_json_file(XTB_FILE, copy.deepcopy(_DEFAULT_XTB_DATA), updater)
 
     return _import_report(
         parsed=parsed,

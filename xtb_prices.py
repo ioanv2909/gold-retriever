@@ -1,4 +1,5 @@
 from datetime import datetime
+import copy
 import threading
 import time
 
@@ -75,7 +76,7 @@ def check_symbol(ticker, group, account_currency):
 
 
 def load_xtb_prices():
-    return load_json_file(XTB_PRICES_FILE, dict(_DEFAULT_CACHE))
+    return load_json_file(XTB_PRICES_FILE, copy.deepcopy(_DEFAULT_CACHE))
 
 
 def recheck_ticker(ticker):
