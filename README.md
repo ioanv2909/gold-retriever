@@ -1,68 +1,71 @@
 # GoldRetriever
 
-Self-hosted portfolio analyzer for **Trading 212** and **XTB**, built with Streamlit.
-It fetches your positions, prices and dividends, scores your holdings and shows returns across accounts
-and currencies. Everything runs on your own server and your data stays on your disk.
+<p align="center"><img src="assets/icon-192.png" width="96" alt="GoldRetriever logo"></p>
 
-> Not related to any cryptocurrency.
+A self-hosted portfolio analyzer for **Trading 212** and **XTB**, built with Streamlit. Your data stays on your own machine.
 
-> **Disclaimer:** this software is provided for information only and is **not financial advice**.
-> Market data comes from third parties (Yahoo Finance, justETF) and may be delayed or inaccurate.
-> The project is not affiliated with Trading 212, XTB, Yahoo or justETF. Use at your own risk.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/main-dark.png">
+  <img src="docs/screenshots/main-light.png" alt="GoldRetriever portfolio summary">
+</picture>
 
 ## Features
 
-- **Trading 212** through the official API (positions, cash, dividends, order history).
-- **XTB** through statement import (.xlsx), several accounts supported (XTB has no public API).
-- Market data from Yahoo Finance and justETF.
-- Quality score, risk score and ETF score, plus a "before buying" checklist and signals.
-- Multi-account, multi-currency totals and history; the display currency is chosen from a dropdown.
-- Returns over a period, including XIRR computed from deposits.
-- Watchlist, alerts and per-position notes.
-- Multiple users with separate data and an admin page.
-- Interface in English and Romanian.
+- Trading 212 (API) and XTB (xlsx report import) in one view, with any number of accounts
+- Display in any currency, chosen per user; exchange rates from Yahoo Finance
+- Market value over time (value vs. invested), return summary and XIRR
+- Per-position profit/loss, dividends, and comparison with the S&P 500 over the same holding period
+- Quality and risk scores, analyst ratings, ETF data from justETF
+- Watchlist and loss-to-profit alerts
+- Detail page for every instrument
+- Multi-user: separate data per user, admin page for accounts, signed login cookie
+- Romanian and English interface
 
-## Quick start (Docker)
+## Quick start
 
-```
+```bash
 git clone https://github.com/ioanv2909/gold-retriever.git
 cd gold-retriever
 docker compose up -d --build
 ```
 
-Open http://localhost:8501. On first start you will be asked to create the **administrator account**.
-Then add your Trading 212 API key from the sidebar and/or import XTB statements.
-To use another port: `PORT=8502 docker compose up -d --build`.
+Open http://localhost:8501. On the first visit you create the admin account. To use another port: `PORT=8080 docker compose up -d`. Everything you add is stored in `./data`.
 
-Update with `git pull && docker compose up -d --build`.
+## Connect your accounts
 
-## Data and privacy
+- **Trading 212:** sidebar, *Trading 212 authentication*. Enter an API key ID and secret (create the key with read-only permissions).
+- **XTB:** sidebar, *XTB — import*. Upload the xlsx account report (sheets *Open Positions*, *Cash Operations*, *Closed Positions*). You can import several accounts (EUR, USD, RON, ...).
 
-- All data lives in `./data` (one folder per user under `data/users/`). Back it up.
-- API keys are stored **in plain text** in that folder. Create a **read-only** Trading 212 API key and keep `./data` private.
-- The app sends no telemetry. It contacts Trading 212, Yahoo Finance and justETF to fetch data.
+## Try the demo
+
+Creates a `demo` user with a fictional portfolio: real tickers and real prices, invented purchases. It needs internet access for the prices.
+
+```bash
+docker compose exec gold-retriever python tools/make_demo.py
+docker compose exec gold-retriever python tools/make_demo_t212.py
+docker compose exec gold-retriever python tools/make_demo_history.py
+```
+
+Log in as `demo` / `demo`.
 
 ## Security notes
 
-- Do not expose the app directly to the internet. Put it behind a reverse proxy with HTTPS.
-- The first account created becomes the administrator, so create it before exposing the app to a network.
+- API keys are stored in plain text in `data/users/<name>/config.json`. Protect the `data` folder.
+- There is no built-in HTTPS. Put the app behind a reverse proxy or a VPN before exposing it to the internet.
+- The first visitor creates the admin account, so do it right after starting the app.
+- The container runs as root, so files in `data/` are owned by root.
 
-## Roadmap
+## Development
 
-- Demo mode with sample data.
-- Automated tests and pinned dependency versions.
+Python 3.10, dependencies in `requirements.txt`. CI compiles the code and checks that every import resolves. To regenerate the screenshots of the demo account:
 
-## Documentation
+```bash
+docker run --rm --network host -v "$PWD":/w mcr.microsoft.com/playwright/python:v1.49.0-noble \
+  sh -c "pip install -q --break-system-packages playwright==1.49.0 && python /w/tools/screenshots.py"
+```
 
-Technical notes (in Romanian) are in [`DOCS.md`](DOCS.md) and [`docs/`](docs/).
-Translation helpers are in [`tools/`](tools/).
+## License and credits
 
-## Descriere in romana
+MIT, see `LICENSE`. The dog in the logo is derived from Noto Emoji (Google, Apache License 2.0), see `assets/NOTICE-artwork.txt`.
 
-GoldRetriever este un analizor de portofoliu self-hosted pentru Trading 212 si XTB. Datele raman pe serverul tau.
-Porneste cu `docker compose up -d --build`, deschide http://localhost:8501 si creeaza contul de administrator.
-Nu este sfat financiar.
-
-## License
-
-MIT, see [LICENSE](LICENSE).
+This is not financial advice. The project is not affiliated with Trading 212, XTB, Yahoo or justETF; check their terms before using their data.

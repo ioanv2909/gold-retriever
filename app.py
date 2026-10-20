@@ -91,7 +91,7 @@ try:
 except ImportError:
     YFINANCE_AVAILABLE = False
 
-st.set_page_config(page_title="GoldRetriever", layout="wide")
+st.set_page_config(page_title="GoldRetriever", layout="wide", page_icon="assets/icon-192.png" if __import__("os").path.exists("assets/icon-192.png") else "🐕")
 
 os.makedirs("data", exist_ok=True)
 
@@ -273,7 +273,7 @@ def render_main_view():
         st.info(
             "Cont demo: toate datele sunt fictive (tickere și prețuri reale, achiziții inventate). Nu reprezintă sfaturi financiare."
             if _ro else
-            "Demo account: all data is fictional (real tickers and prices, invented purchases). Nothing here is financial advice.",
+            "Demo account: all data is fictional (real tickers and prices, invented purchases). This is not financial advice.",
             icon="🧪",
         )
     _c_title, _c_lang = st.columns([12, 2])
