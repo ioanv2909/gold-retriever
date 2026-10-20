@@ -8,7 +8,7 @@ import streamlit as st
 LANGS = ["RO", "EN"]
 
 _T = {
-    "app.title": {"RO": "🐕 GoldRetriever — Portfolio Analyzer", "EN": "🐕 GoldRetriever — Portfolio Analyzer"},
+    "app.title": {"RO": "GoldRetriever — Portfolio Analyzer", "EN": "GoldRetriever — Portfolio Analyzer"},
     "app.summary": {"RO": "📈 Sumar Portofoliu", "EN": "📈 Portfolio Summary"},
     "side.updates": {"RO": "🔄 Actualizări", "EN": "🔄 Updates"},
     "side.filters": {"RO": "🔎 Filtre", "EN": "🔎 Filters"},

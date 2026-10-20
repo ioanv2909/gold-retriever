@@ -92,8 +92,6 @@ except ImportError:
     YFINANCE_AVAILABLE = False
 
 st.set_page_config(page_title="GoldRetriever", layout="wide", page_icon="assets/icon-192.png" if __import__("os").path.exists("assets/icon-192.png") else "🐕")
-if __import__("os").path.exists("assets/icon-192.png"):
-    st.logo("assets/icon-192.png", size="large")
 
 os.makedirs("data", exist_ok=True)
 
@@ -117,28 +115,9 @@ if st.session_state.get("_page_users"):
 
 
 config_data = load_config()
-
-_auth = st.sidebar.expander(t("side.auth"), expanded=False)
-_auth.info(f"📁 Fișier persistent: `{os.path.abspath(CONFIG_FILE)}`")
-
-api_key_id = _auth.text_input("ID-ul cheii API", value=config_data.get("api_key_id", ""))
-api_secret = _auth.text_input("Cheia Secretă", type="password", value=config_data.get("api_secret", ""))
-interval_minutes = _auth.number_input(
-    "Interval actualizare automată (minute)", min_value=1, max_value=1440,
-    value=int(config_data.get("interval_minutes", 15)),
-)
-
-if _auth.button("💾 Salvează Permanent pe Disc"):
-    if save_config(api_key_id, api_secret, interval_minutes):
-        _auth.success("Cheile au fost scrise fizic pe disc!")
-        st.rerun()
-
-_auth.markdown("---")
-_auth.subheader("🔍 Status Fișier pe Disc:")
-if os.path.exists(CONFIG_FILE):
-    _auth.success("Fișierul config.json EXISTĂ pe disc.")
-else:
-    _auth.warning("Fișierul config.json ÎNCĂ NU EXISTĂ pe disc.")
+api_key_id = config_data.get("api_key_id", "")
+api_secret = config_data.get("api_secret", "")
+interval_minutes = int(config_data.get("interval_minutes", 15))
 
 
 # ---------------------------------------------------------------------------
@@ -260,6 +239,370 @@ def _history_dialog_inner(fig):
     st.plotly_chart(big, width="stretch", key="portfolio_history_chart_big")
 
 
+def _section_updates():
+    """Settings > Updates: refresh buttons (moved out of the sidebar)."""
+    if api_key_id and api_secret:
+        st.caption(t("side.auto_on", n=interval_minutes))
+    else:
+        st.caption(t("side.auto_off"))
+    div_status = load_dividends_status()
+    rat_status = load_ratings_status()
+    if st.button(t("btn.refresh_now"), key="upd_now"):
+        disk_cfg = load_config()
+        fetch_and_cache_core(disk_cfg.get("api_key_id"), disk_cfg.get("api_secret"))
+        st.rerun()
+    if div_status.get("in_progress"):
+        st.button(t("btn.refresh_div_busy"), disabled=True, key="div_btn_busy")
+    elif st.button(t("btn.refresh_div"), key="upd_div"):
+        disk_cfg = load_config()
+        snap_now = load_cached_snapshot()
+        tickers_now = [x.get("ticker") for x in (snap_now.get("positions") or [])] if snap_now else []
+        if start_dividends_fetch_background(disk_cfg.get("api_key_id"), disk_cfg.get("api_secret"), tickers_now):
+            st.rerun()
+    if rat_status.get("in_progress"):
+        st.button(t("btn.refresh_rat_busy"), disabled=True, key="rat_btn_busy")
+    elif st.button(t("btn.refresh_rat"), key="upd_rat"):
+        snap_now = load_cached_snapshot()
+        tickers_now = [x.get("ticker") for x in (snap_now.get("positions") or [])] if snap_now else []
+        _all_now = list(tickers_now) + [x for x in _xtb_tickers() if x not in tickers_now]
+        start_quality_fetch_background(_all_now)
+        if start_ratings_fetch_background(_all_now):
+            st.rerun()
+
+
+def _section_xtb_import():
+    """Settings > XTB import (moved out of the sidebar)."""
+    uploaded_xtb_files = st.file_uploader(
+        _tx("Fișiere XTB (.xlsx, câte unul pentru fiecare cont)"),
+        type=["xlsx"],
+        accept_multiple_files=True,
+        key=f"xtb_upload_{st.session_state.get('xtb_nonce', 0)}",
+    )
+
+    if st.button(t("xtb.import"), key="xtb_import_btn"):
+        reports = []
+        errors = []
+
+        for uploaded_file in uploaded_xtb_files or []:
+            safe_name = re.sub(r"\d{6,}", "#####", uploaded_file.name)
+            try:
+                raw = uploaded_file.getvalue()
+                file_hash = hashlib.sha256(raw).hexdigest()
+                parsed = parse_xtb_file(io.BytesIO(raw))
+                reports.append(import_xtb(parsed, file_hash))
+            except ValueError as exc:
+                errors.append(f"{safe_name}: {exc}")
+            except Exception as exc:
+                errors.append(f"{safe_name}: {exc}")
+
+        st.session_state["xtb_last_report"] = reports
+        st.session_state["xtb_last_errors"] = errors
+        st.session_state["xtb_nonce"] = st.session_state.get("xtb_nonce", 0) + 1
+        st.rerun()
+
+    for error in st.session_state.get("xtb_last_errors", []):
+        st.error(error)
+
+    xtb_last_report = st.session_state.get("xtb_last_report")
+    if xtb_last_report:
+        report_rows = []
+        for report in xtb_last_report:
+            verification_issues = []
+            if not report.get("cash_ok"):
+                verification_issues.append("✗ cash")
+            if not report.get("positions_ok"):
+                verification_issues.append("✗ poziții")
+
+            report_rows.append(
+                {
+                    "Cont": report.get("label"),
+                    "Raport din": report.get("report_time"),
+                    "Operațiuni noi": report.get("new_cash_ops", 0) + report.get("new_closed", 0),
+                    "Duplicate sărite": report.get("duplicate_cash_ops", 0) + report.get("duplicate_closed", 0),
+                    "Snapshot": "fișier deja încărcat" if report.get("already_imported") else report.get("snapshot_status"),
+                    "Verificări": "✓" if not verification_issues else " / ".join(verification_issues),
+                    "Tipuri necunoscute": ", ".join(report.get("unknown_types") or []) or "—",
+                }
+            )
+
+        st.dataframe(pd.DataFrame(report_rows), width="stretch", hide_index=True)
+        if st.button(t("xtb.hide_report"), key="xtb_hide_report"):
+            st.session_state.pop("xtb_last_report", None)
+            st.session_state.pop("xtb_last_errors", None)
+            st.rerun()
+
+    xtb_accounts = accounts_summary()
+    if xtb_accounts:
+        st.dataframe(
+            pd.DataFrame(
+                {
+                    "Cont": [account.get("label") for account in xtb_accounts],
+                    "Monedă": [account.get("currency") for account in xtb_accounts],
+                    "Raport din": [account.get("report_time") for account in xtb_accounts],
+                    "Poziții": [account.get("positions") for account in xtb_accounts],
+                    "Operațiuni": [account.get("cash_ops") for account in xtb_accounts],
+                    "Valoare la raport": [account.get("value") for account in xtb_accounts],
+                    "Profit la raport": [account.get("profit") for account in xtb_accounts],
+                }
+            ),
+            width="stretch",
+            hide_index=True,
+        )
+    else:
+        st.caption(t("xtb.no_data"))
+
+    st.markdown(t("xtb.symbols_title"))
+    xtb_prices_cache = load_xtb_prices()
+    xtb_prices_data = xtb_prices_cache.get("data") or {}
+    xtb_symbol_rows = []
+    xtb_symbol_originals = {}
+
+    for ticker, price_info in xtb_prices_data.items():
+        symbol = price_info.get("symbol") or ""
+        status = price_info.get("status")
+        currency_ok = price_info.get("currency_ok")
+        ratio = price_info.get("ratio")
+
+        if status == "ok" and currency_ok in (True, None):
+            status_label = "✅ ok"
+            has_problem = False
+        elif status == "mismatch" or currency_ok is False:
+            status_label = "⚠️ verifică"
+            has_problem = True
+        else:
+            status_label = "❌ fără date"
+            has_problem = True
+
+        xtb_symbol_originals[str(ticker)] = symbol
+        xtb_symbol_rows.append(
+            {
+                "_problem": has_problem,
+                "Ticker": str(ticker),
+                "Simbol Yahoo": symbol,
+                "Preț Yahoo": price_info.get("price"),
+                "Monedă": price_info.get("currency") or "",
+                "Preț XTB": price_info.get("xtb_ref"),
+                "Raport": round(ratio, 3) if ratio is not None else None,
+                "Stare": status_label,
+            }
+        )
+
+    xtb_symbols_df = pd.DataFrame(
+        xtb_symbol_rows,
+        columns=["_problem", "Ticker", "Simbol Yahoo", "Preț Yahoo", "Monedă", "Preț XTB", "Raport", "Stare"],
+    )
+    if not xtb_symbols_df.empty:
+        xtb_symbols_df = xtb_symbols_df.sort_values(["_problem", "Ticker"], ascending=[False, True]).reset_index(drop=True)
+    xtb_symbols_editor_df = xtb_symbols_df.drop(columns=["_problem"], errors="ignore")
+
+    edited_xtb_symbols_df = st.data_editor(
+        xtb_symbols_editor_df,
+        width="stretch",
+        hide_index=True,
+        key="xtb_symbols_editor",
+        disabled=["Ticker", "Preț Yahoo", "Monedă", "Preț XTB", "Raport", "Stare"],
+        column_config={
+            "Simbol Yahoo": st.column_config.TextColumn("Simbol Yahoo"),
+        },
+    )
+
+    xtb_symbols_save_col, xtb_prices_refresh_col = st.columns([1, 1])
+    with xtb_symbols_save_col:
+        if st.button(t("xtb.save_symbols"), key="xtb_symbols_save"):
+            saved_any = False
+
+            for _, row in edited_xtb_symbols_df.iterrows():
+                ticker = str(row["Ticker"])
+                new_symbol = "" if pd.isna(row.get("Simbol Yahoo")) else str(row.get("Simbol Yahoo") or "").strip()
+                old_symbol = xtb_symbol_originals.get(ticker, "")
+
+                if new_symbol == old_symbol:
+                    continue
+
+                ok, msg = save_symbol_override(ticker, new_symbol)
+                if ok:
+                    saved_any = True
+                    st.success(f"{ticker}: {msg}")
+                else:
+                    st.error(f"{ticker}: {msg}")
+
+            if saved_any:
+                st.rerun()
+
+    with xtb_prices_refresh_col:
+        if st.button(t("xtb.refresh_prices"), key="xtb_prices_refresh"):
+            if start_xtb_prices_refresh_background():
+                st.info(t("xtb.prices_started"))
+            else:
+                st.warning(t("xtb.prices_busy"))
+
+    fetched_at = xtb_prices_cache.get("fetched_at")
+    if fetched_at:
+        xtb_prices_updated = datetime.fromtimestamp(fetched_at).strftime("%d.%m.%Y %H:%M:%S")
+    else:
+        xtb_prices_updated = "neactualizat încă"
+
+    xtb_prices_total = len(xtb_prices_data)
+    xtb_prices_ok = sum(
+        1
+        for price_info in xtb_prices_data.values()
+        if price_info.get("status") == "ok" and price_info.get("currency_ok") in (True, None)
+    )
+    st.caption(
+        f"Ultima actualizare: {xtb_prices_updated} · {xtb_prices_ok}/{xtb_prices_total} tickere ok. "
+        "Prețul XTB e luat din export; un raport în jur de 1,00–1,03 e normal "
+        "(probabil XTB evaluează la prețul de vânzare). Sub 0,9 sau peste 1,1 indică simbol sau monedă greșite."
+    )
+
+    xtb_instrument_rows = xtb_instruments()
+    if xtb_instrument_rows:
+        xtb_isin_suggestions = {}
+        xtb_isin_categories = {}
+        xtb_isin_rows = []
+
+        for instrument in xtb_instrument_rows:
+            ticker = instrument.get("ticker")
+            current_isin = str(instrument.get("isin") or "").strip().upper()
+            category = instrument.get("category")
+            xtb_isin_categories[str(ticker)] = category
+
+            resolved_name = "—"
+            if current_isin:
+                resolved = resolve_isin(current_isin)
+                resolved_name = resolved.get("name") or "—"
+
+            suggestion = None if current_isin else suggest_isin(ticker, category)
+            xtb_isin_suggestions[str(ticker)] = suggestion
+            suggestion_text = (
+                f"{suggestion.get('isin')} — {suggestion.get('name')} [{suggestion.get('source')}]"
+                if suggestion
+                else "—"
+            )
+
+            xtb_isin_rows.append(
+                {
+                    "Ticker": ticker,
+                    "Nume": instrument.get("name"),
+                    "Categorie": category,
+                    "Conturi": ", ".join(instrument.get("accounts") or []),
+                    "ISIN": current_isin,
+                    "Rezolvat": resolved_name,
+                    "Sugestie": suggestion_text,
+                    "Aplică sugestia": False,
+                }
+            )
+
+        xtb_isin_df = pd.DataFrame(xtb_isin_rows)
+        edited_xtb_isin_df = st.data_editor(
+            xtb_isin_df,
+            width="stretch",
+            hide_index=True,
+            key="xtb_isin_editor",
+            disabled=["Ticker", "Nume", "Categorie", "Conturi", "Rezolvat", "Sugestie"],
+            column_config={
+                "ISIN": st.column_config.TextColumn("ISIN"),
+                "Aplică sugestia": st.column_config.CheckboxColumn("Aplică sugestia"),
+            },
+        )
+
+        if st.button(t("xtb.save_isin"), key="xtb_isin_save"):
+            original_isins = {
+                str(row["Ticker"]): str(row.get("ISIN") or "").strip().upper()
+                for _, row in xtb_isin_df.iterrows()
+            }
+            changed_isins = {}
+
+            for _, row in edited_xtb_isin_df.iterrows():
+                ticker = str(row["Ticker"])
+                new_isin = "" if pd.isna(row.get("ISIN")) else str(row.get("ISIN") or "").strip().upper()
+                suggestion = xtb_isin_suggestions.get(ticker)
+                apply_suggestion = bool(row.get("Aplică sugestia"))
+
+                if apply_suggestion and not new_isin and suggestion:
+                    new_isin = str(suggestion.get("isin") or "").strip().upper()
+
+                if new_isin != original_isins.get(ticker, ""):
+                    changed_isins[ticker] = new_isin
+
+            if not changed_isins:
+                st.info(t("xtb.no_isin_changes"))
+            else:
+                saved_count = 0
+                post_save_messages = []
+
+                for ticker, new_isin in changed_isins.items():
+                    issues = isin_issues(ticker, new_isin, xtb_isin_categories.get(ticker), changed_isins) if new_isin else []
+                    error_issues = [message for level, message in issues if level == "error"]
+
+                    if error_issues:
+                        for message in error_issues:
+                            st.error(f"{ticker}: {message}")
+                        continue
+
+                    ok, msg = save_isin(ticker, new_isin)
+                    if not ok:
+                        st.error(f"{ticker}: {msg}")
+                        continue
+
+                    saved_count += 1
+                    post_save_messages.extend(
+                        (ticker, level, message)
+                        for level, message in issues
+                        if level in {"warning", "info"}
+                    )
+
+                for ticker, level, message in post_save_messages:
+                    if level == "warning":
+                        st.warning(f"{ticker}: {message}")
+                    else:
+                        st.info(f"{ticker}: {message}")
+
+                if saved_count:
+                    st.success(t("xtb.isin_saved", n=saved_count))
+
+        if st.button(t("xtb.check_isin"), key="xtb_isin_check"):
+            issue_rows = []
+
+            for _, row in xtb_isin_df.iterrows():
+                ticker = str(row["Ticker"])
+                isin = str(row.get("ISIN") or "").strip().upper()
+                if not isin:
+                    continue
+
+                for level, message in isin_issues(ticker, isin, row.get("Categorie")):
+                    issue_rows.append(
+                        {
+                            "Ticker": ticker,
+                            "ISIN": isin,
+                            "Nivel": level,
+                            "Mesaj": message,
+                        }
+                    )
+
+            if issue_rows:
+                st.dataframe(pd.DataFrame(issue_rows), width="stretch", hide_index=True)
+            else:
+                st.success(t("xtb.no_issues"))
+
+    st.checkbox(t("xtb.allow_delete"), key="xtb_del_unlock")
+    if st.session_state.get("xtb_del_unlock") and xtb_accounts:
+        selected_xtb_account = st.selectbox(
+            "Cont XTB de șters",
+            xtb_accounts,
+            format_func=lambda account: account.get("label") or account.get("account_key"),
+            key="xtb_del_account",
+        )
+        if st.button(t("xtb.delete_account"), key="xtb_delete_account"):
+            remove_account(selected_xtb_account["account_key"])
+            st.rerun()
+
+    st.caption(
+        "XTB nu are API: datele sunt un instantaneu din ultimul export. "
+        "Cumpărările și vânzările noi apar doar după un export nou; "
+        "reîncărcarea aceluiași export este sigură, duplicatele sunt ignorate."
+    )
+
+
 def render_main_view():
     _cash_done = False
     detail_loading = bool(st.query_params.get("detail"))
@@ -278,11 +621,17 @@ def render_main_view():
             "Demo account: all data is fictional (real tickers and prices, invented purchases). This is not financial advice.",
             icon="🧪",
         )
-    _c_title, _c_lang = st.columns([12, 2])
+    from auth import user_menu as _user_menu
+    _c_logo, _c_title, _c_lang, _c_user = st.columns([1, 13, 3, 3], vertical_alignment="center")
+    with _c_logo:
+        if os.path.exists("assets/icon-192.png"):
+            st.image("assets/icon-192.png", width=64)
     with _c_title:
         st.title(t("app.title"))
     with _c_lang:
         st.segmented_control("Language", LANGS, key="lang", label_visibility="collapsed")
+    with _c_user:
+        _user_menu(_me)
 
     snapshot = load_cached_snapshot()
     if snapshot and snapshot.get("positions"):
@@ -298,39 +647,12 @@ def render_main_view():
                     dismiss_alert(a["ticker"], a["triggered_at"])
                     st.rerun()
 
-    if api_key_id and api_secret:
-        st.sidebar.caption(t("side.auto_on", n=interval_minutes))
-    else:
-        st.sidebar.caption(t("side.auto_off"))
-
     if not detail_loading:
         st.subheader(t("app.summary"))
 
+
     div_status = load_dividends_status()
     rat_status = load_ratings_status()
-    with st.sidebar.expander(t("side.updates"), expanded=False):
-        if st.button(t("btn.refresh_now"), key="upd_now"):
-            disk_cfg = load_config()
-            fetch_and_cache_core(disk_cfg.get("api_key_id"), disk_cfg.get("api_secret"))
-            st.rerun()
-        if div_status.get("in_progress"):
-            st.button(t("btn.refresh_div_busy"), disabled=True, key="div_btn_busy")
-        elif st.button(t("btn.refresh_div"), key="upd_div"):
-            disk_cfg = load_config()
-            snap_now = load_cached_snapshot()
-            tickers_now = [x.get("ticker") for x in (snap_now.get("positions") or [])] if snap_now else []
-            if start_dividends_fetch_background(disk_cfg.get("api_key_id"), disk_cfg.get("api_secret"), tickers_now):
-                st.rerun()
-        if rat_status.get("in_progress"):
-            st.button(t("btn.refresh_rat_busy"), disabled=True, key="rat_btn_busy")
-        elif st.button(t("btn.refresh_rat"), key="upd_rat"):
-            snap_now = load_cached_snapshot()
-            tickers_now = [x.get("ticker") for x in (snap_now.get("positions") or [])] if snap_now else []
-            _all_now = list(tickers_now) + [x for x in _xtb_tickers() if x not in tickers_now]
-            start_quality_fetch_background(_all_now)
-            if start_ratings_fetch_background(_all_now):
-                st.rerun()
-
     snapshot = load_cached_snapshot()  # re-citit după eventualele butoane de update de mai sus
 
     if snapshot:
@@ -667,7 +989,7 @@ def render_main_view():
 
     filter_options = ["Toate"] + list(RECOMMENDATION_LABELS.values())
     col_sort_info = st.container()
-    with st.sidebar.expander(t("side.filters"), expanded=False):
+    with st.expander(t("side.filters"), expanded=False):
         filter_choice = st.selectbox(t("filter.rating"), filter_options, index=0, key="rec_filter", format_func=_tx)
     if filter_choice != "Toate":
         st.caption(t("filter.active", f=_tx(filter_choice)))
@@ -874,336 +1196,6 @@ def render_main_view():
             else:
                 st.caption(t("wl.empty"))
 
-        with st.sidebar.expander(t("side.xtb_import"), expanded=False):
-            uploaded_xtb_files = st.file_uploader(
-                _tx("Fișiere XTB (.xlsx, câte unul pentru fiecare cont)"),
-                type=["xlsx"],
-                accept_multiple_files=True,
-                key=f"xtb_upload_{st.session_state.get('xtb_nonce', 0)}",
-            )
-
-            if st.button(t("xtb.import"), key="xtb_import_btn"):
-                reports = []
-                errors = []
-
-                for uploaded_file in uploaded_xtb_files or []:
-                    safe_name = re.sub(r"\d{6,}", "#####", uploaded_file.name)
-                    try:
-                        raw = uploaded_file.getvalue()
-                        file_hash = hashlib.sha256(raw).hexdigest()
-                        parsed = parse_xtb_file(io.BytesIO(raw))
-                        reports.append(import_xtb(parsed, file_hash))
-                    except ValueError as exc:
-                        errors.append(f"{safe_name}: {exc}")
-                    except Exception as exc:
-                        errors.append(f"{safe_name}: {exc}")
-
-                st.session_state["xtb_last_report"] = reports
-                st.session_state["xtb_last_errors"] = errors
-                st.session_state["xtb_nonce"] = st.session_state.get("xtb_nonce", 0) + 1
-                st.rerun()
-
-            for error in st.session_state.get("xtb_last_errors", []):
-                st.error(error)
-
-            xtb_last_report = st.session_state.get("xtb_last_report")
-            if xtb_last_report:
-                report_rows = []
-                for report in xtb_last_report:
-                    verification_issues = []
-                    if not report.get("cash_ok"):
-                        verification_issues.append("✗ cash")
-                    if not report.get("positions_ok"):
-                        verification_issues.append("✗ poziții")
-
-                    report_rows.append(
-                        {
-                            "Cont": report.get("label"),
-                            "Raport din": report.get("report_time"),
-                            "Operațiuni noi": report.get("new_cash_ops", 0) + report.get("new_closed", 0),
-                            "Duplicate sărite": report.get("duplicate_cash_ops", 0) + report.get("duplicate_closed", 0),
-                            "Snapshot": "fișier deja încărcat" if report.get("already_imported") else report.get("snapshot_status"),
-                            "Verificări": "✓" if not verification_issues else " / ".join(verification_issues),
-                            "Tipuri necunoscute": ", ".join(report.get("unknown_types") or []) or "—",
-                        }
-                    )
-
-                st.dataframe(pd.DataFrame(report_rows), width="stretch", hide_index=True)
-                if st.button(t("xtb.hide_report"), key="xtb_hide_report"):
-                    st.session_state.pop("xtb_last_report", None)
-                    st.session_state.pop("xtb_last_errors", None)
-                    st.rerun()
-
-            xtb_accounts = accounts_summary()
-            if xtb_accounts:
-                st.dataframe(
-                    pd.DataFrame(
-                        {
-                            "Cont": [account.get("label") for account in xtb_accounts],
-                            "Monedă": [account.get("currency") for account in xtb_accounts],
-                            "Raport din": [account.get("report_time") for account in xtb_accounts],
-                            "Poziții": [account.get("positions") for account in xtb_accounts],
-                            "Operațiuni": [account.get("cash_ops") for account in xtb_accounts],
-                            "Valoare la raport": [account.get("value") for account in xtb_accounts],
-                            "Profit la raport": [account.get("profit") for account in xtb_accounts],
-                        }
-                    ),
-                    width="stretch",
-                    hide_index=True,
-                )
-            else:
-                st.caption(t("xtb.no_data"))
-
-            st.markdown(t("xtb.symbols_title"))
-            xtb_prices_cache = load_xtb_prices()
-            xtb_prices_data = xtb_prices_cache.get("data") or {}
-            xtb_symbol_rows = []
-            xtb_symbol_originals = {}
-
-            for ticker, price_info in xtb_prices_data.items():
-                symbol = price_info.get("symbol") or ""
-                status = price_info.get("status")
-                currency_ok = price_info.get("currency_ok")
-                ratio = price_info.get("ratio")
-
-                if status == "ok" and currency_ok in (True, None):
-                    status_label = "✅ ok"
-                    has_problem = False
-                elif status == "mismatch" or currency_ok is False:
-                    status_label = "⚠️ verifică"
-                    has_problem = True
-                else:
-                    status_label = "❌ fără date"
-                    has_problem = True
-
-                xtb_symbol_originals[str(ticker)] = symbol
-                xtb_symbol_rows.append(
-                    {
-                        "_problem": has_problem,
-                        "Ticker": str(ticker),
-                        "Simbol Yahoo": symbol,
-                        "Preț Yahoo": price_info.get("price"),
-                        "Monedă": price_info.get("currency") or "",
-                        "Preț XTB": price_info.get("xtb_ref"),
-                        "Raport": round(ratio, 3) if ratio is not None else None,
-                        "Stare": status_label,
-                    }
-                )
-
-            xtb_symbols_df = pd.DataFrame(
-                xtb_symbol_rows,
-                columns=["_problem", "Ticker", "Simbol Yahoo", "Preț Yahoo", "Monedă", "Preț XTB", "Raport", "Stare"],
-            )
-            if not xtb_symbols_df.empty:
-                xtb_symbols_df = xtb_symbols_df.sort_values(["_problem", "Ticker"], ascending=[False, True]).reset_index(drop=True)
-            xtb_symbols_editor_df = xtb_symbols_df.drop(columns=["_problem"], errors="ignore")
-
-            edited_xtb_symbols_df = st.data_editor(
-                xtb_symbols_editor_df,
-                width="stretch",
-                hide_index=True,
-                key="xtb_symbols_editor",
-                disabled=["Ticker", "Preț Yahoo", "Monedă", "Preț XTB", "Raport", "Stare"],
-                column_config={
-                    "Simbol Yahoo": st.column_config.TextColumn("Simbol Yahoo"),
-                },
-            )
-
-            xtb_symbols_save_col, xtb_prices_refresh_col = st.columns([1, 1])
-            with xtb_symbols_save_col:
-                if st.button(t("xtb.save_symbols"), key="xtb_symbols_save"):
-                    saved_any = False
-
-                    for _, row in edited_xtb_symbols_df.iterrows():
-                        ticker = str(row["Ticker"])
-                        new_symbol = "" if pd.isna(row.get("Simbol Yahoo")) else str(row.get("Simbol Yahoo") or "").strip()
-                        old_symbol = xtb_symbol_originals.get(ticker, "")
-
-                        if new_symbol == old_symbol:
-                            continue
-
-                        ok, msg = save_symbol_override(ticker, new_symbol)
-                        if ok:
-                            saved_any = True
-                            st.success(f"{ticker}: {msg}")
-                        else:
-                            st.error(f"{ticker}: {msg}")
-
-                    if saved_any:
-                        st.rerun()
-
-            with xtb_prices_refresh_col:
-                if st.button(t("xtb.refresh_prices"), key="xtb_prices_refresh"):
-                    if start_xtb_prices_refresh_background():
-                        st.info(t("xtb.prices_started"))
-                    else:
-                        st.warning(t("xtb.prices_busy"))
-
-            fetched_at = xtb_prices_cache.get("fetched_at")
-            if fetched_at:
-                xtb_prices_updated = datetime.fromtimestamp(fetched_at).strftime("%d.%m.%Y %H:%M:%S")
-            else:
-                xtb_prices_updated = "neactualizat încă"
-
-            xtb_prices_total = len(xtb_prices_data)
-            xtb_prices_ok = sum(
-                1
-                for price_info in xtb_prices_data.values()
-                if price_info.get("status") == "ok" and price_info.get("currency_ok") in (True, None)
-            )
-            st.caption(
-                f"Ultima actualizare: {xtb_prices_updated} · {xtb_prices_ok}/{xtb_prices_total} tickere ok. "
-                "Prețul XTB e luat din export; un raport în jur de 1,00–1,03 e normal "
-                "(probabil XTB evaluează la prețul de vânzare). Sub 0,9 sau peste 1,1 indică simbol sau monedă greșite."
-            )
-
-            xtb_instrument_rows = xtb_instruments()
-            if xtb_instrument_rows:
-                xtb_isin_suggestions = {}
-                xtb_isin_categories = {}
-                xtb_isin_rows = []
-
-                for instrument in xtb_instrument_rows:
-                    ticker = instrument.get("ticker")
-                    current_isin = str(instrument.get("isin") or "").strip().upper()
-                    category = instrument.get("category")
-                    xtb_isin_categories[str(ticker)] = category
-
-                    resolved_name = "—"
-                    if current_isin:
-                        resolved = resolve_isin(current_isin)
-                        resolved_name = resolved.get("name") or "—"
-
-                    suggestion = None if current_isin else suggest_isin(ticker, category)
-                    xtb_isin_suggestions[str(ticker)] = suggestion
-                    suggestion_text = (
-                        f"{suggestion.get('isin')} — {suggestion.get('name')} [{suggestion.get('source')}]"
-                        if suggestion
-                        else "—"
-                    )
-
-                    xtb_isin_rows.append(
-                        {
-                            "Ticker": ticker,
-                            "Nume": instrument.get("name"),
-                            "Categorie": category,
-                            "Conturi": ", ".join(instrument.get("accounts") or []),
-                            "ISIN": current_isin,
-                            "Rezolvat": resolved_name,
-                            "Sugestie": suggestion_text,
-                            "Aplică sugestia": False,
-                        }
-                    )
-
-                xtb_isin_df = pd.DataFrame(xtb_isin_rows)
-                edited_xtb_isin_df = st.data_editor(
-                    xtb_isin_df,
-                    width="stretch",
-                    hide_index=True,
-                    key="xtb_isin_editor",
-                    disabled=["Ticker", "Nume", "Categorie", "Conturi", "Rezolvat", "Sugestie"],
-                    column_config={
-                        "ISIN": st.column_config.TextColumn("ISIN"),
-                        "Aplică sugestia": st.column_config.CheckboxColumn("Aplică sugestia"),
-                    },
-                )
-
-                if st.button(t("xtb.save_isin"), key="xtb_isin_save"):
-                    original_isins = {
-                        str(row["Ticker"]): str(row.get("ISIN") or "").strip().upper()
-                        for _, row in xtb_isin_df.iterrows()
-                    }
-                    changed_isins = {}
-
-                    for _, row in edited_xtb_isin_df.iterrows():
-                        ticker = str(row["Ticker"])
-                        new_isin = "" if pd.isna(row.get("ISIN")) else str(row.get("ISIN") or "").strip().upper()
-                        suggestion = xtb_isin_suggestions.get(ticker)
-                        apply_suggestion = bool(row.get("Aplică sugestia"))
-
-                        if apply_suggestion and not new_isin and suggestion:
-                            new_isin = str(suggestion.get("isin") or "").strip().upper()
-
-                        if new_isin != original_isins.get(ticker, ""):
-                            changed_isins[ticker] = new_isin
-
-                    if not changed_isins:
-                        st.info(t("xtb.no_isin_changes"))
-                    else:
-                        saved_count = 0
-                        post_save_messages = []
-
-                        for ticker, new_isin in changed_isins.items():
-                            issues = isin_issues(ticker, new_isin, xtb_isin_categories.get(ticker), changed_isins) if new_isin else []
-                            error_issues = [message for level, message in issues if level == "error"]
-
-                            if error_issues:
-                                for message in error_issues:
-                                    st.error(f"{ticker}: {message}")
-                                continue
-
-                            ok, msg = save_isin(ticker, new_isin)
-                            if not ok:
-                                st.error(f"{ticker}: {msg}")
-                                continue
-
-                            saved_count += 1
-                            post_save_messages.extend(
-                                (ticker, level, message)
-                                for level, message in issues
-                                if level in {"warning", "info"}
-                            )
-
-                        for ticker, level, message in post_save_messages:
-                            if level == "warning":
-                                st.warning(f"{ticker}: {message}")
-                            else:
-                                st.info(f"{ticker}: {message}")
-
-                        if saved_count:
-                            st.success(t("xtb.isin_saved", n=saved_count))
-
-                if st.button(t("xtb.check_isin"), key="xtb_isin_check"):
-                    issue_rows = []
-
-                    for _, row in xtb_isin_df.iterrows():
-                        ticker = str(row["Ticker"])
-                        isin = str(row.get("ISIN") or "").strip().upper()
-                        if not isin:
-                            continue
-
-                        for level, message in isin_issues(ticker, isin, row.get("Categorie")):
-                            issue_rows.append(
-                                {
-                                    "Ticker": ticker,
-                                    "ISIN": isin,
-                                    "Nivel": level,
-                                    "Mesaj": message,
-                                }
-                            )
-
-                    if issue_rows:
-                        st.dataframe(pd.DataFrame(issue_rows), width="stretch", hide_index=True)
-                    else:
-                        st.success(t("xtb.no_issues"))
-
-            st.checkbox(t("xtb.allow_delete"), key="xtb_del_unlock")
-            if st.session_state.get("xtb_del_unlock") and xtb_accounts:
-                selected_xtb_account = st.selectbox(
-                    "Cont XTB de șters",
-                    xtb_accounts,
-                    format_func=lambda account: account.get("label") or account.get("account_key"),
-                    key="xtb_del_account",
-                )
-                if st.button(t("xtb.delete_account"), key="xtb_delete_account"):
-                    remove_account(selected_xtb_account["account_key"])
-                    st.rerun()
-
-            st.caption(
-                "XTB nu are API: datele sunt un instantaneu din ultimul export. "
-                "Cumpărările și vânzările noi apar doar după un export nou; "
-                "reîncărcarea aceluiași export este sigură, duplicatele sunt ignorate."
-            )
 
     if "Trading 212" in sel_portfolios:
         _notes = []
@@ -1277,4 +1269,8 @@ elif _synced is not None:
 if "selected_ticker" in st.session_state and "selected_row" in st.session_state:
     render_detail_view(st.session_state["selected_row"], st.session_state.get("total_portfolio_value", 0), api_key_id, api_secret)
 else:
+    if st.session_state.get("_page") == "settings":
+        from settings_page import render_settings
+        render_settings(_me, [(t("side.updates"), _section_updates), (t("side.xtb_import"), _section_xtb_import)])
+        st.stop()
     render_main_view()

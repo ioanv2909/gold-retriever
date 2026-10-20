@@ -149,17 +149,7 @@ def require_login():
 
 
 def _chrome(me):
-    sb = st.sidebar
-    sb.caption(f"👤 {me} · {users.role(me)}")
-    if sb.button(_tr("logout"), key="logout_btn"):
-        st.session_state.pop("_user", None)
-        st.session_state["_auth_loggedout"] = True
-        st.session_state["_auth_clear_cookie"] = True
-        st.rerun()
-    if users.role(me) == "admin":
-        if sb.button(_tr("admin_title"), key="open_users_page"):
-            st.session_state["_page_users"] = True
-            st.rerun()
+    return  # replaced by user_menu() in the page header
 
 
 _S.update({
@@ -180,18 +170,19 @@ def _flash(kind, text):
     st.rerun()
 
 
-def render_users_page(me):
+def render_users_page(me, embedded=False):
     import pandas as pd
 
     if users.role(me) != "admin":
         st.session_state.pop("_page_users", None)
         st.rerun()
 
-    top = st.columns([1, 4])
-    if top[0].button(_tr("back"), key="users_back"):
-        st.session_state.pop("_page_users", None)
-        st.rerun()
-    top[1].markdown("## " + _tr("admin_title"))
+    if not embedded:
+        top = st.columns([1, 4])
+        if top[0].button(_tr("back"), key="users_back"):
+            st.session_state.pop("_page_users", None)
+            st.rerun()
+        top[1].markdown("## " + _tr("admin_title"))
 
     fl = st.session_state.pop("_adm_flash", None)
     if fl:
@@ -243,3 +234,40 @@ def render_users_page(me):
             if st.button(_tr("delete"), key="adm_del"):
                 err = users.delete_user(d_user, me, d_purge)
                 _flash("err", _tr("err_" + err)) if err else _flash("ok", _tr("ok_deleted"))
+
+
+_S.update({
+    "settings": ("Setări", "Settings"),
+})
+
+
+def _btn(label, key):
+    try:
+        return st.button(label, key=key, width="stretch")
+    except TypeError:
+        return st.button(label, key=key, use_container_width=True)
+
+
+def user_menu(me):
+    """Top-right user menu: Settings / Log out."""
+    try:
+        pop = st.popover("👤 " + me)
+    except TypeError:
+        pop = st.popover("👤 " + me)
+    with pop:
+        st.markdown(
+            "<span class='um-marker'></span><style>"
+            "div[data-testid='stPopoverBody']:has(.um-marker){width:11rem !important;min-width:0 !important;}"
+            "</style>",
+            unsafe_allow_html=True,
+        )
+        st.caption(users.role(me))
+        if _btn("⚙️ " + _tr("settings"), "menu_settings"):
+            st.session_state["_page"] = "settings"
+            st.rerun()
+        if _btn(_tr("logout"), "menu_logout"):
+            st.session_state.pop("_user", None)
+            st.session_state.pop("_page", None)
+            st.session_state["_auth_loggedout"] = True
+            st.session_state["_auth_clear_cookie"] = True
+            st.rerun()
