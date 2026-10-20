@@ -14,7 +14,8 @@ jobs:
         run: |
           python - <<'PY'
           import ast, glob, importlib.util, os, sys
-          local = {os.path.splitext(f)[0] for f in glob.glob("*.py")}
+          local = {os.path.splitext(os.path.basename(f))[0] for f in glob.glob("*.py") + glob.glob("tools/*.py")}
+          optional = {"playwright"}  # only used by tools/screenshots.py
           missing = set()
           for f in glob.glob("*.py") + glob.glob("tools/*.py"):
               tree = ast.parse(open(f, encoding="utf-8").read())
@@ -25,7 +26,7 @@ jobs:
                   elif isinstance(n, ast.ImportFrom) and n.level == 0 and n.module:
                       names = [n.module.split(".")[0]]
                   for name in names:
-                      if name not in local and importlib.util.find_spec(name) is None:
+                      if name not in local and name not in optional and importlib.util.find_spec(name) is None:
                           missing.add((f, name))
           for f, name in sorted(missing):
               print("unresolved import:", name, "in", f)
