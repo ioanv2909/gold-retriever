@@ -172,7 +172,7 @@ def check_token(token):
 def records():
     d = _load()["users"]
     return [
-        {"key": k, "name": v.get("name", k), "role": v.get("role"), "created": v.get("created")}
+        {"key": k, "name": v.get("name", k), "role": v.get("role"), "created": v.get("created"), "email": v.get("email")}
         for k, v in sorted(d.items())
     ]
 
@@ -188,5 +188,21 @@ def set_role(name, new_role):
     if rec.get("role") == "admin" and new_role != "admin" and admins <= 1:
         return "last_admin"
     rec["role"] = new_role
+    _save(d)
+    return None
+
+
+def set_email(name, email):
+    email = str(email or "").strip()
+    if email and (email.count("@") != 1 or " " in email or email.startswith("@") or "." not in email.split("@")[1]):
+        return "email"
+    d = _load()
+    rec = d["users"].get(str(name).lower())
+    if not rec:
+        return "name"
+    if email:
+        rec["email"] = email
+    else:
+        rec.pop("email", None)
     _save(d)
     return None

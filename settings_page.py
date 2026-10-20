@@ -67,6 +67,9 @@ def render_settings(me, sections=()):
         entries.append(("👥 " + _L("Utilizatori", "Users"), lambda: _tab_users(me)))
     entries.append(("ℹ️ " + _L("Despre", "About"), _tab_about))
 
+    if users.role(me) == "admin":
+        from notify_ui import render_notifications
+        entries.insert(len(entries) - 1, ("🔔 " + _L("Notificări", "Notifications"), lambda: render_notifications(me)))
     tabs = st.tabs([e[0] for e in entries])
     for tab, (_, fn) in zip(tabs, entries):
         with tab:
