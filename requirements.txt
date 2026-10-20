@@ -1,8 +1,8 @@
-streamlit>=1.35
-requests
-pandas
-numpy
-yfinance
-plotly
+streamlit==1.65.0
+requests==2.34.2
+pandas==2.3.3
+numpy==2.2.6
+yfinance==1.7.0
+plotly==7.1.0
 justetf-scraping @ https://github.com/druzsan/justetf-scraping/archive/53cca6aaba5c97068ae0b6385d28a729dfdbf2a1.zip
-openpyxl>=3.1
+openpyxl==3.1.5

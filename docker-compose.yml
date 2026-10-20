@@ -2,6 +2,9 @@ services:
   gold-retriever:
     build: .
     container_name: gold-retriever
+    user: "1000:1000"
+    environment:
+      - HOME=/tmp
     ports:
       - "${PORT:-8501}:8501"
     volumes:
