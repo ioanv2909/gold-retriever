@@ -6,7 +6,7 @@ import streamlit as st
 import users
 from core import CONFIG_FILE, load_config, save_config
 
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 REPO_URL = "https://github.com/ioanv2909/gold-retriever"
 
 

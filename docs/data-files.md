@@ -15,6 +15,9 @@ Everything is JSON except `auth_secret`. Do not commit this folder:
 | `quality_cache.json`, `quality_status.json` | Quality scores and job progress |
 | `market_context_cache.json`, `market_context_status.json` | Benchmark (S&P 500) data and job progress |
 | `manual_metrics.json` | Manually entered metrics, when present |
+| `mail.json` | SMTP settings for notifications (password in plain text, mode 600) |
+| `notify_state.json` | Times of sent alerts and the last SMTP error |
+| `backup_status.json` | Time of the last successful backup (written by the backup script) |
 
 ## Per user (`data/users/<name>/`)
 

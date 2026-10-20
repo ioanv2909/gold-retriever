@@ -51,6 +51,7 @@ Infrastructure
 - `userctx.py` - `UPath`: resolves a file name to the current user's folder, or to the shared folder.
 - `users.py` - accounts, roles, PBKDF2 password hashing, migration of legacy single-user data.
 - `background.py` - background refresh threads and their status files.
+- `notify.py`, `alerts.py`, `notify_ui.py` - email notifications: SMTP sending with throttling, alert rules (consecutive failures, backup age, XTB import, security) and the Settings tab.
 
 ## Users
 

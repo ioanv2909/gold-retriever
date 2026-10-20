@@ -1,3 +1,13 @@
+## 0.2.0 — 2026-10-20
+
+- Notifications: email alerts to admins (SMTP) for failed backups, failed refreshes, XTB imports with problems and security events (Settings, Notifications).
+- Backup: daily backup script for `data/` with retention, status file and failure alert; restore steps documented.
+- Security: alert when an account is locked after failed logins and on every user change.
+- Fix: importing an XTB report no longer shares default state between users in the same process.
+- Container runs as a non-root user; dependency versions are pinned.
+- Unit tests for XIRR, currency conversion, XTB parsing and import, and notifications; CI runs them.
+- Documentation rewritten (architecture, data flow, data files, backup and notifications).
+
 ## 0.1.0 — 2026-10-20
 
 First public version.
