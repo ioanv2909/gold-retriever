@@ -112,3 +112,8 @@ def test_save_settings_cleans_values(env):
     assert cfg["events"] == ["backup"]
     assert cfg["security"] == "starttls"
     assert os.stat(notify.MAIL_FILE).st_mode & 0o777 == 0o600
+
+
+def test_min_hours_overrides_default(env):
+    assert notify.notify("backup", "s", "b", key="k", sync=True, min_hours=0) is True
+    assert notify.notify("backup", "s", "b", key="k", sync=True, min_hours=0) is True

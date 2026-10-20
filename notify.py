@@ -134,7 +134,7 @@ def send_test():
         return False, msg
 
 
-def notify(event, subject, body, key=None, sync=False):
+def notify(event, subject, body, key=None, sync=False, min_hours=None):
     """Trimite o alerta adminilor. Intoarce True daca a fost trimisa (sau pornita)."""
     cfg = load_settings()
     if event not in cfg["events"] or not configured(cfg):
@@ -147,7 +147,8 @@ def notify(event, subject, body, key=None, sync=False):
     with _LOCK:
         state = _read(STATE_FILE, {})
         sent = {k: v for k, v in (state.get("sent") or {}).items() if now - float(v) < 7 * 86400}
-        if now - float(sent.get(key, 0)) < cfg["min_interval_h"] * 3600:
+        limit_h = cfg["min_interval_h"] if min_hours is None else min_hours
+        if now - float(sent.get(key, 0)) < limit_h * 3600:
             return False
         sent[key] = now
         state["sent"] = sent

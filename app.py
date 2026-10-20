@@ -1,4 +1,5 @@
 import streamlit as st
+import alerts
 import requests
 import pandas as pd
 import numpy as np
@@ -295,6 +296,10 @@ def _section_xtb_import():
             except Exception as exc:
                 errors.append(f"{safe_name}: {exc}")
 
+        try:
+            alerts.record_xtb_import(reports, errors, _me)
+        except Exception:
+            pass
         st.session_state["xtb_last_report"] = reports
         st.session_state["xtb_last_errors"] = errors
         st.session_state["xtb_nonce"] = st.session_state.get("xtb_nonce", 0) + 1

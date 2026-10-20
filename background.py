@@ -1,3 +1,4 @@
+import alerts
 from etf import compute_etf_score, extract_etf_metrics, get_instrument
 from risk import extract_risk_metrics, compute_risk
 from yf_compat import yf, YFINANCE_AVAILABLE
@@ -377,14 +378,21 @@ def xtb_positions_for_context():
 def start_background_scheduler(user=None):
     def run_loop():
         last_core = last_div = last_rat = last_q = last_m = last_w = last_j = last_x = last_h = 0.0
+        last_hc = 0.0
         while True:
             cfg = load_config()
             key_id, secret = cfg.get("api_key_id"), cfg.get("api_secret")
             interval_s = max(1, int(cfg.get("interval_minutes", 15))) * 60
 
             if key_id and secret and (time.time() - last_core) >= interval_s:
-                fetch_and_cache_core(key_id, secret)
+                snap_c = fetch_and_cache_core(key_id, secret)
                 last_core = time.time()
+                try:
+                    errs_c = dict((snap_c or {}).get("errors") or {})
+                    errs_c.update({"stale-" + k: v for k, v in ((snap_c or {}).get("stale_errors") or {}).items()})
+                    alerts.record_refresh("Trading 212", user or "default", errs_c, secrets=(key_id, secret))
+                except Exception as e:
+                    print(f"[alerts] {e}", flush=True)
                 try:
                     snap_h = load_cached_snapshot()
                     cash_h = (snap_h or {}).get("cash") or {}
@@ -433,6 +441,15 @@ def start_background_scheduler(user=None):
                 except Exception as e:
                     print(f"[history] {e}", flush=True)
                 last_h = time.time()
+
+            if (time.time() - last_hc) >= 600:
+                last_hc = time.time()
+                try:
+                    from t212_api import load_cached_dividends as _lcd
+                    alerts.check_backup()
+                    alerts.record_refresh("dividende", user or "default", {"dividends": (_lcd() or {}).get("error")})
+                except Exception as e:
+                    print(f"[alerts] {e}", flush=True)
 
             time.sleep(5)
 
