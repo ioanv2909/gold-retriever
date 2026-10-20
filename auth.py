@@ -1,5 +1,6 @@
 import time
 
+import alerts
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -133,6 +134,10 @@ def require_login():
         if not users.verify(key, pw):
             cnt += 1
             if cnt >= _MAX_FAILS:
+                try:
+                    alerts.record_lockout(key, users.exists(key), _MAX_FAILS, _LOCK_SECONDS)
+                except Exception:
+                    pass
                 cnt, until = 0, now + _LOCK_SECONDS
             _fails[key] = (cnt, until)
             time.sleep(1)
@@ -209,6 +214,8 @@ def render_users_page(me, embedded=False):
             n_role = st.selectbox(_tr("role"), ["user", "admin"])
             if st.form_submit_button(_tr("add")):
                 _, err = users.create_user(n_name, n_pwd, n_role)
+                if not err:
+                    alerts.record_user_event("utilizator creat", me, n_name, "rol: " + str(n_role))
                 _flash("err", _tr("err_" + err)) if err else _flash("ok", _tr("ok_created"))
 
     with t_manage:
@@ -219,6 +226,8 @@ def render_users_page(me, embedded=False):
             r_pwd = st.text_input(_tr("new_pwd"), type="password", key="adm_rst_pwd")
             if st.button(_tr("apply"), key="adm_rst"):
                 err = users.set_password(r_user, r_pwd)
+                if not err:
+                    alerts.record_user_event("parola resetata", me, r_user)
                 _flash("err", _tr("err_" + err)) if err else _flash("ok", _tr("ok_pwd"))
         with c2:
             st.markdown("**" + _tr("set_role") + "**")
@@ -226,6 +235,8 @@ def render_users_page(me, embedded=False):
             s_role = st.selectbox(_tr("role"), ["user", "admin"], key="adm_role_val")
             if st.button(_tr("apply"), key="adm_role"):
                 err = users.set_role(s_user, s_role)
+                if not err:
+                    alerts.record_user_event("rol schimbat", me, s_user, "rol nou: " + str(s_role))
                 _flash("err", _tr("err_" + err)) if err else _flash("ok", _tr("ok_role"))
         with c3:
             st.markdown("**" + _tr("delete") + "**")
@@ -233,6 +244,8 @@ def render_users_page(me, embedded=False):
             d_purge = st.checkbox(_tr("purge"), key="adm_del_purge")
             if st.button(_tr("delete"), key="adm_del"):
                 err = users.delete_user(d_user, me, d_purge)
+                if not err:
+                    alerts.record_user_event("utilizator sters", me, d_user, "date sterse" if d_purge else "date pastrate")
                 _flash("err", _tr("err_" + err)) if err else _flash("ok", _tr("ok_deleted"))
 
 

@@ -76,3 +76,25 @@ def test_xtb_import_problems_alert(calls):
     assert alerts.record_xtb_import(bad, ["report.xlsx: boom"], "bob") is True
     body = calls[0][0][2]
     assert "cash check failed" in body and "Mystery" in body and "boom" in body and "bob" in body
+
+
+def test_lockout_alert_names_existing_user(calls):
+    assert alerts.record_lockout("admin", True, 5, 900) is True
+    args, kwargs = calls[0]
+    assert args[0] == "security" and kwargs["key"] == "lockout:admin" and kwargs["min_hours"] == 1
+    assert "admin" in args[2] and "15 minute" in args[2]
+
+
+def test_lockout_alert_never_echoes_unknown_names(calls):
+    alerts.record_lockout("<script>alert(1)</script>", False, 5, 900)
+    args, kwargs = calls[0]
+    assert "<script>" not in args[2]
+    assert kwargs["key"] == "lockout:(nume inexistent)"
+
+
+def test_user_event_is_never_throttled(calls):
+    alerts.record_user_event("parola resetata", "admin", "bob")
+    alerts.record_user_event("parola resetata", "admin", "bob")
+    assert len(calls) == 2
+    assert all(k["min_hours"] == 0 for _, k in calls)
+    assert "bob" in calls[0][0][2] and "admin" in calls[0][0][2]

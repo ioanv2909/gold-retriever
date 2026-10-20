@@ -72,3 +72,20 @@ def record_xtb_import(reports, errors, user):
     body = "Import XTB cu probleme (utilizator: %s).\n\n%s" % (user, "\n".join(problems))
     return notify.notify("xtb_import", "Import XTB cu probleme", body,
                          key="xtb:%s:%s" % (user, "|".join(sorted(problems))))
+
+
+def record_lockout(user, exists, max_fails, lock_seconds):
+    """Cont blocat temporar dupa prea multe autentificari esuate."""
+    who = user if exists else "(nume inexistent)"
+    body = "Cont blocat temporar dupa %d autentificari esuate la rand (utilizator: %s, blocat %d minute)." % (
+        max_fails, who, lock_seconds // 60)
+    return notify.notify("security", "Autentificari esuate repetat", body, key="lockout:%s" % who, min_hours=1)
+
+
+def record_user_event(action, actor, target, detail=""):
+    """Modificari ale utilizatorilor facute de un admin. Se trimite mereu, fara limitare in timp."""
+    body = "Admin: %s\nActiune: %s\nAsupra: %s" % (actor, action, target)
+    if detail:
+        body += "\nDetalii: %s" % detail
+    return notify.notify("security", "Modificare utilizatori: %s" % action, body,
+                         key="user:%s:%s:%s:%s" % (action, actor, target, time.time()), min_hours=0)
