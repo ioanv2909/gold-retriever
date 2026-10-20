@@ -1,3 +1,4 @@
+import copy
 import hashlib
 import re
 import warnings
@@ -328,9 +329,10 @@ def _read_sheet(file_like, sheet_name):
 
 
 def _normalize_xtb_data(data):
-    normalized = dict(_DEFAULT_XTB_DATA)
+    # copii in adancime: constanta implicita nu trebuie impartita intre apeluri/utilizatori
+    normalized = copy.deepcopy(_DEFAULT_XTB_DATA)
     if isinstance(data, dict):
-        normalized.update(data)
+        normalized.update(copy.deepcopy(data))
     for key in _DEFAULT_XTB_DATA:
         if not isinstance(normalized.get(key), dict):
             normalized[key] = {}
