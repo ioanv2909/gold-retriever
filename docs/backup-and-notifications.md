@@ -53,6 +53,7 @@ like the Trading 212 keys.
 | Refresh | Trading 212 or dividends refresh failed 3 times in a row (checked every refresh cycle / 10 minutes) |
 | XTB import | A report fails the cash or positions check, has unknown operation types, or cannot be parsed |
 | Security | An account is locked after repeated failed logins; a user is created, deleted, gets a new password or role |
+| Position alerts | A price alert, score alert or concentration alert set by the user fires (sent to the user, not the admins) |
 | Calendar | Earnings, ex-dividend or dividend payment dates for held positions within the next N days (sent to the user, not the admins) |
 
 The same alert is not resent more often than the configured interval (6 hours by
@@ -62,7 +63,20 @@ Emails never contain keys, passwords or amounts.
 Calendar emails go to each user's own address, set in Settings, tab Calendar, together with
 the opt-in and how many days ahead (1-30, default 7). The scheduler checks once an hour and
 sends one digest with the events not sent before; `events_notified.json` remembers them. The
-admin must also enable the Calendar event in Notifications. `notify_state.json` keeps the send
+admin must also enable the Calendar event in Notifications.
+
+Position alerts are set per user in Settings, tab Alerts, and checked every 15 minutes:
+
+- **Price:** rises to or above / falls to or below a price, in the instrument currency (GBX shown
+  as GBP). Fires once, then waits until re-armed. Can also be added from the position page.
+- **Score:** the quality, risk or dividend score of a held position falls below a threshold
+  (again only after it rose 5 points above it) or drops by N points from its last peak. The
+  first value seen is only a baseline.
+- **Concentration:** a position exceeds the maximum share of the portfolio, all accounts
+  together; again only after it fell 2 points below the limit.
+
+Fired alerts go to `alert_log.json` (banner on the main page until marked seen) and, if the user
+has an address and the admin enabled the Position alerts event, one email per check. `notify_state.json` keeps the send
 times and the last SMTP error.
 
 The backup script sends its alert through `tools/notify_cli.py`, which reads the same

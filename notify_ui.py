@@ -56,6 +56,7 @@ def render_notifications(me):
         "xtb_import": _L("Importuri XTB cu probleme", "XTB imports with problems"),
         "security": _L("Securitate", "Security"),
         "events": _L("Calendar (fiecărui utilizator, la adresa proprie)", "Calendar (to each user, at their own address)"),
+        "positions": _L("Alerte poziții: preț, scor, concentrare (fiecărui utilizator)", "Position alerts: price, score, concentration (to each user)"),
     }
     chosen = st.multiselect(
         _L("Evenimente", "Events"), list(labels),

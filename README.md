@@ -24,6 +24,7 @@ A self-hosted portfolio analyzer for **Trading 212** and **XTB**, built with Str
 - Per-position profit/loss, dividends, and comparison with the S&P 500 over the same holding period
 - Quality, risk and dividend scores, analyst ratings, ETF data from justETF
 - Watchlist and loss-to-profit alerts
+- Position alerts on price, score and concentration, as an in-app banner and by email
 - Events calendar: upcoming earnings, ex-dividend and dividend payment dates for held positions, with an optional email digest per user
 - Email notifications (SMTP) to admins for failed backups, failed refreshes, XTB import problems and security events
 - Detail page for every instrument

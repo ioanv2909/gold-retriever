@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Position alerts (Settings, Alerts), checked every 15 minutes in the background:
+  - price alerts per position (rises to or above / falls to or below a price, in the instrument currency), firing once and re-armable; also addable from the position page;
+  - score alerts when the quality, risk or dividend score falls below a threshold or drops by N points from its last peak;
+  - concentration alert when a position exceeds a share of the whole portfolio (Trading 212 and XTB together).
+  Fired alerts show as a banner on the main page and are emailed to the user if they have an address and an admin enabled "Position alerts" in Notifications.
 - Dividend score (X/100) for stocks, on four pillars: safety (payout from earnings and from free cash flow), growth (5-year dividend CAGR), consistency (consecutive years paid, cuts in 10 years) and yield (a yield above 8% lowers the score as a possible trap). Shown as a new "Div. score" column in the positions table and as a Dividend section on the position page, with pillar scores and indicator details.
 
 ## 0.2.6 — 2026-10-21

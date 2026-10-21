@@ -26,6 +26,8 @@ from risk import RISK_INDICATORS, compute_risk, extract_risk_metrics
 from valuation import red_count, valuation_rows
 from scoring import INDICATORS, compute_score, extract_metrics
 from dividend_score import PILLARS, compute_dividend_score, extract_dividend_metrics
+from position_alerts_ui import cached_holdings, render_quick_price_alert
+from userctx import current_user
 from t212_api import fetch_account_currency, fetch_order_history_for_ticker
 from yahoo import fetch_benchmark_return, fetch_price_chart_history, fetch_sector_etf_reference, fetch_yahoo_analysis, fetch_yahoo_currency_hint, guess_yahoo_symbol
 from xtb_positions import xtb_holdings
@@ -370,6 +372,9 @@ def render_detail_view(position_row, total_portfolio_value, api_key_id, api_secr
     checklist_price = None
     checklist_sma200 = None
     checklist_ret_3m = None
+    _held = cached_holdings(current_user()).get(ticker)
+    if _held:
+        render_quick_price_alert(ticker, _held.get("name"), _held.get("price"), _held.get("ccy"))
     st.markdown("---")
 
     # --- scor de calitate ---
