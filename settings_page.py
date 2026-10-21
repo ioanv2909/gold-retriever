@@ -1,4 +1,5 @@
 """Settings page: Trading 212 keys, user management (admin), about + release notes."""
+import json
 import os
 
 import streamlit as st
@@ -34,7 +35,16 @@ def _tab_t212():
 
 def _tab_about():
     st.markdown("### GoldRetriever")
-    st.caption("v" + VERSION)
+    info = {}
+    try:
+        with open("build_info.json", encoding="utf-8") as f:
+            info = json.load(f)
+    except Exception:
+        pass
+    label = "v" + str(info.get("version") or VERSION)
+    if info.get("sha"):
+        label += " \u00b7 " + info["sha"] + (_L(" (necomis)", " (uncommitted)") if info.get("dirty") else "")
+    st.caption(label)
     st.markdown(
         f"[GitHub]({REPO_URL}) · MIT license\n\n"
         + _L("Aplicație self-hosted pentru analiza portofoliilor Trading 212 și XTB. Datele rămân pe serverul tău.",
