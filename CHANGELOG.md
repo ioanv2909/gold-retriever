@@ -1,3 +1,7 @@
+## 0.2.16 — 2026-10-21
+
+- Compare tab on the main page: up to five instruments (positions, watchlist or any Yahoo symbol) side by side. A chart of the return over the chosen period (YTD by default) with labels at the line ends, and a table with return, annualized volatility, max drawdown, quality, risk and dividend scores, P/E, forward P/E, dividend yield, analyst target upside, beta, market cap, sector, country and currency. Each instrument keeps its color while it stays selected.
+
 ## 0.2.15 — 2026-10-21
 
 - Settings: language switch (RO/EN) in the page header, as on the main page; the open tab stays the same.

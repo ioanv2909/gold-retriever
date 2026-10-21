@@ -1079,7 +1079,7 @@ def render_main_view():
             return "color: #ff6b6b;"
         return "color: #9aa0a6;"
 
-    tab_pos, tab_ex, tab_ev, tab_wl = st.tabs([t("tab.positions"), t("tab.exposure"), t("tab.events"), t("tab.watchlist")])
+    tab_pos, tab_ex, tab_cmp, tab_ev, tab_wl = st.tabs([t("tab.positions"), t("tab.exposure"), t("tab.compare"), t("tab.events"), t("tab.watchlist")])
     with tab_pos:
         styled_table = table_df.style.format(
             {
@@ -1140,6 +1140,10 @@ def render_main_view():
     with tab_ex:
         from exposure_ui import render_exposure_tab
         render_exposure_tab(vdf, display_ccy)
+
+    with tab_cmp:
+        from compare_ui import render_compare_tab
+        render_compare_tab(vdf)
 
     with tab_ev:
         from events_ui import render_calendar_tab
