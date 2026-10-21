@@ -2,6 +2,8 @@ import time
 
 import alerts
 import streamlit as st
+
+from url_tabs import reset as reset_tabs
 import streamlit.components.v1 as components
 
 import users
@@ -280,8 +282,7 @@ def user_menu(me):
             for k in ("selected_ticker", "selected_row", "_url_ticker"):
                 st.session_state.pop(k, None)
             st.query_params.pop("detail", None)
-            st.query_params.pop("tab", None)
-            st.session_state.pop("settings_tab", None)
+            reset_tabs("settings_tab")
             st.query_params["page"] = "settings"
             st.session_state["_page"] = "settings"
             st.rerun()
@@ -289,7 +290,7 @@ def user_menu(me):
             st.session_state.pop("_user", None)
             st.session_state.pop("_page", None)
             st.query_params.pop("page", None)
-            st.query_params.pop("tab", None)
+            reset_tabs("settings_tab")
             st.session_state["_auth_loggedout"] = True
             st.session_state["_auth_clear_cookie"] = True
             st.rerun()

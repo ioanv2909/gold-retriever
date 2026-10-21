@@ -85,3 +85,29 @@ def parse_symbols(text):
         if p and len(p) <= 15 and p not in out:
             out.append(p)
     return out
+
+
+def spread_labels(values, min_gap):
+    """Pozitiile verticale ale etichetelor, la cel putin min_gap una de alta si cat mai aproape de valori.
+    values: {cheie: valoare}. Grupurile impinse se recentreaza pe media valorilor lor."""
+    items = sorted(values.items(), key=lambda kv: kv[1])
+    if min_gap <= 0 or len(items) < 2:
+        return dict(items)
+    # grupuri de etichete prea apropiate; fiecare grup sta centrat pe valorile lui, cu pasul min_gap
+    groups = [[k] for k, _ in items]
+    vals = dict(items)
+
+    def place(g):
+        mid = sum(vals[k] for k in g) / len(g)
+        start = mid - min_gap * (len(g) - 1) / 2
+        return [start + i * min_gap for i in range(len(g))]
+
+    merged = True
+    while merged:
+        merged = False
+        for i in range(len(groups) - 1):
+            if place(groups[i])[-1] + min_gap > place(groups[i + 1])[0] + 1e-9:
+                groups[i:i + 2] = [groups[i] + groups[i + 1]]
+                merged = True
+                break
+    return {k: y for g in groups for k, y in zip(g, place(g))}

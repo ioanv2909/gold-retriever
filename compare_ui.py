@@ -10,6 +10,7 @@ from yf_compat import yf, YFINANCE_AVAILABLE
 
 # paleta categoriala, in ordine fixa; culoarea urmeaza simbolul, nu pozitia lui in lista
 COLORS = ("#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4")
+LABEL_GAP = 0.055  # distanta minima intre etichete, ca fractie din intervalul vertical (~un rand de text)
 _G2D = {"3H": "1Z", "1D": "1Z", "1W": "1S", "1M": "1L", "1Y": "1A", "YTD": "YTD", "Max": "Max"}
 
 
@@ -78,11 +79,21 @@ def _chart(norm, labels, colors):
         fig.add_trace(go.Scatter(
             x=s.index, y=s.values, mode="lines", name=labels[sym], line={"color": colors[sym], "width": 2},
             hovertemplate=labels[sym] + ": %{y:+.1f}%<extra></extra>"))
-        # eticheta directa la capatul liniei, ca identitatea sa nu depinda doar de culoare
         fig.add_trace(go.Scatter(
-            x=[s.index[-1]], y=[s.iloc[-1]], mode="markers+text", text=[f"{sym} {s.iloc[-1]:+.1f}%"],
-            textposition="middle right", marker={"color": colors[sym], "size": 8},
+            x=[s.index[-1]], y=[s.iloc[-1]], mode="markers", marker={"color": colors[sym], "size": 8},
             showlegend=False, hoverinfo="skip"))
+    # etichete directe la capatul liniilor, ca identitatea sa nu depinda doar de culoare;
+    # cele prea apropiate se departeaza pe verticala (punctul ramane la valoarea reala)
+    ends = {sym: float(norm[sym].dropna().iloc[-1]) for sym in norm.columns if not norm[sym].dropna().empty}
+    y_min, y_max = min(float(norm.min().min()), 0.0), max(float(norm.max().max()), 0.0)
+    gap = max(y_max - y_min, 1e-6) * LABEL_GAP
+    placed = compare.spread_labels(ends, gap)
+    # axa include si etichetele impinse peste capete, ca sa nu fie taiate
+    fig.update_yaxes(range=[min(y_min, *placed.values()) - gap, max(y_max, *placed.values()) + gap])
+    for sym, y in placed.items():
+        last_x = norm[sym].dropna().index[-1]
+        fig.add_annotation(x=last_x, y=y, text=f"{sym} {ends[sym]:+.1f}%", showarrow=False,
+                           xanchor="left", xshift=8, yanchor="middle")
     fig.add_hline(y=0, line={"color": "#9a9994", "width": 1})
     fig.update_layout(height=420, hovermode="x unified", margin={"l": 10, "r": 110, "t": 10, "b": 10},
                       yaxis={"ticksuffix": "%", "gridcolor": "rgba(154,153,148,0.2)"},

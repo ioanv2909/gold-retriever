@@ -51,3 +51,25 @@ def test_parse_symbols():
     assert compare.parse_symbols("nvda, sap.de;KO  nvda") == ["NVDA", "SAP.DE", "KO"]
     assert compare.parse_symbols("") == []
     assert compare.parse_symbols("X" * 16) == []
+
+
+def test_spread_labels_keeps_distance_and_stays_centered():
+    out = compare.spread_labels({"A": 10.0, "B": 10.5, "C": 30.0}, 2.0)
+    assert out["C"] == 30.0
+    assert out["B"] - out["A"] == pytest.approx(2.0)
+    assert (out["A"] + out["B"]) / 2 == pytest.approx(10.25)
+
+
+def test_spread_labels_chain_merges_groups():
+    vals = {"A": 0.0, "B": 0.5, "C": 1.0, "D": 1.5}
+    out = compare.spread_labels(vals, 1.0)
+    ys = sorted(out.values())
+    assert all(b - a >= 1.0 - 1e-9 for a, b in zip(ys, ys[1:]))
+    assert sum(ys) / 4 == pytest.approx(0.75)
+    assert sorted(out, key=out.get) == ["A", "B", "C", "D"]
+
+
+def test_spread_labels_far_apart_or_trivial_unchanged():
+    assert compare.spread_labels({"A": 1.0, "B": 50.0}, 2.0) == {"A": 1.0, "B": 50.0}
+    assert compare.spread_labels({"A": 1.0}, 2.0) == {"A": 1.0}
+    assert compare.spread_labels({}, 2.0) == {}

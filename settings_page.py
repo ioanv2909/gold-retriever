@@ -6,6 +6,7 @@ import streamlit as st
 
 import users
 from i18n import LANGS
+from url_tabs import reset as reset_tabs, url_tabs
 from core import CONFIG_FILE, load_config, save_config
 
 VERSION = "0.2.0"
@@ -70,8 +71,7 @@ def render_settings(me, sections=()):
     if top[0].button(_L("← Înapoi", "← Back"), key="settings_back"):
         st.session_state.pop("_page", None)
         st.query_params.pop("page", None)
-        st.query_params.pop("tab", None)
-        st.session_state.pop("settings_tab", None)
+        reset_tabs("settings_tab")
         st.rerun()
     top[1].markdown("## ⚙️ " + _L("Setări", "Settings"))
     with top[2]:
@@ -89,22 +89,9 @@ def render_settings(me, sections=()):
         from notify_ui import render_notifications
         entries.insert(len(entries) - 1, ("notifications", "🔔 " + _L("Notificări", "Notifications"),
                                           lambda: render_notifications(me)))
-    label_by_id = {i: label for i, label, _ in entries}
-    id_by_label = {label: i for i, label, _ in entries}
-    wanted = st.query_params.get("tab")
-    if wanted not in label_by_id:
-        wanted = entries[0][0]
-        st.query_params.pop("tab", None)
-    # URL-ul castiga (link, refresh, schimbarea limbii schimba eticheta); dupa un click, callback-ul le aliniaza
-    if st.session_state.get("settings_tab") != label_by_id[wanted]:
-        st.session_state.pop("settings_tab", None)
-
-    def _sync_tab():
-        st.query_params["tab"] = id_by_label.get(st.session_state.get("settings_tab"), entries[0][0])
-
-    tabs = st.tabs([e[1] for e in entries], default=label_by_id[wanted], key="settings_tab", on_change=_sync_tab)
-    for tab, (_, _, fn) in zip(tabs, entries):
-        if tab.open is False:
+    tabs = url_tabs([(i, label) for i, label, _ in entries], "settings_tab")
+    for i, _, fn in entries:
+        if tabs[i].open is False:
             continue  # se randeaza doar tabul deschis
-        with tab:
+        with tabs[i]:
             fn()

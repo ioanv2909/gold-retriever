@@ -132,6 +132,7 @@ def _watch_background_jobs():
 
 
 from portfolio_model import portfolio_options, default_currency, build_rows
+from url_tabs import url_tabs
 from history_multi import multi_history_records
 from xtb import instruments as _xtb_instruments
 
@@ -1001,7 +1002,7 @@ def render_main_view():
             st.session_state["total_portfolio_value"] = total_portfolio_value
             st.session_state["scroll_to_top_detail"] = True
             st.rerun()
-        st.query_params.clear()
+        st.query_params.pop("detail", None)
         st.rerun()
 
     vdf = vdf.copy()
@@ -1079,7 +1080,9 @@ def render_main_view():
             return "color: #ff6b6b;"
         return "color: #9aa0a6;"
 
-    tab_pos, tab_ex, tab_cmp, tab_ev, tab_wl = st.tabs([t("tab.positions"), t("tab.exposure"), t("tab.compare"), t("tab.events"), t("tab.watchlist")])
+    _tabs = url_tabs([("positions", t("tab.positions")), ("exposure", t("tab.exposure")), ("compare", t("tab.compare")),
+                      ("calendar", t("tab.events")), ("watchlist", t("tab.watchlist"))], "main_tab")
+    tab_pos, tab_ex, tab_cmp, tab_ev, tab_wl = (_tabs[k] for k in ("positions", "exposure", "compare", "calendar", "watchlist"))
     with tab_pos:
         styled_table = table_df.style.format(
             {
@@ -1137,17 +1140,21 @@ def render_main_view():
             st.session_state["scroll_to_top_detail"] = True
             st.rerun()
 
-    with tab_ex:
-        from exposure_ui import render_exposure_tab
-        render_exposure_tab(vdf, display_ccy)
+    # taburile secundare se randeaza doar cand sunt deschise (comparatia descarca preturi)
+    if tab_ex.open is not False:
+        with tab_ex:
+            from exposure_ui import render_exposure_tab
+            render_exposure_tab(vdf, display_ccy)
 
-    with tab_cmp:
-        from compare_ui import render_compare_tab
-        render_compare_tab(vdf)
+    if tab_cmp.open is not False:
+        with tab_cmp:
+            from compare_ui import render_compare_tab
+            render_compare_tab(vdf)
 
-    with tab_ev:
-        from events_ui import render_calendar_tab
-        render_calendar_tab(dict(zip(df_display["ticker"], df_display["name"])))
+    if tab_ev.open is not False:
+        with tab_ev:
+            from events_ui import render_calendar_tab
+            render_calendar_tab(dict(zip(df_display["ticker"], df_display["name"])))
 
     if not detail_loading:
         with tab_wl:
@@ -1315,7 +1322,7 @@ if _sel is not None:
 elif _synced is not None:
     st.session_state.pop("_url_ticker", None)
     if _url_detail is not None:
-        st.query_params.clear()
+        st.query_params.pop("detail", None)
 
 if "selected_ticker" in st.session_state and "selected_row" in st.session_state:
     render_detail_view(st.session_state["selected_row"], st.session_state.get("total_portfolio_value", 0), api_key_id, api_secret)

@@ -1,3 +1,8 @@
+## 0.2.17 — 2026-10-21
+
+- Compare chart: end-of-line labels that would overlap are spread apart vertically (the point stays at the real value), and the axis makes room for them.
+- Main page tabs have their own address too (`?tab=exposure`, `compare`, `calendar`, `watchlist`), so a refresh or a link reopens the same tab in either language; closing a position page returns to the tab you came from. Exposure, Compare and Calendar are rendered only when open.
+
 ## 0.2.16 — 2026-10-21
 
 - Compare tab on the main page: up to five instruments (positions, watchlist or any Yahoo symbol) side by side. A chart of the return over the chosen period (YTD by default) with labels at the line ends, and a table with return, annualized volatility, max drawdown, quality, risk and dividend scores, P/E, forward P/E, dividend yield, analyst target upside, beta, market cap, sector, country and currency. Each instrument keeps its color while it stays selected.
