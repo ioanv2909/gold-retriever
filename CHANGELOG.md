@@ -1,14 +1,31 @@
-## Unreleased
+## 0.2.12 — 2026-10-21
+
+- Release notes: features from 0.2.7 to 0.2.11 are listed under their versions instead of "Unreleased".
+
+## 0.2.11 — 2026-10-21
 
 - Exposure tab on the main page: breakdown of the selected portfolios by sector, country and currency, in the display currency, as bar charts with tables. ETFs are split by their sector weights (look-through); Yahoo has no country breakdown for ETFs, so they show as a separate country bucket. Sector and country data come from Yahoo Finance and are refreshed weekly in the background.
+
+## 0.2.10 — 2026-10-21
+
 - Analysts section on the position page (Yahoo Finance): mean, median, low and high price targets with upside and a range chart, recommendation distribution over the last four months, EPS and revenue estimates (current/next quarter and year) with growth, EPS estimate revisions (vs 30 and 90 days ago, up/down revisions) and the latest rating changes by firm. Replaces the old single-line target block.
 - New "Target %" column in the positions table: upside to the analysts' mean target, refreshed with the ratings every 12 hours.
+
+## 0.2.9 — 2026-10-21
+
 - Position alerts (Settings, Alerts), checked every 15 minutes in the background:
   - price alerts per position (rises to or above / falls to or below a price, in the instrument currency), firing once and re-armable; also addable from the position page;
   - score alerts when the quality, risk or dividend score falls below a threshold or drops by N points from its last peak;
   - concentration alert when a position exceeds a share of the whole portfolio (Trading 212 and XTB together).
   Fired alerts show as a banner on the main page and are emailed to the user if they have an address and an admin enabled "Position alerts" in Notifications.
+
+## 0.2.8 — 2026-10-21
+
 - Dividend score (X/100) for stocks, on four pillars: safety (payout from earnings and from free cash flow), growth (5-year dividend CAGR), consistency (consecutive years paid, cuts in 10 years) and yield (a yield above 8% lowers the score as a possible trap). Shown as a new "Div. score" column in the positions table and as a Dividend section on the position page, with pillar scores and indicator details.
+
+## 0.2.7 — 2026-10-21
+
+- Documentation: README, data flow and release notes cover the events calendar and admin notifications.
 
 ## 0.2.6 — 2026-10-21
 
