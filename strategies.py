@@ -19,10 +19,21 @@ from userctx import UPath
 STRATEGY_CACHE_FILE = UPath("strategy_cache.json", shared=True)
 STRATEGY_STATUS_FILE = UPath("strategy_status.json", shared=True)
 STRATEGY_REFRESH_INTERVAL = 86400
-VERSION = 2             # se mareste cand se adauga metrici: intrarile vechi se recalculeaza
+VERSION = 3             # se mareste cand se adauga metrici: intrarile vechi se recalculeaza
 MARKET_KEY = "_market"  # contextul pietei (VIX, S&P 500 fata de SMA200), in acelasi cache
 
-LENSES = ("value", "growth", "ddm", "div_growth", "sentiment", "events")
+LENSES = ("value", "growth", "ddm", "div_growth", "sentiment", "events", "trend")
+# profilul utilizatorului alege lentilele care conteaza la convergenta (nu exista un scor combinat)
+PROFILES = {
+    "balanced": LENSES,
+    "value": ("value", "ddm", "sentiment"),
+    "growth": ("growth", "sentiment", "events", "trend"),
+    "income": ("ddm", "div_growth", "value"),
+    "momentum": ("trend", "sentiment", "events"),
+}
+CUSTOM = "custom"
+PROFILE_FILE = UPath("strategy_profile.json")
+OVEREXTENDED_Z = 2.5    # pretul la peste 2,5 deviatii standard deasupra SMA200: posibila revenire
 STRONG, WEAK = 65, 50   # aceleasi praguri ca la scorul de calitate
 MIN_COVERAGE = 50
 
@@ -76,6 +87,22 @@ EVENT_INDICATORS = [
     {"key": "avg_surprise", "weight": 20, "target": 5, "red_flag": -2, "higher_is_better": True},
     {"key": "avg_reaction", "weight": 20, "target": 2, "red_flag": -2, "higher_is_better": True},
     {"key": "event_balance", "weight": 30, "target": 2, "red_flag": -2, "higher_is_better": True},
+]
+def rsi_score(v):
+    """RSI intre 45 si 65 = trend sanatos (1); spre 25 (supravandut) sau 80 (supracumparat) scade la 0."""
+    if v is None:
+        return None
+    if 45 <= v <= 65:
+        return 1.0
+    return max(0.0, (v - 25) / 20) if v < 45 else max(0.0, (80 - v) / 15)
+
+
+TREND_INDICATORS = [
+    {"key": "mom_12_1", "weight": 30, "target": 15, "red_flag": -5, "higher_is_better": True},
+    {"key": "rel_6m", "weight": 30, "target": 5, "red_flag": -10, "higher_is_better": True},
+    {"key": "sma200_z", "weight": 25, "target": 1, "red_flag": -1, "higher_is_better": True},
+    {"key": "rsi14", "weight": 15, "target": "45–65", "red_flag": "<25 / >80", "higher_is_better": True,
+     "scorer": rsi_score},
 ]
 DDM_INDICATORS = [
     {"key": "ddm_margin", "weight": 100, "target": 10, "red_flag": -50, "higher_is_better": True},
@@ -199,14 +226,15 @@ def extract_metrics(tk, rf=None, today=None, symbol=None, ua_email=None, now=Non
     import analysts
     info = tk.info or {}
     quote = str(info.get("quoteType") or "").upper()
-    if quote in ("ETF", "MUTUALFUND"):
-        return {"v": VERSION, "kind": "etf"}
 
     def safe(fn):
         try:
             return fn()
         except Exception:
             return None
+
+    if quote in ("ETF", "MUTUALFUND"):
+        return dict(signals.technicals(safe(lambda: tk.history(period="2y")["Close"])), v=VERSION, kind="etf")
 
     fin, bs, cf = safe(lambda: tk.financials), safe(lambda: tk.balance_sheet), safe(lambda: tk.cashflow)
     currency, fin_ccy = info.get("currency"), info.get("financialCurrency") or info.get("currency")
@@ -291,11 +319,16 @@ def _score(indicators, values):
     rows, points, coverage = [], 0.0, 0.0
     for ind in indicators:
         val = values.get(ind["key"])
-        score = None if val is None else indicator_score(val, ind["target"], ind["red_flag"], ind["higher_is_better"])
+        if val is None:
+            score = None
+        elif "scorer" in ind:
+            score = ind["scorer"](val)
+        else:
+            score = indicator_score(val, ind["target"], ind["red_flag"], ind["higher_is_better"])
         if score is not None:
             points += score * ind["weight"]
             coverage += ind["weight"]
-        rows.append(dict(ind, value=val, score=score))
+        rows.append(dict({k: v for k, v in ind.items() if k != "scorer"}, value=val, score=score))
     return rows, (points / coverage * 100 if coverage else None), coverage
 
 
@@ -450,21 +483,58 @@ def ddm_lens(m, today=None, erp=ERP):
         "g1": g1, "g2": g2, "g_hist": g_hist, "g_sust": g_sust, "sens": sens})
 
 
-def evaluate(m, quality=None, today=None):
-    """Toate lentilele pentru o intrare din cache. ETF-urile si intrarile fara date sunt N/A."""
-    if not m or m.get("kind") == "etf":
-        reason = "etf" if m and m.get("kind") == "etf" else "no_data"
-        return {lens: _na(lens, reason) for lens in LENSES}
+def trend_lens(m, market=None):
+    """Stratul data-driven: momentum, forta relativa, trend si RSI, din preturi (merge si la ETF-uri)."""
+    spx = (market or {}).get("spx_ret_6m")
+    vals = dict(m, rel_6m=m["ret_6m"] - spx if m.get("ret_6m") is not None and spx is not None else None)
+    z = m.get("sma200_z")
+    return _result("trend", TREND_INDICATORS, vals, {
+        "ret_6m": m.get("ret_6m"), "spx_ret_6m": spx, "sma200_dist": m.get("sma200_dist"),
+        "overextended": z is not None and z > OVEREXTENDED_Z})
+
+
+def evaluate(m, quality=None, today=None, market=None):
+    """Toate lentilele pentru o intrare din cache. La ETF-uri se aplica doar Trend; fara date, totul e N/A."""
+    if not m:
+        return {lens: _na(lens, "no_data") for lens in LENSES}
+    if m.get("kind") == "etf":
+        out = {lens: _na(lens, "etf") for lens in LENSES}
+        out["trend"] = trend_lens(m, market)
+        return out
     return {"value": value_lens(m, quality), "growth": growth_lens(m), "ddm": ddm_lens(m, today),
-            "div_growth": div_growth_lens(m, today), "sentiment": sentiment_lens(m), "events": events_lens(m)}
+            "div_growth": div_growth_lens(m, today), "sentiment": sentiment_lens(m), "events": events_lens(m),
+            "trend": trend_lens(m, market)}
 
 
-def convergence(results):
-    """(pozitive, negative, cu date): cate lentile sunt de acord. "trap" conteaza ca negativa."""
-    pos = sum(1 for r in results.values() if r["level"] == "strong")
-    neg = sum(1 for r in results.values() if r["level"] in ("weak", "trap"))
-    known = sum(1 for r in results.values() if r["level"] in ("strong", "mixed", "weak", "trap"))
+def convergence(results, lenses=None):
+    """(pozitive, negative, cu date) pe lentilele date (implicit toate). "trap" conteaza ca negativa."""
+    rs = [r for k, r in results.items() if lenses is None or k in lenses]
+    pos = sum(1 for r in rs if r["level"] == "strong")
+    neg = sum(1 for r in rs if r["level"] in ("weak", "trap"))
+    known = sum(1 for r in rs if r["level"] in ("strong", "mixed", "weak", "trap"))
     return pos, neg, known
+
+
+def load_profile():
+    """(nume, lentile) pentru utilizatorul curent; implicit "balanced"."""
+    saved = load_json_file(PROFILE_FILE, {})
+    name = saved.get("profile") if isinstance(saved, dict) else None
+    if name == CUSTOM:
+        lenses = tuple(x for x in saved.get("lenses") or () if x in LENSES)
+        if lenses:
+            return CUSTOM, lenses
+    if name in PROFILES:
+        return name, tuple(PROFILES[name])
+    return "balanced", tuple(LENSES)
+
+
+def save_profile(name, lenses=None):
+    if name == CUSTOM:
+        data = {"profile": CUSTOM, "lenses": [x for x in LENSES if x in (lenses or ())]}
+    else:
+        data = {"profile": name if name in PROFILES else "balanced"}
+    save_json_file(PROFILE_FILE, data)
+    return load_profile()
 
 
 # ---------------------------------------------------------------------------

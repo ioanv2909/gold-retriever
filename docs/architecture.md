@@ -55,7 +55,7 @@ Calculations
 - `exposure.py`, `exposure_ui.py` - portfolio exposure by sector and country (ETFs split by their sector weights from Yahoo and country weights from justETF) and currency, and the Exposure tab.
 - `analysts.py`, `analysts_ui.py` - analyst price targets, recommendations, estimates, revisions and rating changes from Yahoo Finance, and the Analysts section on the position page.
 - `signals.py` - data for the Sentiment and Event-driven lenses: rating changes, insider trades, institutions, short interest, news headlines classified by keywords, earnings surprises and price reactions, SEC EDGAR 8-K filings, market context (VIX, S&P 500 vs SMA200).
-- `strategies.py`, `strategies_ui.py` - strategy lenses (value, growth, DDM with CAPM, dividend growth, sentiment, event-driven): metrics from Yahoo Finance, scoring, convergence, the daily background job, the Strategies tab and the section on the position page.
+- `strategies.py`, `strategies_ui.py` - strategy lenses (value, growth, DDM with CAPM, dividend growth, sentiment, event-driven, trend & momentum), the per-user investor profile: metrics from Yahoo Finance, scoring, convergence, the daily background job, the Strategies tab and the section on the position page.
 - `dividend_score.py` - dividend score (safety, growth, consistency, yield) from Yahoo Finance dividend history, payout and cash flow.
 
 Infrastructure

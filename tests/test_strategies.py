@@ -121,7 +121,8 @@ def test_value_lens_flags_value_trap():
 
 def test_evaluate_and_convergence():
     etf = s.evaluate({"kind": "etf"})
-    assert all(r["reason"] == "etf" for r in etf.values()) and s.convergence(etf) == (0, 0, 0)
+    assert all(r["reason"] == "etf" for k, r in etf.items() if k != "trend") and s.convergence(etf) == (0, 0, 0)
+    assert etf["trend"]["applicable"] and etf["trend"]["level"] == "insufficient"
     assert all(r["reason"] == "no_data" for r in s.evaluate(None).values())
     res = {"a": {"level": "strong"}, "b": {"level": "trap"}, "c": {"level": "mixed"}, "d": {"level": "na"},
            "e": {"level": "insufficient"}, "f": {"level": "weak"}}
@@ -166,7 +167,8 @@ def test_extract_metrics_skips_price_ratios_across_currencies():
     assert m["pe_hist"] is None and m["fcf_yield"] is None and m["graham_upside"] is None
     gbp = s.extract_metrics(FakeTicker(currency="GBp", fin_ccy="GBP"), rf=4.0, today=TODAY)
     assert gbp["fcf_yield"] == pytest.approx(110 / 19 / 1.0 * 100)  # 100 pence = 1 GBP
-    assert s.extract_metrics(FakeTicker(quote="ETF")) == {"v": s.VERSION, "kind": "etf"}
+    etf = s.extract_metrics(FakeTicker(quote="ETF"))
+    assert etf["kind"] == "etf" and etf["v"] == s.VERSION and etf["mom_12_1"] is None
 
 
 def test_fetch_and_cache_refreshes_only_stale(monkeypatch):
@@ -234,7 +236,7 @@ def test_strategies_tab_renders_matrix(monkeypatch):
     df = at.dataframe[0].value
     assert list(df["ticker"]) == ["AAA", "EEE", "NEW"]
     assert df.loc[0, "value"] is not None and "pozitive" in df.loc[0, "conv"]
-    assert df.loc[1, "conv"] == "Nu se aplică la ETF-uri" and df.loc[2, "conv"].startswith("Fără date")
+    assert df.loc[1, "conv"] == "Nicio lentilă cu date suficiente" and df.loc[2, "conv"].startswith("Fără date")
 
 
 def test_strategy_section_renders_cards_and_ddm(monkeypatch):
@@ -253,3 +255,51 @@ def test_score_shade_darkens_with_the_score():
     assert _shade(None) == "" and _shade(float("nan")) == ""
     shades = [_shade(v) for v in (10, 40, 55, 70, 95)]
     assert len(set(shades)) == 5 and "#1f7a4d" in shades[-1] and "#eef7f1" in shades[0]
+
+
+def test_technicals_from_prices():
+    import signals
+    up = pd.Series([100 * 1.001 ** i for i in range(300)])
+    tech = signals.technicals(up)
+    assert tech["mom_12_1"] == pytest.approx((1.001 ** (299 - 21) / 1.001 ** (299 - 252) - 1) * 100)
+    assert tech["ret_6m"] == pytest.approx((1.001 ** 126 - 1) * 100)
+    assert tech["sma200_z"] > 1.5 and tech["sma200_dist"] > 0 and tech["rsi14"] == 100.0
+    flat = signals.technicals(pd.Series([100.0, 101.0] * 150))
+    assert flat["rsi14"] == pytest.approx(50, abs=5) and abs(flat["sma200_z"]) < 1.1
+    assert signals.technicals(None)["rsi14"] is None
+    assert signals.technicals(pd.Series([1.0] * 50))["mom_12_1"] is None
+
+
+@pytest.mark.parametrize("v, score", [(55, 1.0), (45, 1.0), (35, 0.5), (25, 0.0), (72.5, 0.5), (85, 0.0)])
+def test_rsi_score_band(v, score):
+    assert s.rsi_score(v) == pytest.approx(score)
+
+
+def test_trend_lens_uses_market_and_flags_overextension():
+    m = {"mom_12_1": 30.0, "ret_6m": 20.0, "sma200_z": 2.8, "rsi14": 60.0, "sma200_dist": 25.0}
+    r = s.trend_lens(m, {"spx_ret_6m": 5.0})
+    vals = {row["key"]: row["value"] for row in r["rows"]}
+    assert vals["rel_6m"] == pytest.approx(15.0) and r["level"] == "strong" and r["extra"]["overextended"]
+    assert {row["key"]: row["value"] for row in s.trend_lens(m)["rows"]}["rel_6m"] is None
+    rsi_row = next(row for row in r["rows"] if row["key"] == "rsi14")
+    assert rsi_row["target"] == "45–65" and "scorer" not in rsi_row
+
+
+def test_profile_roundtrip_and_convergence_subset():
+    assert s.load_profile() == ("balanced", s.LENSES)
+    assert s.save_profile("income") == ("income", s.PROFILES["income"])
+    assert s.save_profile("custom", ["trend", "nope", "value"]) == ("custom", ("value", "trend"))
+    assert s.save_profile("custom", []) == ("balanced", s.LENSES)
+    assert s.save_profile("bogus") == ("balanced", s.LENSES)
+    res = {"value": {"level": "strong"}, "growth": {"level": "weak"}, "trend": {"level": "strong"}}
+    assert s.convergence(res, ("value", "trend")) == (2, 0, 2)
+
+
+def test_strategies_tab_profile_limits_convergence(monkeypatch):
+    from streamlit.testing.v1 import AppTest
+    _ui_setup(monkeypatch)
+    s.save_profile("income")
+    at = AppTest.from_function(_tab_page).run()
+    assert not at.exception
+    assert at.dataframe[0].value.loc[0, "conv"].endswith("din 3 lentile cu date")
+    assert any("Coloanele gri" in c.value for c in at.caption)

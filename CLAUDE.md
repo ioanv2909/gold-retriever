@@ -15,7 +15,7 @@ port 8501, uid 1000). Public repo: ioanv2909/gold-retriever, branch main.
 - New UI strings go in `i18n.py` with both RO and EN entries.
 - CHANGELOG: never leave an "Unreleased" section (Settings > About shows the file as is). Put the entry under
   `## X.Y.Z — date` for the version the commit will get: last `v*` tag patch + commits since the tag + 1.
-- Run tests before committing: `.venv/bin/python -m pytest -q` (213 tests, also run in CI).
+- Run tests before committing: `.venv/bin/python -m pytest -q` (223 tests, also run in CI).
 - Commit, `git push` and `./tools/deploy.sh` are pre-approved once the tests pass: do them without asking,
   then report the result (version, health check, log errors). Still ask before anything that deletes or
   changes data (`rm`, `data/`, git history rewrites) and before other `docker` commands.
@@ -40,11 +40,11 @@ tabs, log watchdog, admin status page, Yahoo 401 retry, host uptime watchdog (cr
 
 ## Planned work
 1. Strategy lenses (stage 1 done in v0.2.26: value, growth, DDM, dividend growth; stage 2 done in v0.2.28:
-   sentiment, event-driven, event alerts; stage 3 done in v0.2.29: sector rotation, factor exposure).
+   sentiment, event-driven, event alerts; stage 3 done in v0.2.29: sector rotation, factor exposure; stage 4 done
+   in v0.2.30: trend & momentum lens, per-user investor profile for convergence).
    Decisions taken with the user:
    DDM required return by CAPM (overridable later), SEC EDGAR allowed (User-Agent with the admin email),
    news sentiment by keywords only (no LLM), no combined score: show convergence (N positive / M negative).
-   - Stage 4: data-driven layer: user-weighted lens profile, momentum 12-1, distance from SMA200, RSI.
 2. New broker connector. Waiting for the user: which broker, API or file export, a sample export.
 
 ## Notes for future work

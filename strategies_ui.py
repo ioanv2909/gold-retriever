@@ -16,6 +16,7 @@ FMT = {
     "payout_trend": "{:+.1f} pp", "ddm_margin": "{:+.0f}%",
     "rating_net_90d": "{:+.0f}", "target_net_90d": "{:+.0f}%", "rec_mean": "{:.2f}", "short_float": "{:.1f}%",
     "short_change": "{:+.0f}%", "insider_net": "{:+.3f}%", "inst_change": "{:+.1f}%", "news_tone": "{:+.0f}",
+    "mom_12_1": "{:+.1f}%", "rel_6m": "{:+.1f} pp", "sma200_z": "{:+.2f}σ", "rsi14": "{:.0f}",
     "beat_rate": "{:.0f}%", "avg_surprise": "{:+.1f}%", "avg_reaction": "{:+.1f}%", "event_balance": "{:+.0f}",
 }
 TONES = {1: "🟢", 0: "⚪", -1: "🔴"}
@@ -35,6 +36,8 @@ def _shade(v):
 
 
 def _fmt(key, v):
+    if isinstance(v, str):
+        return v
     return FMT.get(key, "{:.2f}").format(v) if v is not None else "n/a"
 
 
@@ -102,6 +105,31 @@ def _conv_text(pos, neg, known):
     return t("st.conv", pos=pos, neg=neg, n=known)
 
 
+def _profile_label(name, lenses):
+    if name == strategies.CUSTOM:
+        return t("st.profile.custom") + " (" + ", ".join(t("st.lens." + x) for x in lenses) + ")"
+    return t("st.profile." + name)
+
+
+def _profile_picker():
+    """Profilul de investitor al utilizatorului: alege lentilele care conteaza la convergenta."""
+    name, lenses = strategies.load_profile()
+    names = list(strategies.PROFILES) + [strategies.CUSTOM]
+    c1, c2 = st.columns([2, 5], vertical_alignment="bottom")
+    new = c1.selectbox(t("st.profile"), names, index=names.index(name), key="st_profile",
+                       format_func=lambda k: t("st.profile." + k), help=t("st.profile_help"))
+    if new == strategies.CUSTOM:
+        chosen = c2.multiselect(t("st.profile_lenses"), list(strategies.LENSES), default=list(lenses),
+                                format_func=lambda k: t("st.lens." + k), key="st_profile_lenses")
+        if chosen and (new != name or tuple(chosen) != tuple(lenses)):
+            name, lenses = strategies.save_profile(new, chosen)
+    else:
+        c2.caption(t("st.profile_uses", lenses=", ".join(t("st.lens." + x) for x in strategies.PROFILES[new])))
+        if new != name:
+            name, lenses = strategies.save_profile(new)
+    return name, lenses
+
+
 def _rows_table(r):
     return pd.DataFrame([{
         t("st.col.indicator"): t("st.ind." + row["key"]),
@@ -167,25 +195,32 @@ def render_strategy_section(ticker, yahoo_symbol, position_row):
     if not m:
         with st.spinner(t("st.loading_one")):
             m = get_metrics(yahoo_symbol)
-    results = strategies.evaluate(m, _quality(ticker))
-    pos, neg, known = strategies.convergence(results)
-    st.caption(_conv_text(pos, neg, known))
+    mk = _market(strategies.load_cache())
+    results = strategies.evaluate(m, _quality(ticker), market=mk)
+    pname, plenses = strategies.load_profile()
+    pos, neg, known = strategies.convergence(results, plenses)
+    st.caption(t("st.conv_profile", p=_profile_label(pname, plenses)) + " " + _conv_text(pos, neg, known))
 
-    market = _market_text(_market(strategies.load_cache()))
+    market = _market_text(mk)
     if market:
         st.caption(market)
 
-    lenses = list(strategies.LENSES)
+    etf = (m or {}).get("kind") == "etf"
+    # lentilele profilului primele; la ETF-uri doar cele care se aplica (Trend)
+    lenses = [x for x in plenses] + [x for x in strategies.LENSES if x not in plenses]
+    if etf:
+        lenses = [x for x in lenses if results[x]["applicable"]]
     cols = [c for _ in range(0, len(lenses), 3) for c in st.columns(3)]
     for c, lens in zip(cols, lenses):
         r = results[lens]
         with c.container(border=True):
-            st.markdown("**%s**" % t("st.lens." + lens))
+            mark = " ★" if lens in plenses and len(plenses) < len(strategies.LENSES) else ""
+            st.markdown("**%s%s**" % (t("st.lens." + lens), mark))
             score = "%.0f/100" % r["total"] if r["total"] is not None and r["level"] != "insufficient" else "n/a"
             st.markdown("### %s %s" % (DOTS[r["level"]], score))
             st.caption(_verdict(r))
 
-    for lens in strategies.LENSES:
+    for lens in lenses:
         r = results[lens]
         if not r["applicable"]:
             continue
@@ -206,6 +241,14 @@ def render_strategy_section(ticker, yahoo_symbol, position_row):
                              s=x.get("insider_sells") or 0, n=x.get("news_n") or 0))
             if lens == "events":
                 _events_details(ticker, r["extra"])
+            if lens == "trend":
+                x = r["extra"]
+                if x.get("ret_6m") is not None and x.get("spx_ret_6m") is not None:
+                    st.caption(t("st.trend_6m", r="%+.1f" % x["ret_6m"], s="%+.1f" % x["spx_ret_6m"]))
+                if x.get("sma200_dist") is not None:
+                    st.caption(t("st.trend_sma", d="%+.1f" % x["sma200_dist"]))
+                if x.get("overextended"):
+                    st.warning(t("st.overextended"))
             if lens == "div_growth":
                 x = r["extra"]
                 avg, cur = position_row.get("averagePrice"), position_row.get("currentPrice")
@@ -215,9 +258,10 @@ def render_strategy_section(ticker, yahoo_symbol, position_row):
     st.caption(t("st.disclaimer"))
 
 
-def _matrix(vdf, cache):
+def _matrix(vdf, cache, plenses=strategies.LENSES):
     from background import load_quality_cache
     qcache = load_quality_cache()
+    mk = _market(cache)
     rows = []
     seen = set()
     for rec in vdf.to_dict("records"):
@@ -226,9 +270,8 @@ def _matrix(vdf, cache):
             continue
         seen.add(tk)
         entry = cache.get(tk) or {}
-        res = strategies.evaluate(entry.get("m"), _quality(tk, qcache))
-        pos, neg, known = strategies.convergence(res)
-        etf = (entry.get("m") or {}).get("kind") == "etf"
+        res = strategies.evaluate(entry.get("m"), _quality(tk, qcache), market=mk)
+        pos, neg, known = strategies.convergence(res, plenses)
 
         def score(lens):
             r = res[lens]
@@ -238,10 +281,12 @@ def _matrix(vdf, cache):
         rows.append({
             "ticker": tk, "name": rec.get("name") or "",
             "value": score("value"), "growth": score("growth"), "ddm": score("ddm"), "div_growth": score("div_growth"),
-            "sentiment": score("sentiment"), "events": score("events"),
+            "sentiment": score("sentiment"), "events": score("events"), "trend": score("trend"),
             "ddm_margin": ddm["extra"].get("margin") if ddm["applicable"] else None,
-            "conv": t("st.na.etf") if etf else (_conv_text(pos, neg, known) if entry else t("st.na.no_data")),
-            "note": t("st.trap") if res["value"]["level"] == "trap" else "",
+            "conv": _conv_text(pos, neg, known) if entry else t("st.na.no_data"),
+            "note": " · ".join(x for x in (t("st.trap") if res["value"]["level"] == "trap" else "",
+                                           t("st.overext_short") if res["trend"]["extra"].get("overextended") else "")
+                               if x),
             "_pos": pos, "_neg": neg, "_known": known,
         })
     return sorted(rows, key=lambda r: (-(r["_pos"] - r["_neg"]), -r["_pos"], r["ticker"]))
@@ -270,7 +315,8 @@ def render_strategies_tab(vdf):
     if market:
         st.caption(market)
 
-    rows = _matrix(vdf, cache)
+    pname, plenses = _profile_picker()
+    rows = _matrix(vdf, cache, plenses)
     if flt == "positive":
         rows = [r for r in rows if r["_pos"] >= 2 and r["_pos"] > r["_neg"]]
     elif flt == "negative":
@@ -281,8 +327,13 @@ def render_strategies_tab(vdf):
 
     df = pd.DataFrame(rows).drop(columns=["_pos", "_neg", "_known"])
     score_col = lambda lens: st.column_config.Column(t("st.lens." + lens), help=t("st.lens_help." + lens))
+    # lentilele din afara profilului raman vizibile, dar estompate (nu intra in convergenta)
+    inside = [x for x in strategies.LENSES if x in plenses]
+    outside = [x for x in strategies.LENSES if x not in plenses]
     styled = df.style.format({lens: "{:.0f}/100" for lens in strategies.LENSES} | {"ddm_margin": "{:+.0f}%"},
-                             na_rep="—").map(_shade, subset=list(strategies.LENSES))
+                             na_rep="—").map(_shade, subset=inside)
+    if outside:
+        styled = styled.map(lambda v: "color: #8a8a8a", subset=outside)
     event = st.dataframe(
         styled, hide_index=True, width="stretch", on_select="rerun", selection_mode="single-row",
         key="st_table_%d" % st.session_state.get("table_nonce", 0),
@@ -291,6 +342,7 @@ def render_strategies_tab(vdf):
             "name": st.column_config.TextColumn(t("st.col.name"), help=t("st.col.name_help")),
             "value": score_col("value"), "growth": score_col("growth"), "ddm": score_col("ddm"),
             "div_growth": score_col("div_growth"), "sentiment": score_col("sentiment"), "events": score_col("events"),
+            "trend": score_col("trend"),
             "ddm_margin": st.column_config.Column(t("st.col.ddm_margin"), help=t("st.col.ddm_margin_help")),
             "conv": st.column_config.TextColumn(t("st.col.conv"), help=t("st.col.conv_help")),
             "note": st.column_config.TextColumn(t("st.col.note"), help=t("st.col.note_help")),
@@ -306,5 +358,7 @@ def render_strategies_tab(vdf):
             st.session_state["scroll_to_top_detail"] = True
             st.rerun()
     st.caption(t("st.scale"))
+    if outside:
+        st.caption(t("st.outside_note"))
     st.caption(t("st.tab_note"))
     st.caption(t("st.disclaimer"))

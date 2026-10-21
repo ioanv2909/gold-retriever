@@ -31,3 +31,4 @@ def _isolated_strategies(tmp_path, monkeypatch):
     monkeypatch.setattr(signals, "market_context", lambda: {"vix": None, "spx_vs_sma200": None})
     monkeypatch.setattr(signals, "ua_email", lambda: None)
     monkeypatch.setattr(signals, "SEC_TICKERS_FILE", str(tmp_path / "sec_tickers.json"))
+    monkeypatch.setattr(strategies, "PROFILE_FILE", str(tmp_path / "strategy_profile.json"))

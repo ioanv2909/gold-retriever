@@ -1,3 +1,9 @@
+## 0.2.30 — 2026-10-21
+
+- New strategy lens "Trend & momentum" (the data-driven layer, from prices only): 12-1 momentum, 6-month return versus the S&P 500, distance from the 200-day average in standard deviations and RSI (14 days; 45–65 scores best, both extremes score low). A price more than 2.5 standard deviations above the 200-day average is flagged as stretched. It also applies to ETFs, which now show this lens on the position page and in the matrix.
+- Investor profile (Strategies tab, saved per user): Balanced (all lenses), Value, Growth, Dividend income, Momentum or Custom (pick the lenses). Convergence counts only the profile's lenses; the other columns stay visible in grey and the position page shows the profile's cards first, marked with ★. Still no combined score.
+- The lenses are recomputed once after the update (new metrics).
+
 ## 0.2.29 — 2026-10-21
 
 - Exposure tab: a selector between Composition (the sector, country and currency charts), Sector rotation and Factors, kept in the URL (`?ex_view=`). The new views download prices only when opened.

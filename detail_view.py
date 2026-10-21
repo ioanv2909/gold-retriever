@@ -1005,10 +1005,9 @@ def render_detail_view(position_row, total_portfolio_value, api_key_id, api_secr
         render_analyst_section(yahoo_symbol, price, yccy, ticker)
         st.markdown("---")
 
-    # --- lentile de strategie (doar actiuni) ---
-    if not is_etf:
-        render_strategy_section(ticker, yahoo_symbol, position_row)
-        st.markdown("---")
+    # --- lentile de strategie (la ETF-uri doar Trend) ---
+    render_strategy_section(ticker, yahoo_symbol, position_row)
+    st.markdown("---")
 
     # --- semnale (informativ) ---
     st.subheader("🧭 Semnale (informativ — nu e sfat de investiții)")

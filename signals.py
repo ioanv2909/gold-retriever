@@ -20,6 +20,7 @@ NEWS_DAYS = 30
 EVENT_DAYS = 180
 EVENT_BALANCE_DAYS = 90
 MAX_EVENTS = 40
+MONTH, SIX_MONTHS, YEAR = 21, 126, 252   # zile de tranzactionare
 SEC_TIMEOUT = 20
 SEC_TICKERS_FILE = UPath("sec_tickers.json", shared=True)
 SEC_TICKERS_REFRESH = 7 * 86400
@@ -351,6 +352,7 @@ def extract(tk, symbol, info, now=None, ua_email=None, news_fn=None, edgar_fn=No
     m["news_n"] = len(news)
 
     close = safe(lambda: tk.history(period="2y")["Close"])
+    m.update(technicals(close))
     earn = earnings_stats(safe(lambda: tk.get_earnings_dates(limit=12)), close, now)
     m.update({k: earn[k] for k in ("beat_rate", "avg_surprise", "avg_reaction", "earnings_n")})
 
@@ -370,6 +372,38 @@ def extract(tk, symbol, info, now=None, ua_email=None, news_fn=None, edgar_fn=No
     return m
 
 
+def rsi(close, n=14):
+    """RSI Wilder pe n zile."""
+    d = close.diff().dropna()
+    if len(d) < n + 1:
+        return None
+    up = d.clip(lower=0).ewm(alpha=1 / n, adjust=False).mean()
+    down = (-d.clip(upper=0)).ewm(alpha=1 / n, adjust=False).mean()
+    if down.iloc[-1] == 0:
+        return 100.0
+    return float(100 - 100 / (1 + up.iloc[-1] / down.iloc[-1]))
+
+
+def technicals(close):
+    """Din preturile zilnice: momentum 12-1 (randamentul pe 12 luni fara ultima luna, %), randamentul pe 6 luni,
+    distanta fata de SMA200 (% si in deviatii standard ale pretului pe 200 de zile) si RSI 14."""
+    out = {"mom_12_1": None, "ret_6m": None, "sma200_dist": None, "sma200_z": None, "rsi14": None}
+    if close is None or len(close) == 0:
+        return out
+    c = pd.Series(list(close.values), dtype=float).dropna()
+    if len(c) > YEAR:
+        out["mom_12_1"] = float((c.iloc[-1 - MONTH] / c.iloc[-1 - YEAR] - 1) * 100)
+    if len(c) > SIX_MONTHS:
+        out["ret_6m"] = float((c.iloc[-1] / c.iloc[-1 - SIX_MONTHS] - 1) * 100)
+    if len(c) >= 200:
+        last = c.iloc[-200:]
+        sma, sd = float(last.mean()), float(last.std())
+        out["sma200_dist"] = float((c.iloc[-1] / sma - 1) * 100)
+        out["sma200_z"] = float((c.iloc[-1] - sma) / sd) if sd else None
+    out["rsi14"] = rsi(c)
+    return out
+
+
 def fetch_news(symbol, count=20):
     from yf_compat import yf, YFINANCE_AVAILABLE
     if not YFINANCE_AVAILABLE:
@@ -383,7 +417,7 @@ def fetch_news(symbol, count=20):
 def market_context():
     """VIX si distanta S&P 500 fata de media pe 200 de zile (%). Nu intra in scoruri, e contextul pietei."""
     from yf_compat import yf, YFINANCE_AVAILABLE
-    out = {"vix": None, "spx_vs_sma200": None}
+    out = {"vix": None, "spx_vs_sma200": None, "spx_ret_6m": None}
     if not YFINANCE_AVAILABLE:
         return out
     try:
@@ -394,6 +428,8 @@ def market_context():
         c = yf.Ticker("^GSPC").history(period="1y")["Close"].dropna()
         if len(c) >= 200:
             out["spx_vs_sma200"] = float((c.iloc[-1] / c.iloc[-200:].mean() - 1) * 100)
+        if len(c) > SIX_MONTHS:
+            out["spx_ret_6m"] = float((c.iloc[-1] / c.iloc[-1 - SIX_MONTHS] - 1) * 100)
     except Exception:
         pass
     return out
