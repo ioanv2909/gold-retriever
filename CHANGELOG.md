@@ -1,3 +1,7 @@
+## 0.2.13 — 2026-10-21
+
+- Settings have their own address (`?page=settings`), so a page refresh stays on Settings instead of going back to the main page.
+
 ## 0.2.12 — 2026-10-21
 
 - Release notes: features from 0.2.7 to 0.2.11 are listed under their versions instead of "Unreleased".

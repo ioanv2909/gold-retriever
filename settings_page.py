@@ -68,6 +68,7 @@ def render_settings(me, sections=()):
     top = st.columns([2, 8], vertical_alignment="center")
     if top[0].button(_L("← Înapoi", "← Back"), key="settings_back"):
         st.session_state.pop("_page", None)
+        st.query_params.pop("page", None)
         st.rerun()
     top[1].markdown("## ⚙️ " + _L("Setări", "Settings"))
 

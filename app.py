@@ -1290,6 +1290,12 @@ if _wl_rows and _wl_cached and "selected_ticker" not in st.session_state and _wl
     st.session_state["total_portfolio_value"] = st.session_state.get("_table_total", 0)
     st.session_state["scroll_to_top_detail"] = True
 
+# ?page=settings e sursa de adevar, ca refresh-ul sa ramana pe Setari
+if st.query_params.get("page") == "settings":
+    st.session_state["_page"] = "settings"
+elif st.session_state.get("_page") == "settings":
+    st.session_state.pop("_page", None)
+
 _url_detail = st.query_params.get("detail")
 _sel = st.session_state.get("selected_ticker")
 _synced = st.session_state.get("_url_ticker")

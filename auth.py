@@ -276,11 +276,17 @@ def user_menu(me):
         )
         st.caption(users.role(me))
         if _btn("⚙️ " + _tr("settings"), "menu_settings"):
+            # URL-ul dedicat pastreaza pagina la refresh; pagina pozitiei se inchide
+            for k in ("selected_ticker", "selected_row", "_url_ticker"):
+                st.session_state.pop(k, None)
+            st.query_params.pop("detail", None)
+            st.query_params["page"] = "settings"
             st.session_state["_page"] = "settings"
             st.rerun()
         if _btn(_tr("logout"), "menu_logout"):
             st.session_state.pop("_user", None)
             st.session_state.pop("_page", None)
+            st.query_params.pop("page", None)
             st.session_state["_auth_loggedout"] = True
             st.session_state["_auth_clear_cookie"] = True
             st.rerun()
