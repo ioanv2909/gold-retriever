@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(grep:*)",
+      "Bash(ls:*)",
+      "Bash(.venv/bin/python -m pytest:*)",
+      "Bash(python3 -m py_compile:*)"
+    ],
+    "deny": [
+      "Read(./data/**)",
+      "Edit(./data/**)",
+      "Read(./.env)",
+      "Read(~/.git-credentials)",
+      "Read(~/.ssh/**)",
+      "Bash(cat data/*)",
+      "Bash(cat ~/.git-credentials)"
+    ]
+  }
+}
