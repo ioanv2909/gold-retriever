@@ -46,6 +46,7 @@ Calculations
 - `t212_history_rebuild.py`, `xtb_history_rebuild.py`, `history_multi.py` - daily value history rebuilt from fills/purchases and Yahoo closes.
 - `scoring.py`, `risk.py`, `valuation.py`, `etf.py`, `checklist.py` - quality, risk and valuation indicators and thresholds.
 - `position_alerts.py`, `position_alerts_ui.py` - price, score and concentration alerts: rules, background evaluation, email, settings tab, banner and the quick price alert on the position page.
+- `health.py`, `health_ui.py` - service status: records every request to Yahoo (yfinance hook), justETF, Trading 212 and SMTP, job freshness from the status files, live probes; the Settings > Status tab (admin).
 - `logwatch.py` - log watchdog: tees stdout/stderr, groups error lines by pattern, emails admins on new patterns; list in Settings, Notifications.
 - `url_tabs.py` - tabs bound to the `?tab=` URL parameter with stable ids (main page and settings), so refresh and links keep the open tab.
 - `compare.py`, `compare_ui.py` - side-by-side comparison of up to five instruments: normalized return chart and a table of period stats, scores and valuation.

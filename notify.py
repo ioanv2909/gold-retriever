@@ -89,6 +89,11 @@ def last_state():
 
 
 def _result(err):
+    try:
+        import health
+        health.record("smtp", err is None, error=err)
+    except Exception:
+        pass
     with _LOCK:
         state = _read(STATE_FILE, {})
         state["last_error"] = err
@@ -115,6 +120,31 @@ def _send(cfg, to, subject, body):
         if cfg["user"]:
             smtp.login(cfg["user"], cfg["password"])
         smtp.send_message(msg)
+
+
+def check_connection():
+    """Conectare si autentificare la serverul SMTP, fara sa trimita nimic. Intoarce (ok, mesaj)."""
+    cfg = load_settings()
+    if not configured(cfg):
+        return False, "SMTP not configured (server and sender are required)"
+    try:
+        ctx = ssl.create_default_context()
+        if cfg["security"] == "ssl":
+            smtp = smtplib.SMTP_SSL(cfg["host"], int(cfg["port"]), context=ctx, timeout=20)
+        else:
+            smtp = smtplib.SMTP(cfg["host"], int(cfg["port"]), timeout=20)
+        with smtp:
+            if cfg["security"] == "starttls":
+                smtp.starttls(context=ctx)
+            if cfg["user"]:
+                smtp.login(cfg["user"], cfg["password"])
+            smtp.noop()
+        _result(None)
+        return True, "%s:%s" % (cfg["host"], cfg["port"])
+    except Exception as e:
+        msg = ("%s: %s" % (type(e).__name__, e))[:300]
+        _result(msg)
+        return False, msg
 
 
 def send_test():

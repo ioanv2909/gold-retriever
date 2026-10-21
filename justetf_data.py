@@ -86,7 +86,9 @@ def refresh_justetf_cache(force=False):
             print(f"[justetf] {e}", flush=True)
             return False
 
-        df = justetf_scraping.load_overview(strategy="epg-longOnly")
+        import health
+        with health.timed("justetf"):
+            df = justetf_scraping.load_overview(strategy="epg-longOnly")
 
         if "isin" not in df.columns and df.index.name == "isin":
             df = df.reset_index()

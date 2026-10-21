@@ -159,10 +159,14 @@ def test_unclassified_found_on_justetf_becomes_etf(tmp_path, monkeypatch):
 def test_justetf_session_gets_a_timeout(monkeypatch):
     seen = {}
 
+    class Resp:
+        status_code = 200
+
     def fake_request(self, method, url, **kwargs):
         seen.update(kwargs)
-        return "ok"
+        return Resp()
 
     monkeypatch.setattr(ex.requests.Session, "request", fake_request)
-    assert ex._TimeoutSession().get("https://example.invalid") == "ok"
+    assert isinstance(ex._TimeoutSession().get("https://example.invalid"), Resp)
     assert seen["timeout"] == ex.JUSTETF_TIMEOUT
+    assert ex.health.status("justetf")["level"] == "green"

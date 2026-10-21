@@ -1,4 +1,5 @@
 import alerts
+import health
 import events
 import exposure
 import position_alerts
@@ -431,6 +432,8 @@ def start_background_scheduler(user=None):
                     errs_c = dict((snap_c or {}).get("errors") or {})
                     errs_c.update({"stale-" + k: v for k, v in ((snap_c or {}).get("stale_errors") or {}).items()})
                     alerts.record_refresh("Trading 212", user or "default", errs_c, secrets=(key_id, secret))
+                    bad_c = [v for v in (snap_c or {}).get("errors", {}).values() if v]
+                    health.record("t212", not bad_c, error=alerts._mask(bad_c[0], (key_id, secret)) if bad_c else None)
                 except Exception as e:
                     print(f"[alerts] {e}", flush=True)
                 try:

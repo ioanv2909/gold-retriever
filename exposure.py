@@ -9,6 +9,8 @@ import types
 
 import requests
 
+import health
+
 from core import load_json_file, read_status, save_json_file, update_json_file
 from userctx import UPath
 
@@ -86,7 +88,15 @@ def parse_countries(items):
 class _TimeoutSession(requests.Session):
     def request(self, *args, **kwargs):
         kwargs.setdefault("timeout", JUSTETF_TIMEOUT)
-        return super().request(*args, **kwargs)
+        t0 = time.time()
+        try:
+            response = super().request(*args, **kwargs)
+        except Exception as e:
+            health.record("justetf", False, time.time() - t0, "%s: %s" % (type(e).__name__, str(e)[:150]))
+            raise
+        ok = response.status_code < 400 or response.status_code == 404  # 404: ISIN necunoscut, serviciul merge
+        health.record("justetf", ok, time.time() - t0, None if ok else "HTTP %s" % response.status_code)
+        return response
 
 
 def _justetf():

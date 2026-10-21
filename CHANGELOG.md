@@ -1,3 +1,12 @@
+## 0.2.24 — 2026-10-21
+
+- Status page (Settings, Status; admins only) with a green / yellow / red / gray indicator and text on every row:
+  - external services: Yahoo Finance, justETF, Trading 212 API and email (SMTP), measured on the app's real requests (last success, last error, requests and errors in the last hour, average time), plus the backup age;
+  - background jobs: dividends, ratings, scores, market context, calendar, exposure, XTB prices and watchlist (running, up to date, stale or stuck);
+  - the number of error patterns from the log watchdog.
+  A "Test now" button makes one real request to each service (SMTP: connection and login only, no email).
+- Tests no longer write service state into `data/`.
+
 ## 0.2.23 — 2026-10-21
 
 - Log watchdog: errors written to the application log (module errors, Yahoo HTTP errors, Streamlit errors, uncaught exceptions in background threads) are grouped by pattern and listed in Settings, Notifications, "Recent problems in the log". A pattern not seen in the last 24 hours emails the admins (new event "New errors in the log", at most once every 30 minutes). Known harmless messages are ignored. It runs inside the app, so it cannot report the app itself being down.

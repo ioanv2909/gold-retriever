@@ -5,7 +5,7 @@ import os
 import streamlit as st
 
 import users
-from i18n import LANGS
+from i18n import LANGS, t
 from url_tabs import reset as reset_tabs, url_tabs
 from core import CONFIG_FILE, load_config, save_config
 
@@ -86,9 +86,11 @@ def render_settings(me, sections=()):
     entries.append(("about", "ℹ️ " + _L("Despre", "About"), _tab_about))
 
     if users.role(me) == "admin":
+        from health_ui import render_status
         from notify_ui import render_notifications
         entries.insert(len(entries) - 1, ("notifications", "🔔 " + _L("Notificări", "Notifications"),
                                           lambda: render_notifications(me)))
+        entries.insert(len(entries) - 1, ("status", t("hs.tab"), lambda: render_status(me)))
     tabs = url_tabs([(i, label) for i, label, _ in entries], "settings_tab")
     for i, _, fn in entries:
         if tabs[i].open is False:

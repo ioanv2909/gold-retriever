@@ -72,6 +72,10 @@ warnings, HTTP 404 for ETFs without fundamentals, Streamlit context warnings), g
 and keeps the last 24 hours in `log_problems.json`. Admins see the list in Settings, Notifications. It
 cannot report a crashed or stopped container; check `docker ps` / the health endpoint for that.
 
+Settings, tab Status (admin) shows the state of Yahoo Finance, justETF, Trading 212, SMTP and the
+backup, and of every background job, with a green / yellow / red / gray indicator. "Test now" makes one
+real request to each service; for SMTP it only connects and logs in.
+
 Position alerts are set per user in Settings, tab Alerts, and checked every 15 minutes:
 
 - **Price:** rises to or above / falls to or below a price, in the instrument currency (GBX shown
