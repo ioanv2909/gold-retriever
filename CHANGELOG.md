@@ -1,3 +1,14 @@
+## 0.2.26 — 2026-10-21
+
+- Strategy lenses: four views of every stock, each with a score X/100, a one-line verdict and the signals behind it (value, target, red flag, why it matters):
+  - Value: P/E versus the company's own history, free cash flow yield, earnings yield versus the 10-year bond, Graham number, Piotroski F-score, EV/EBITDA; a cheap stock with a weak quality score is flagged as a possible value trap;
+  - Growth: revenue and EPS growth (historical and estimated), EPS revisions over 90 days, PEG, Rule of 40;
+  - DDM: two-stage dividend discount model, required return by CAPM (10-year bond + beta × 5% risk premium), growth = the lower of the 5-year dividend CAGR and ROE × (1 − payout); value, margin of safety and a sensitivity table (required return and growth ± 1 pp). Not applied to ETFs, yields under 1%, dividend histories under 5 years or dividends cut twice in 10 years;
+  - Dividend growth: consecutive years of increases, dividend growth over 3, 5 and 10 years, Chowder rule, payout trend, and the yield on your purchase price.
+- Convergence: how many lenses are positive and how many negative, instead of one combined score.
+- New main tab "Strategies" (`?tab=strategies`): positions × lenses matrix, sorted by convergence, with a "mostly positive / mostly negative" filter; a click opens the position. The position page has a new "Strategies" section with the cards and the details of each lens.
+- The lenses are recomputed daily in the background (`strategy_cache.json`, shared); the job is listed on the Status page.
+
 ## 0.2.25 — 2026-10-21
 
 - Host watchdog: `tools/uptime_check.py`, run from cron every 5 minutes, checks the app's health endpoint and emails the admins when it fails twice in a row, and once more when it is back (new event "App not responding"). It covers what the in-app log watchdog cannot: the app being down. Its state is a row on the Status page.

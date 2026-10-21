@@ -1082,9 +1082,11 @@ def render_main_view():
             return "color: #ff6b6b;"
         return "color: #9aa0a6;"
 
-    _tabs = url_tabs([("positions", t("tab.positions")), ("exposure", t("tab.exposure")), ("compare", t("tab.compare")),
+    _tabs = url_tabs([("positions", t("tab.positions")), ("strategies", t("tab.strategies")),
+                      ("exposure", t("tab.exposure")), ("compare", t("tab.compare")),
                       ("calendar", t("tab.events")), ("watchlist", t("tab.watchlist"))], "main_tab")
-    tab_pos, tab_ex, tab_cmp, tab_ev, tab_wl = (_tabs[k] for k in ("positions", "exposure", "compare", "calendar", "watchlist"))
+    tab_pos, tab_st, tab_ex, tab_cmp, tab_ev, tab_wl = (
+        _tabs[k] for k in ("positions", "strategies", "exposure", "compare", "calendar", "watchlist"))
     with tab_pos:
         styled_table = table_df.style.format(
             {
@@ -1143,6 +1145,11 @@ def render_main_view():
             st.rerun()
 
     # taburile secundare se randeaza doar cand sunt deschise (comparatia descarca preturi)
+    if tab_st.open is not False:
+        with tab_st:
+            from strategies_ui import render_strategies_tab
+            render_strategies_tab(vdf)
+
     if tab_ex.open is not False:
         with tab_ex:
             from exposure_ui import render_exposure_tab

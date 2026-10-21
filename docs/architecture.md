@@ -53,6 +53,7 @@ Calculations
 - `compare.py`, `compare_ui.py` - side-by-side comparison of up to five instruments: normalized return chart and a table of period stats, scores and valuation.
 - `exposure.py`, `exposure_ui.py` - portfolio exposure by sector and country (ETFs split by their sector weights from Yahoo and country weights from justETF) and currency, and the Exposure tab.
 - `analysts.py`, `analysts_ui.py` - analyst price targets, recommendations, estimates, revisions and rating changes from Yahoo Finance, and the Analysts section on the position page.
+- `strategies.py`, `strategies_ui.py` - strategy lenses (value, growth, DDM with CAPM, dividend growth): metrics from Yahoo Finance, scoring, convergence, the daily background job, the Strategies tab and the section on the position page.
 - `dividend_score.py` - dividend score (safety, growth, consistency, yield) from Yahoo Finance dividend history, payout and cash flow.
 
 Infrastructure

@@ -10,7 +10,7 @@ refresh therefore never makes a page load slow or fail.
     XTB xlsx upload --> xtb.json (+ xtb_prices.json from Yahoo)
     Yahoo / justETF --> quality_cache.json, market_context_cache.json,
                         justetf_cache.json, ratings_cache.json, events_cache.json,
-                        exposure_cache.json
+                        exposure_cache.json, strategy_cache.json
     caches ------------> app.py computes rows and totals --> screen
 
 ## Trading 212

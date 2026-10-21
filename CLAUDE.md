@@ -15,7 +15,7 @@ port 8501, uid 1000). Public repo: ioanv2909/gold-retriever, branch main.
 - New UI strings go in `i18n.py` with both RO and EN entries.
 - CHANGELOG: never leave an "Unreleased" section (Settings > About shows the file as is). Put the entry under
   `## X.Y.Z — date` for the version the commit will get: last `v*` tag patch + commits since the tag + 1.
-- Run tests before committing: `.venv/bin/python -m pytest -q` (156 tests, also run in CI).
+- Run tests before committing: `.venv/bin/python -m pytest -q` (175 tests, also run in CI).
 - Commit, `git push` and `./tools/deploy.sh` are pre-approved once the tests pass: do them without asking,
   then report the result (version, health check, log errors). Still ask before anything that deletes or
   changes data (`rm`, `data/`, git history rewrites) and before other `docker` commands.
@@ -28,7 +28,7 @@ port 8501, uid 1000). Public repo: ioanv2909/gold-retriever, branch main.
 - `app.py` main view; `detail_view.py` per-position page; `settings_page.py` settings;
   `core.py` shared logic and `CHART_PERIODS`; `xtb.py`, `xtb_prices.py` XTB import;
   `notify.py`, `notify_ui.py`, `alerts.py` email notifications; `logwatch.py` log watchdog; `health.py`, `health_ui.py` status page; `uptime.py` + `tools/uptime_check.py` host watchdog (cron of user ioanv, every 5 min); `events.py`, `events_ui.py` events calendar; `position_alerts.py`, `position_alerts_ui.py` price/score/concentration alerts; `background.py` refresh loop;
-  `auth.py`, `users.py`, `userctx.py` multi-user; `checklist.py` quality/risk scoring; `dividend_score.py` dividend score; `analysts.py`, `analysts_ui.py` analyst data; `exposure.py`, `exposure_ui.py` sector/country/currency exposure; `compare.py`, `compare_ui.py` ticker comparison; `i18n.py` strings; `url_tabs.py` tabs bound to `?tab=` (main page and settings).
+  `auth.py`, `users.py`, `userctx.py` multi-user; `checklist.py` quality/risk scoring; `dividend_score.py` dividend score; `analysts.py`, `analysts_ui.py` analyst data; `strategies.py`, `strategies_ui.py` strategy lenses (Strategies tab + section on the position page); `exposure.py`, `exposure_ui.py` sector/country/currency exposure; `compare.py`, `compare_ui.py` ticker comparison; `i18n.py` strings; `url_tabs.py` tabs bound to `?tab=` (main page and settings).
 - Per-user data: `data/users/<name>/`; shared files in `data/`.
 - Docs: `docs/` (architecture, data-flow, data-files, backup-and-notifications). `CHANGELOG.md`.
 - Backup: `tools/backup-goldretriever.sh` (cron, Synology share), status in `data/backup_status.json`.
@@ -39,7 +39,17 @@ exposure by sector/country/currency (ETF look-through via Yahoo and justETF), ti
 tabs, log watchdog, admin status page, Yahoo 401 retry, host uptime watchdog (cron).
 
 ## Planned work
-1. New broker connector. Waiting for the user: which broker, API or file export, a sample export.
+1. Strategy lenses (stage 1 done in v0.2.26: value, growth, DDM, dividend growth). Decisions taken with the user:
+   DDM required return by CAPM (overridable later), SEC EDGAR allowed (User-Agent with the admin email),
+   news sentiment by keywords only (no LLM), no combined score: show convergence (N positive / M negative).
+   - Stage 2: Sentiment lens (rating changes, EPS revisions, short interest, insider transactions, institutional
+     holders; market: VIX, S&P vs SMA200) and Event-driven lens (earnings surprise history and next-day reaction,
+     SEC EDGAR 8-K timeline: 2.01 M&A, 5.02 management changes, 1.01 material agreements; keyword-classified
+     Yahoo news for non-US stocks). Alerts via position_alerts.
+   - Stage 3: portfolio level: sector rotation (RRG of sector ETFs vs the market, combined with exposure) and
+     factor exposure (regression of portfolio returns on VLUE, MTUM, QUAL, USMV, IWM, SPY).
+   - Stage 4: data-driven layer: user-weighted lens profile, momentum 12-1, distance from SMA200, RSI.
+2. New broker connector. Waiting for the user: which broker, API or file export, a sample export.
 
 ## Notes for future work
 - Tests must never write into `data/`: modules that persist state get an autouse fixture in

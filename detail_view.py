@@ -28,6 +28,7 @@ from scoring import INDICATORS, compute_score, extract_metrics
 from dividend_score import PILLARS, compute_dividend_score, extract_dividend_metrics
 from position_alerts_ui import cached_holdings, render_quick_price_alert
 from analysts_ui import render_analyst_section
+from strategies_ui import render_strategy_section
 from userctx import current_user
 from t212_api import fetch_account_currency, fetch_order_history_for_ticker
 from yahoo import fetch_benchmark_return, fetch_price_chart_history, fetch_sector_etf_reference, fetch_yahoo_analysis, fetch_yahoo_currency_hint, guess_yahoo_symbol
@@ -1002,6 +1003,11 @@ def render_detail_view(position_row, total_portfolio_value, api_key_id, api_secr
     # --- target analiști ---
     if data.get("target_mean_price") or data.get("number_of_analysts"):
         render_analyst_section(yahoo_symbol, price, yccy, ticker)
+        st.markdown("---")
+
+    # --- lentile de strategie (doar actiuni) ---
+    if not is_etf:
+        render_strategy_section(ticker, yahoo_symbol, position_row)
         st.markdown("---")
 
     # --- semnale (informativ) ---

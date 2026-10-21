@@ -91,7 +91,7 @@ def _backup_row():
     }
 
 
-SHARED_JOBS = ("quality", "market", "events", "exposure")
+SHARED_JOBS = ("quality", "market", "events", "exposure", "strategies")
 USER_JOBS = ("dividends", "ratings", "xtb_prices", "watchlist")
 
 
@@ -99,6 +99,7 @@ def _job_files():
     import core
     import events
     import exposure
+    import strategies
     from background import MARKET_CONTEXT_STATUS_FILE, QUALITY_STATUS_FILE
     return {
         "dividends": (core.DIVIDENDS_STATUS_FILE, core.DIVIDENDS_REFRESH_INTERVAL),
@@ -107,6 +108,7 @@ def _job_files():
         "market": (MARKET_CONTEXT_STATUS_FILE, core.MARKET_CONTEXT_REFRESH_INTERVAL),
         "events": (events.EVENTS_STATUS_FILE, 3600),
         "exposure": (exposure.EXPOSURE_STATUS_FILE, 3600),
+        "strategies": (strategies.STRATEGY_STATUS_FILE, 3600),
         "xtb_prices": (core.XTB_PRICES_STATUS_FILE, core.XTB_PRICES_REFRESH_INTERVAL),
         "watchlist": (core.WATCHLIST_STATUS_FILE, core.WATCHLIST_REFRESH_INTERVAL),
     }
