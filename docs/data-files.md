@@ -28,7 +28,7 @@ Everything is JSON except `auth_secret`. Do not commit this folder:
 | `account_info_cache.json` | Account currency |
 | `portfolio_cache.json` | Latest Trading 212 snapshot |
 | `dividends_cache.json`, `dividends_status.json` | Dividends per ticker and job progress |
-| `ratings_cache.json`, `ratings_status.json` | Analyst recommendations and job progress |
+| `ratings_cache.json`, `ratings_status.json` | Analyst recommendations, upside to the mean price target, and job progress |
 | `alert_rules.json`, `alert_rules_state.json`, `alert_log.json` | Position alert rules (price, score, concentration), their state between checks, and the last 200 fired alerts |
 | `events_prefs.json`, `events_notified.json` | Calendar email opt-in and days ahead; events already emailed |
 | `t212_fills.json` | Executed orders used to rebuild history |

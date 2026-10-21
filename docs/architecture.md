@@ -46,6 +46,7 @@ Calculations
 - `t212_history_rebuild.py`, `xtb_history_rebuild.py`, `history_multi.py` - daily value history rebuilt from fills/purchases and Yahoo closes.
 - `scoring.py`, `risk.py`, `valuation.py`, `etf.py`, `checklist.py` - quality, risk and valuation indicators and thresholds.
 - `position_alerts.py`, `position_alerts_ui.py` - price, score and concentration alerts: rules, background evaluation, email, settings tab, banner and the quick price alert on the position page.
+- `analysts.py`, `analysts_ui.py` - analyst price targets, recommendations, estimates, revisions and rating changes from Yahoo Finance, and the Analysts section on the position page.
 - `dividend_score.py` - dividend score (safety, growth, consistency, yield) from Yahoo Finance dividend history, payout and cash flow.
 
 Infrastructure

@@ -22,7 +22,8 @@ A self-hosted portfolio analyzer for **Trading 212** and **XTB**, built with Str
 - Display in any currency, chosen per user; exchange rates from Yahoo Finance
 - Market value over time (value vs. invested), return summary and XIRR
 - Per-position profit/loss, dividends, and comparison with the S&P 500 over the same holding period
-- Quality, risk and dividend scores, analyst ratings, ETF data from justETF
+- Quality, risk and dividend scores, ETF data from justETF
+- Analyst price targets, recommendations, EPS and revenue estimates and revisions
 - Watchlist and loss-to-profit alerts
 - Position alerts on price, score and concentration, as an in-app banner and by email
 - Events calendar: upcoming earnings, ex-dividend and dividend payment dates for held positions, with an optional email digest per user

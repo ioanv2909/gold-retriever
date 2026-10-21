@@ -140,6 +140,9 @@ from portfolio_model import fx as _fx
 from xtb import load_xtb as _load_xtb
 
 
+_COL_HELP_I18N = {"Scor div.": lambda: t("help.div_score"), "Țintă %": lambda: t("help.target_upside")}
+
+
 def _div_score(entry):
     entry = entry or {}
     if entry.get("div_total") is None or (entry.get("div_coverage") or 0) < 50:
@@ -756,6 +759,7 @@ def render_main_view():
     rat_snapshot = load_cached_ratings()
     ratings = (rat_snapshot or {}).get("ratings", {})
     df["recomandare"] = df["ticker"].map(lambda t: ratings.get(t, "none"))
+    targets = (rat_snapshot or {}).get("targets", {})
 
     quality_snapshot = load_quality_cache()
     quality_data = quality_snapshot or {}
@@ -1002,6 +1006,7 @@ def render_main_view():
 
     vdf = vdf.copy()
     vdf["recomandare"] = vdf["ticker"].map(lambda t: ratings.get(t, "none"))
+    vdf["tinta_%"] = vdf["ticker"].map(lambda t: (targets.get(t) or {}).get("upside"))
     vdf["Scor"] = vdf["ticker"].map(lambda t: round(quality_data.get(t, {}).get("total"), 1) if quality_data.get(t, {}).get("total") is not None and (quality_data.get(t, {}).get("coverage") or 0) >= 50 else None)
     vdf["Rating"] = vdf["ticker"].map(lambda t: quality_data.get(t, {}).get("rating"))
     vdf["Scor risc"] = vdf["ticker"].map(lambda t: round(quality_data.get(t, {}).get("risk_total"), 1) if quality_data.get(t, {}).get("risk_total") is not None and (quality_data.get(t, {}).get("risk_coverage") or 0) >= 50 else None)
@@ -1057,6 +1062,7 @@ def render_main_view():
         "PEG": df_display["peg_ratio_display"],
         "vs S&P500 pp": df_display["alpha_%"],
         "Recomandare": df_display["recomandare"].map(lambda v: RECOMMENDATION_LABELS.get(v, v)),
+        "Țintă %": pd.to_numeric(df_display["tinta_%"], errors="coerce"),
         "Scor TL": pd.to_numeric(df_display["Scor"], errors="coerce"),
         "Rating": df_display["Rating"].map(lambda v: _tx(str(v).split(" / ")[0]) if isinstance(v, str) else v),
         "Scor risc": pd.to_numeric(df_display["Scor risc"], errors="coerce"),
@@ -1093,12 +1099,13 @@ def render_main_view():
                 "Scor TL": "{:.1f}",
                 "Scor risc": "{:.1f}",
                 "Scor div.": "{:.1f}",
+                "Țintă %": "{:+.1f}%",
             },
             na_rep="n/a",
         )
         styled_table = styled_table.map(
             colorize,
-            subset=[f"P/L ({_c})", "Randament %", "Rand. total %", "vs S&P500 pp"],
+            subset=[f"P/L ({_c})", "Randament %", "Rand. total %", "vs S&P500 pp", "Țintă %"],
         )
 
         _t212_rows = {r["ticker"]: r for r in df.to_dict("records")}
@@ -1116,7 +1123,7 @@ def render_main_view():
             styled_table,
             width="stretch",
             hide_index=True,
-            column_config={c: st.column_config.Column(col(c), help=t("help.div_score") if c == "Scor div." else COLUMN_HELP.get(c)) for c in table_df.columns},
+            column_config={c: st.column_config.Column(col(c), help=_COL_HELP_I18N[c]() if c in _COL_HELP_I18N else COLUMN_HELP.get(c)) for c in table_df.columns},
             on_select="rerun",
             selection_mode="single-row",
             key=f"positions_table_{st.session_state.get('table_nonce', 0)}",

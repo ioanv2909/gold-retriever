@@ -27,6 +27,7 @@ from valuation import red_count, valuation_rows
 from scoring import INDICATORS, compute_score, extract_metrics
 from dividend_score import PILLARS, compute_dividend_score, extract_dividend_metrics
 from position_alerts_ui import cached_holdings, render_quick_price_alert
+from analysts_ui import render_analyst_section
 from userctx import current_user
 from t212_api import fetch_account_currency, fetch_order_history_for_ticker
 from yahoo import fetch_benchmark_return, fetch_price_chart_history, fetch_sector_etf_reference, fetch_yahoo_analysis, fetch_yahoo_currency_hint, guess_yahoo_symbol
@@ -999,13 +1000,8 @@ def render_detail_view(position_row, total_portfolio_value, api_key_id, api_secr
     st.markdown("---")
 
     # --- target analiști ---
-    if data.get("target_mean_price"):
-        st.subheader("🎯 Target de preț (analiști)")
-        a1, a2, a3 = st.columns(3)
-        upside = (data["target_mean_price"] / price - 1) * 100
-        a1.metric("Target mediu", f"{data['target_mean_price']:.2f} {yccy}", f"{upside:+.1f}% vs. curent")
-        a2.metric("Recomandare consens", RECOMMENDATION_LABELS.get(data.get("recommendation"), data.get("recommendation", "n/a")))
-        a3.metric("Nr. analiști", data.get("number_of_analysts", "n/a"))
+    if data.get("target_mean_price") or data.get("number_of_analysts"):
+        render_analyst_section(yahoo_symbol, price, yccy, ticker)
         st.markdown("---")
 
     # --- semnale (informativ) ---

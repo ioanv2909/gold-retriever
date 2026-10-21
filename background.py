@@ -111,28 +111,38 @@ def save_ratings_status(status):
 
 
 def fetch_rating_for_symbol(yahoo_symbol):
+    rec, target, err = fetch_rating_and_target(yahoo_symbol)
+    return rec, err
+
+
+def fetch_rating_and_target(yahoo_symbol):
+    """(recomandare, {upside, n}, eroare). Tinta si pretul vin din acelasi info, deci in aceeasi unitate (si la GBp)."""
     if not YFINANCE_AVAILABLE:
-        return None, "yfinance indisponibil"
+        return None, None, "yfinance indisponibil"
     try:
         info = yf.Ticker(yahoo_symbol).info or {}
-        return info.get("recommendationKey", "none"), None
+        mean, price = info.get("targetMeanPrice"), info.get("currentPrice") or info.get("regularMarketPrice")
+        target = {"upside": (mean / price - 1) * 100, "n": info.get("numberOfAnalystOpinions")} if mean and price else None
+        return info.get("recommendationKey", "none"), target, None
     except Exception as e:
-        return None, str(e)
+        return None, None, str(e)
 
 
 def fetch_and_cache_ratings(tickers_t212):
     save_ratings_status({"in_progress": True, "started_at": time.time(), "total": len(tickers_t212), "done": 0})
     mapping = load_ticker_map()
-    ratings = {}
+    ratings, targets = {}, {}
     for idx, t212_ticker in enumerate(tickers_t212):
         ysym = mapping.get(t212_ticker) or guess_yahoo_symbol(t212_ticker)
-        rec, err = fetch_rating_for_symbol(ysym)
+        rec, target, err = fetch_rating_and_target(ysym)
         ratings[t212_ticker] = rec or "none"
+        if target:
+            targets[t212_ticker] = target
         save_ratings_status({"in_progress": True, "started_at": None, "total": len(tickers_t212), "done": idx + 1})
         if idx < len(tickers_t212) - 1:
             time.sleep(1.5)  # yfinance nu are rate limit oficial, dar o pauză mică e mai politicos
 
-    snapshot = {"fetched_at": time.time(), "ratings": ratings}
+    snapshot = {"fetched_at": time.time(), "ratings": ratings, "targets": targets}
     save_json_file(RATINGS_CACHE_FILE, snapshot)
     save_ratings_status({"in_progress": False, "started_at": None, "total": len(tickers_t212), "done": len(tickers_t212)})
     return snapshot

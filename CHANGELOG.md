@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Analysts section on the position page (Yahoo Finance): mean, median, low and high price targets with upside and a range chart, recommendation distribution over the last four months, EPS and revenue estimates (current/next quarter and year) with growth, EPS estimate revisions (vs 30 and 90 days ago, up/down revisions) and the latest rating changes by firm. Replaces the old single-line target block.
+- New "Target %" column in the positions table: upside to the analysts' mean target, refreshed with the ratings every 12 hours.
 - Position alerts (Settings, Alerts), checked every 15 minutes in the background:
   - price alerts per position (rises to or above / falls to or below a price, in the instrument currency), firing once and re-armable; also addable from the position page;
   - score alerts when the quality, risk or dividend score falls below a threshold or drops by N points from its last peak;
