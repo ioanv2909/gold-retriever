@@ -12,7 +12,7 @@ Everything is JSON except `auth_secret`. Do not commit this folder:
 | `ui_prefs.json` | Interface preferences |
 | `instruments_cache.json` | Trading 212 instrument metadata |
 | `justetf_cache.json` | justETF data for ETFs |
-| `quality_cache.json`, `quality_status.json` | Quality scores and job progress |
+| `quality_cache.json`, `quality_status.json` | Quality, risk and dividend scores and job progress |
 | `market_context_cache.json`, `market_context_status.json` | Benchmark (S&P 500) data and job progress |
 | `events_cache.json`, `events_status.json` | Upcoming earnings and dividend dates per ticker (Yahoo Finance, 12 h) and job progress |
 | `manual_metrics.json` | Manually entered metrics, when present |

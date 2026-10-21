@@ -39,6 +39,7 @@ from core import (
     save_json_file,
 )
 from scoring import compute_score, extract_metrics
+from dividend_score import compute_dividend_score, extract_dividend_metrics
 from t212_api import fetch_and_cache_core, fetch_dividends_for_ticker, load_cached_snapshot
 from core import record_portfolio_point
 from justetf_data import start_justetf_refresh_background
@@ -248,7 +249,7 @@ def fetch_and_cache_quality(tickers_t212):
             if cached_entry and cached_entry.get("updated"):
                 try:
                     updated_dt = datetime.fromisoformat(cached_entry["updated"])
-                    if (now - updated_dt).total_seconds() < QUALITY_REFRESH_INTERVAL and "risk_total" in cached_entry and cached_entry.get("rating") != "ISIN lipsă":
+                    if (now - updated_dt).total_seconds() < QUALITY_REFRESH_INTERVAL and "risk_total" in cached_entry and "div_pays" in cached_entry and cached_entry.get("rating") != "ISIN lipsă":
                         save_quality_status({"in_progress": True, "started_at": None, "total": len(tickers_t212), "done": idx + 1})
                         continue
                 except Exception:
@@ -294,6 +295,14 @@ def fetch_and_cache_quality(tickers_t212):
             except Exception as e:
                 print(f"[risk] {ticker}: {e}", flush=True)
                 risk_res = {}
+            div_res, div_pays = {}, False
+            if not is_etf:
+                try:
+                    div_m, div_pays = extract_dividend_metrics(tk)
+                    if div_pays:
+                        div_res = compute_dividend_score(div_m)
+                except Exception as e:
+                    print(f"[dividend] {ticker}: {e}", flush=True)
             cache[ticker] = {
                 "kind": kind,
                 "total": score_res.get("total"),
@@ -302,6 +311,10 @@ def fetch_and_cache_quality(tickers_t212):
                 "risk_total": risk_res.get("total"),
                 "risk_rating": risk_res.get("rating"),
                 "risk_coverage": risk_res.get("coverage"),
+                "div_pays": div_pays,
+                "div_total": div_res.get("total"),
+                "div_rating": div_res.get("rating"),
+                "div_coverage": div_res.get("coverage"),
                 "updated": datetime.now().isoformat(),
             }
             save_json_file(QUALITY_CACHE_FILE, cache)

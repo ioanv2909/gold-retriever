@@ -45,6 +45,7 @@ Calculations
 - `returns_summary.py`, `t212_history.py` - XIRR returns from deposits and withdrawals.
 - `t212_history_rebuild.py`, `xtb_history_rebuild.py`, `history_multi.py` - daily value history rebuilt from fills/purchases and Yahoo closes.
 - `scoring.py`, `risk.py`, `valuation.py`, `etf.py`, `checklist.py` - quality, risk and valuation indicators and thresholds.
+- `dividend_score.py` - dividend score (safety, growth, consistency, yield) from Yahoo Finance dividend history, payout and cash flow.
 
 Infrastructure
 - `core.py` - file locations, JSON read/write with file locks, config, alerts.

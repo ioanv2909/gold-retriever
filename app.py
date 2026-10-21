@@ -140,6 +140,13 @@ from portfolio_model import fx as _fx
 from xtb import load_xtb as _load_xtb
 
 
+def _div_score(entry):
+    entry = entry or {}
+    if entry.get("div_total") is None or (entry.get("div_coverage") or 0) < 50:
+        return None
+    return round(entry["div_total"], 1)
+
+
 def _xtb_cash_lines(labels, display_ccy):
     d = _load_xtb()
     lines, total = [], 0.0
@@ -752,6 +759,7 @@ def render_main_view():
     df["Scor"] = df["ticker"].map(lambda t: round(quality_data.get(t, {}).get("total"), 1) if quality_data.get(t, {}).get("total") is not None else None)
     df["Rating"] = df["ticker"].map(lambda t: quality_data.get(t, {}).get("rating"))
     df["Scor risc"] = df["ticker"].map(lambda t: round(quality_data.get(t, {}).get("risk_total"), 1) if quality_data.get(t, {}).get("risk_total") is not None else None)
+    df["Scor div."] = df["ticker"].map(lambda t: _div_score(quality_data.get(t)))
 
     _ui = st.session_state.setdefault("_ui_prefs", {})
     _opts = portfolio_options()
@@ -994,6 +1002,7 @@ def render_main_view():
     vdf["Scor"] = vdf["ticker"].map(lambda t: round(quality_data.get(t, {}).get("total"), 1) if quality_data.get(t, {}).get("total") is not None and (quality_data.get(t, {}).get("coverage") or 0) >= 50 else None)
     vdf["Rating"] = vdf["ticker"].map(lambda t: quality_data.get(t, {}).get("rating"))
     vdf["Scor risc"] = vdf["ticker"].map(lambda t: round(quality_data.get(t, {}).get("risk_total"), 1) if quality_data.get(t, {}).get("risk_total") is not None and (quality_data.get(t, {}).get("risk_coverage") or 0) >= 50 else None)
+    vdf["Scor div."] = vdf["ticker"].map(lambda t: _div_score(quality_data.get(t)))
     vdf["sp500_return_%"] = pd.to_numeric(vdf["ticker"].map(lambda t: mc.get(t, {}).get("sp500_return_%")), errors="coerce")
     vdf["peg_ratio_display"] = vdf["ticker"].map(lambda t: mc.get(t, {}).get("peg"))
     vdf["alpha_%"] = pd.to_numeric(vdf["randament_total_%"], errors="coerce") - vdf["sp500_return_%"]
@@ -1048,6 +1057,7 @@ def render_main_view():
         "Scor TL": pd.to_numeric(df_display["Scor"], errors="coerce"),
         "Rating": df_display["Rating"].map(lambda v: _tx(str(v).split(" / ")[0]) if isinstance(v, str) else v),
         "Scor risc": pd.to_numeric(df_display["Scor risc"], errors="coerce"),
+        "Scor div.": pd.to_numeric(df_display["Scor div."], errors="coerce"),
         "Conturi": df_display["accounts"],
     })
 
@@ -1079,6 +1089,7 @@ def render_main_view():
                 "vs S&P500 pp": "{:+.2f}",
                 "Scor TL": "{:.1f}",
                 "Scor risc": "{:.1f}",
+                "Scor div.": "{:.1f}",
             },
             na_rep="n/a",
         )
@@ -1102,7 +1113,7 @@ def render_main_view():
             styled_table,
             width="stretch",
             hide_index=True,
-            column_config={c: st.column_config.Column(col(c), help=COLUMN_HELP.get(c)) for c in table_df.columns},
+            column_config={c: st.column_config.Column(col(c), help=t("help.div_score") if c == "Scor div." else COLUMN_HELP.get(c)) for c in table_df.columns},
             on_select="rerun",
             selection_mode="single-row",
             key=f"positions_table_{st.session_state.get('table_nonce', 0)}",

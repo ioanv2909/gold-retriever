@@ -25,6 +25,7 @@ from xtb_positions import xtb_rows
 from risk import RISK_INDICATORS, compute_risk, extract_risk_metrics
 from valuation import red_count, valuation_rows
 from scoring import INDICATORS, compute_score, extract_metrics
+from dividend_score import PILLARS, compute_dividend_score, extract_dividend_metrics
 from t212_api import fetch_account_currency, fetch_order_history_for_ticker
 from yahoo import fetch_benchmark_return, fetch_price_chart_history, fetch_sector_etf_reference, fetch_yahoo_analysis, fetch_yahoo_currency_hint, guess_yahoo_symbol
 from xtb_positions import xtb_holdings
@@ -42,6 +43,47 @@ def get_quality_score(yahoo_symbol):
         return result, notes
     except Exception:
         return None, {}
+
+
+@st.cache_data(ttl=21600)
+def get_dividend_score(yahoo_symbol):
+    """(rezultat, plateste) - rezultat None daca nu s-au putut citi datele."""
+    if not YFINANCE_AVAILABLE:
+        return None, False
+    try:
+        metrics, pays = extract_dividend_metrics(yf.Ticker(yahoo_symbol))
+        return (compute_dividend_score(metrics) if pays else None), pays
+    except Exception:
+        return None, True
+
+
+def _render_dividend_score(yahoo_symbol, is_etf):
+    st.divider()
+    st.subheader(tr("dv.div_title"))
+    if is_etf:
+        st.info(tr("dv.div_etf"))
+        return
+    result, pays = get_dividend_score(yahoo_symbol)
+    if not pays:
+        st.info(tr("dv.div_none"))
+        return
+    if not result:
+        st.info(tr("dv.div_no_data"))
+        return
+    st.metric(tr("dv.div_score"), f"{result['total']:.0f}/100", _x(result["rating"]), delta_color="off",
+              help=tr("help.div_score"))
+    cols = st.columns(len(PILLARS))
+    for c, p in zip(cols, PILLARS):
+        v = result["pillars"].get(p)
+        c.metric(tr("dv.div_pillar." + p), f"{v:.0f}/100" if v is not None else "n/a")
+    st.dataframe(pd.DataFrame([{
+        tr("dv.div_col.indicator"): tr("dv.div_ind." + r["key"]),
+        tr("dv.div_col.value"): round(r["value"], 1) if r["value"] is not None else None,
+        tr("dv.div_col.target"): r["target"],
+        tr("dv.div_col.red_flag"): r["red_flag"],
+        tr("dv.div_col.score"): f"{r['score'] * 100:.0f}/100" if r["score"] is not None else "n/a",
+    } for r in result["rows"]]), hide_index=True, width="stretch")
+    st.caption(tr("dv.div_coverage", c=f"{result['coverage']:.0f}") + " " + tr("dv.div_hint"))
 
 
 @st.cache_data(ttl=21600)
@@ -581,6 +623,8 @@ def render_detail_view(position_row, total_portfolio_value, api_key_id, api_secr
                     f"Ponderea poziției în portofoliu: "
                     f"{position_row['valoare_curenta'] * position_row.get('fx_rate', 1.0) / total_portfolio_value * 100:.1f}%"
                 )
+
+    _render_dividend_score(yahoo_symbol, is_etf)
 
     st.divider()
     checklist_box = st.container()
