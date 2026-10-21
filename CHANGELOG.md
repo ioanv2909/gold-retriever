@@ -1,3 +1,7 @@
+## 0.2.22 — 2026-10-21
+
+- Fix: when Yahoo answers HTTP 401 (invalid crumb, usually right after a start), requests are retried up to twice with a new crumb. Before, yfinance returned empty data that could be cached as "no data" for hours (calendar, ratings) or a week (exposure).
+
 ## 0.2.21 — 2026-10-21
 
 - Fix: after a restart or deploy, background jobs (dividends, ratings, scores, calendar, exposure, prices, watchlist) no longer stay blocked for up to 30 minutes by an "in progress" state left by the previous process.
