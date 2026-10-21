@@ -142,14 +142,20 @@ def render_compare_tab(vdf):
         return
     opts = _options(vdf)
     c1, c2 = st.columns([3, 2], vertical_alignment="bottom")
+    # selectia si perioada stau in URL (?cmp=AAPL&cmp=KO&cmp_period=1A): refresh-ul si linkurile le pastreaza.
+    # Cat timp tabul e inchis, widget-urile nu se randeaza; copia de rezerva le reface la revenire.
+    for key in ("cmp", "cmp_period"):
+        if key not in st.session_state and key not in st.query_params and st.session_state.get("_saved_" + key):
+            st.session_state[key] = st.session_state["_saved_" + key]
     chosen = c1.multiselect(
-        t("cmp.pick", n=compare.MAX_SYMBOLS), list(opts), key="cmp_symbols", max_selections=compare.MAX_SYMBOLS,
+        t("cmp.pick", n=compare.MAX_SYMBOLS), list(opts), key="cmp", max_selections=compare.MAX_SYMBOLS,
         accept_new_options=True, format_func=lambda s: opts[s][0] if s in opts else s,
-        placeholder=t("cmp.placeholder"))
-    if "cmp_period" not in st.session_state:
-        st.session_state["cmp_period"] = _G2D.get(st.session_state.get("_hist_range_pref", "YTD"), "YTD")
-    period = c2.segmented_control(t("dv.period"), list(CHART_PERIODS), key="cmp_period",
-                                  format_func=lambda k: t("dv.per." + k)) or "YTD"
+        placeholder=t("cmp.placeholder"), bind="query-params")
+    period = c2.segmented_control(
+        t("dv.period"), list(CHART_PERIODS), key="cmp_period", bind="query-params",
+        default=_G2D.get(st.session_state.get("_hist_range_pref", "YTD"), "YTD"),
+        format_func=lambda k: t("dv.per." + k)) or "YTD"
+    st.session_state["_saved_cmp"], st.session_state["_saved_cmp_period"] = list(chosen), period
     symbols = list(dict.fromkeys(compare.parse_symbols(" ".join(chosen))))
     if len(symbols) < 2:
         st.caption(t("cmp.hint"))

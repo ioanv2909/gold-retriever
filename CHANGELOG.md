@@ -1,3 +1,7 @@
+## 0.2.18 — 2026-10-21
+
+- Compare: the chosen instruments and period are kept in the address (`?tab=compare&cmp=AAPL&cmp=KO&cmp_period=1A`), so a refresh or a link reopens the same comparison; switching to another tab and back keeps them too.
+
 ## 0.2.17 — 2026-10-21
 
 - Compare chart: end-of-line labels that would overlap are spread apart vertically (the point stays at the real value), and the axis makes room for them.
