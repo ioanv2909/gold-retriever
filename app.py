@@ -827,7 +827,8 @@ def render_main_view():
                     history_df = _f
             _first_all = history_df["x"].min()
             if st.session_state.get("history_range") not in ("3H", "1D", "1W", "1M", "1Y", "YTD", "Max"):
-                st.session_state["history_range"] = "Max"
+                _pref = st.session_state.get("_hist_range_pref")
+                st.session_state["history_range"] = _pref if _pref in ("3H", "1D", "1W", "1M", "1Y", "YTD", "Max") else "YTD"
             st.checkbox(t("hist.hide_small", thr=f"{_thr:,.0f} {display_ccy}"), value=True, key="hist_hide_small")
             _hc_left, _hc_right = st.columns(2)
             with _hc_left:
@@ -835,6 +836,7 @@ def render_main_view():
                     "Perioadă", ["3H", "1D", "1W", "1M", "1Y", "YTD", "Max"],
                     horizontal=True, key="history_range", label_visibility="collapsed",
                 )
+            st.session_state["_hist_range_pref"] = range_choice
             _now = pd.Timestamp(datetime.now())
             _deltas = {
                 "3H": pd.Timedelta(hours=3), "1D": pd.Timedelta(days=1), "1W": pd.Timedelta(weeks=1),
