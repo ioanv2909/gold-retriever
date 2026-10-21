@@ -53,6 +53,7 @@ like the Trading 212 keys.
 | Refresh | Trading 212 or dividends refresh failed 3 times in a row (checked every refresh cycle / 10 minutes) |
 | XTB import | A report fails the cash or positions check, has unknown operation types, or cannot be parsed |
 | Security | An account is locked after repeated failed logins; a user is created, deleted, gets a new password or role |
+| Log errors | A new error pattern appears in the application log (not seen in the last 24 hours); at most one email every 30 minutes |
 | Position alerts | A price alert, score alert or concentration alert set by the user fires (sent to the user, not the admins) |
 | Calendar | Earnings, ex-dividend or dividend payment dates for held positions within the next N days (sent to the user, not the admins) |
 
@@ -64,6 +65,12 @@ Calendar emails go to each user's own address, set in Settings, tab Calendar, to
 the opt-in and how many days ahead (1-30, default 7). The scheduler checks once an hour and
 sends one digest with the events not sent before; `events_notified.json` remembers them. The
 admin must also enable the Calendar event in Notifications.
+
+The log watchdog (`logwatch.py`) runs inside the app: it reads everything the process writes to
+stdout/stderr (including Python logging from Streamlit and yfinance), skips known noise (Yahoo cookie
+warnings, HTTP 404 for ETFs without fundamentals, Streamlit context warnings), groups the rest by pattern
+and keeps the last 24 hours in `log_problems.json`. Admins see the list in Settings, Notifications. It
+cannot report a crashed or stopped container; check `docker ps` / the health endpoint for that.
 
 Position alerts are set per user in Settings, tab Alerts, and checked every 15 minutes:
 

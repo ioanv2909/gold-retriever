@@ -1,3 +1,7 @@
+## 0.2.23 — 2026-10-21
+
+- Log watchdog: errors written to the application log (module errors, Yahoo HTTP errors, Streamlit errors, uncaught exceptions in background threads) are grouped by pattern and listed in Settings, Notifications, "Recent problems in the log". A pattern not seen in the last 24 hours emails the admins (new event "New errors in the log", at most once every 30 minutes). Known harmless messages are ignored. It runs inside the app, so it cannot report the app itself being down.
+
 ## 0.2.22 — 2026-10-21
 
 - Fix: when Yahoo answers HTTP 401 (invalid crumb, usually right after a start), requests are retried up to twice with a new crumb. Before, yfinance returned empty data that could be cached as "no data" for hours (calendar, ratings) or a week (exposure).

@@ -15,7 +15,7 @@ port 8501, uid 1000). Public repo: ioanv2909/gold-retriever, branch main.
 - New UI strings go in `i18n.py` with both RO and EN entries.
 - CHANGELOG: never leave an "Unreleased" section (Settings > About shows the file as is). Put the entry under
   `## X.Y.Z — date` for the version the commit will get: last `v*` tag patch + commits since the tag + 1.
-- Run tests before committing: `.venv/bin/python -m pytest -q` (122 tests, also run in CI).
+- Run tests before committing: `.venv/bin/python -m pytest -q` (138 tests, also run in CI).
 - Ask before `git push`, `./tools/deploy.sh`, anything with `docker` or `rm`.
 
 ## Deploy
@@ -25,7 +25,7 @@ port 8501, uid 1000). Public repo: ioanv2909/gold-retriever, branch main.
 ## Layout
 - `app.py` main view; `detail_view.py` per-position page; `settings_page.py` settings;
   `core.py` shared logic and `CHART_PERIODS`; `xtb.py`, `xtb_prices.py` XTB import;
-  `notify.py`, `notify_ui.py`, `alerts.py` email notifications; `events.py`, `events_ui.py` events calendar; `position_alerts.py`, `position_alerts_ui.py` price/score/concentration alerts; `background.py` refresh loop;
+  `notify.py`, `notify_ui.py`, `alerts.py` email notifications; `logwatch.py` log watchdog; `events.py`, `events_ui.py` events calendar; `position_alerts.py`, `position_alerts_ui.py` price/score/concentration alerts; `background.py` refresh loop;
   `auth.py`, `users.py`, `userctx.py` multi-user; `checklist.py` quality/risk scoring; `dividend_score.py` dividend score; `analysts.py`, `analysts_ui.py` analyst data; `exposure.py`, `exposure_ui.py` sector/country/currency exposure; `compare.py`, `compare_ui.py` ticker comparison; `i18n.py` strings; `url_tabs.py` tabs bound to `?tab=` (main page and settings).
 - Per-user data: `data/users/<name>/`; shared files in `data/`.
 - Docs: `docs/` (architecture, data-flow, data-files, backup-and-notifications). `CHANGELOG.md`.

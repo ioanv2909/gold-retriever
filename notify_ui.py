@@ -3,8 +3,10 @@ import time
 
 import streamlit as st
 
+import logwatch
 import notify
 import users
+from i18n import t
 
 
 def _L(ro, en):
@@ -57,6 +59,7 @@ def render_notifications(me):
         "security": _L("Securitate", "Security"),
         "events": _L("Calendar (fiecărui utilizator, la adresa proprie)", "Calendar (to each user, at their own address)"),
         "positions": _L("Alerte poziții: preț, scor, concentrare (fiecărui utilizator)", "Position alerts: price, score, concentration (to each user)"),
+        "logs": t("lw.event"),
     }
     chosen = st.multiselect(
         _L("Evenimente", "Events"), list(labels),
@@ -91,3 +94,22 @@ def render_notifications(me):
     if state.get("last_error"):
         when = time.strftime("%Y-%m-%d %H:%M", time.localtime(state.get("last_ts", 0)))
         st.warning(_L("Ultima eroare de trimitere (", "Last send error (") + when + "): " + state["last_error"])
+
+    _render_log_problems()
+
+
+def _render_log_problems():
+    st.markdown("#### " + t("lw.title"))
+    st.caption(t("lw.caption"))
+    items = logwatch.recent()
+    if not items:
+        st.caption(t("lw.none"))
+        return
+    st.dataframe([{
+        t("lw.col.last"): time.strftime("%Y-%m-%d %H:%M", time.localtime(p.get("last", 0))),
+        t("lw.col.count"): p.get("count", 0),
+        t("lw.col.sample"): p.get("sample", ""),
+    } for p in items], hide_index=True, width="stretch")
+    if st.button(t("lw.clear"), key="lw_clear"):
+        logwatch.clear()
+        st.rerun()

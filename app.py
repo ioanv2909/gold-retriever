@@ -1,3 +1,5 @@
+import logwatch
+logwatch.install()  # inainte de orice alt import, ca sa prinda tot ce se scrie in log
 import streamlit as st
 import alerts
 import requests

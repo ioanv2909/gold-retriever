@@ -17,7 +17,7 @@ MAIL_FILE = os.path.join(DATA_ROOT, "mail.json")
 STATE_FILE = os.path.join(DATA_ROOT, "notify_state.json")
 USERS_FILE = os.path.join(DATA_ROOT, "users.json")
 
-EVENTS = ("backup", "refresh", "xtb_import", "security", "events", "positions")
+EVENTS = ("backup", "refresh", "xtb_import", "security", "events", "positions", "logs")
 DEFAULTS = {
     "host": "", "port": 587, "security": "starttls",
     "user": "", "password": "", "sender": "",
