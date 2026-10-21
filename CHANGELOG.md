@@ -1,3 +1,7 @@
+## 0.2.21 — 2026-10-21
+
+- Fix: after a restart or deploy, background jobs (dividends, ratings, scores, calendar, exposure, prices, watchlist) no longer stay blocked for up to 30 minutes by an "in progress" state left by the previous process.
+
 ## 0.2.20 — 2026-10-21
 
 - Fix: the exposure refresh could hang forever on a justETF request (the library sets no timeout), leaving the remaining ETFs in "ETF (no breakdown)". Requests now time out after 20 seconds and the queue moves on; a failed ETF is retried after a day.

@@ -124,11 +124,17 @@ def load_json_file(path, default):
         return default
 
 
+# momentul pornirii procesului: un job "in curs" scris inainte de el apartine unui proces oprit
+PROCESS_STARTED = time.time()
+
+
 def read_status(path, max_age=1800):
     status = load_json_file(path, {})
     if status.get("in_progress"):
         try:
-            is_stale = not os.path.exists(path) or (time.time() - os.path.getmtime(path)) > max_age
+            mtime = os.path.getmtime(path)
+            # dupa un restart niciun fir vechi nu mai ruleaza, deci starea nu mai blocheaza jobul
+            is_stale = (time.time() - mtime) > max_age or mtime < PROCESS_STARTED
         except Exception:
             is_stale = True
         if is_stale:

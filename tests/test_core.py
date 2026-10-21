@@ -112,3 +112,28 @@ def test_fx_cross_rate_via_usd(clean_fx_cache, monkeypatch):
 
     monkeypatch.setattr(portfolio_model, "fetch_fx_rate", fake)
     assert portfolio_model.fx("RON", "EUR") == pytest.approx(0.18)
+
+
+def test_read_status_ignores_jobs_from_a_previous_process(tmp_path, monkeypatch):
+    import json
+    import os
+    import time
+
+    import core
+
+    path = tmp_path / "status.json"
+    path.write_text(json.dumps({"in_progress": True, "done": 3}))
+    now = time.time()
+    os.utime(path, (now - 60, now - 60))  # scris acum un minut
+
+    monkeypatch.setattr(core, "PROCESS_STARTED", now - 3600)  # procesul ruleaza de o ora: jobul e viu
+    assert core.read_status(str(path))["in_progress"] is True
+
+    monkeypatch.setattr(core, "PROCESS_STARTED", now - 10)  # restart dupa scriere: jobul e mort
+    st = core.read_status(str(path))
+    assert st["in_progress"] is False and st["stale"] is True and st["done"] == 3
+
+    monkeypatch.setattr(core, "PROCESS_STARTED", now - 3600)
+    os.utime(path, (now - 2000, now - 2000))  # mai vechi de 30 de minute, ca inainte
+    assert core.read_status(str(path))["in_progress"] is False
+    assert core.read_status(str(tmp_path / "missing.json")) == {}
