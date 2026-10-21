@@ -245,3 +245,10 @@ def test_strategy_section_renders_cards_and_ddm(monkeypatch):
     assert "Valoare DDM" in text and "/100" in text
     captions = " ".join(c.value for c in at.caption)
     assert "yield on cost" in captions and "5.25" in captions  # 3.5% x 60 / 40
+
+
+def test_score_shade_darkens_with_the_score():
+    from strategies_ui import _shade
+    assert _shade(None) == "" and _shade(float("nan")) == ""
+    shades = [_shade(v) for v in (10, 40, 55, 70, 95)]
+    assert len(set(shades)) == 5 and "#1f7a4d" in shades[-1] and "#eef7f1" in shades[0]

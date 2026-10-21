@@ -16,6 +16,18 @@ FMT = {
     "payout_trend": "{:+.1f} pp", "ddm_margin": "{:+.0f}%",
 }
 FILTERS = ("all", "positive", "negative")
+# o singura nuanta (verde), mai inchisa cu scorul; treptele urmeaza pragurile 50 / 65 ale lentilelor
+SHADES = ((35, "#eef7f1", "#1a1a1a"), (50, "#d3eddc", "#1a1a1a"), (65, "#a6dbb9", "#10301f"),
+          (80, "#5fb889", "#0b2416"), (101, "#1f7a4d", "#ffffff"))
+
+
+def _shade(v):
+    if v is None or v != v:
+        return ""
+    for upper, bg, fg in SHADES:
+        if v < upper:
+            return "background-color: %s; color: %s" % (bg, fg)
+    return ""
 
 
 def _fmt(key, v):
@@ -194,20 +206,20 @@ def render_strategies_tab(vdf):
         return
 
     df = pd.DataFrame(rows).drop(columns=["_pos", "_neg", "_known"])
-    score_col = lambda lens: st.column_config.ProgressColumn(
-        t("st.lens." + lens), min_value=0, max_value=100, format="%.0f/100", help=t("st.lens_help." + lens))
+    score_col = lambda lens: st.column_config.Column(t("st.lens." + lens), help=t("st.lens_help." + lens))
+    styled = df.style.format({lens: "{:.0f}/100" for lens in strategies.LENSES} | {"ddm_margin": "{:+.0f}%"},
+                             na_rep="—").map(_shade, subset=list(strategies.LENSES))
     event = st.dataframe(
-        df, hide_index=True, width="stretch", on_select="rerun", selection_mode="single-row",
+        styled, hide_index=True, width="stretch", on_select="rerun", selection_mode="single-row",
         key="st_table_%d" % st.session_state.get("table_nonce", 0),
         column_config={
-            "ticker": st.column_config.TextColumn(t("st.col.ticker")),
-            "name": st.column_config.TextColumn(t("st.col.name")),
+            "ticker": st.column_config.TextColumn(t("st.col.ticker"), help=t("st.col.ticker_help")),
+            "name": st.column_config.TextColumn(t("st.col.name"), help=t("st.col.name_help")),
             "value": score_col("value"), "growth": score_col("growth"), "ddm": score_col("ddm"),
             "div_growth": score_col("div_growth"),
-            "ddm_margin": st.column_config.NumberColumn(t("st.col.ddm_margin"), format="%+.0f%%",
-                                                         help=t("st.col.ddm_margin_help")),
+            "ddm_margin": st.column_config.Column(t("st.col.ddm_margin"), help=t("st.col.ddm_margin_help")),
             "conv": st.column_config.TextColumn(t("st.col.conv"), help=t("st.col.conv_help")),
-            "note": st.column_config.TextColumn(t("st.col.note")),
+            "note": st.column_config.TextColumn(t("st.col.note"), help=t("st.col.note_help")),
         })
     sel = event.selection.rows if event and event.selection else []
     if sel:
@@ -219,5 +231,6 @@ def render_strategies_tab(vdf):
             st.session_state["total_portfolio_value"] = st.session_state.get("_table_total")
             st.session_state["scroll_to_top_detail"] = True
             st.rerun()
+    st.caption(t("st.scale"))
     st.caption(t("st.tab_note"))
     st.caption(t("st.disclaimer"))

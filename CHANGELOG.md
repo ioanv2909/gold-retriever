@@ -1,3 +1,7 @@
+## 0.2.27 — 2026-10-21
+
+- Strategies tab: lens scores are shown as cells shaded in one green hue, darker for higher scores (steps at 35, 50, 65 and 80), instead of bars in the theme's red, which read as negative. Every column has a tooltip explaining what it measures and how to read it.
+
 ## 0.2.26 — 2026-10-21
 
 - Strategy lenses: four views of every stock, each with a score X/100, a one-line verdict and the signals behind it (value, target, red flag, why it matters):
