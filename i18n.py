@@ -98,6 +98,44 @@ _T = {
     "table.click_hint": {"RO": "Click pe un rând din tabel pentru analiza detaliată.", "EN": "Click a table row for the detailed analysis."},
     "tab.positions": {"RO": "Poziții", "EN": "Positions"},
     "tab.watchlist": {"RO": "👁️ Watchlist", "EN": "👁️ Watchlist"},
+    "tab.events": {"RO": "📅 Calendar", "EN": "📅 Calendar"},
+    "ev.type.earnings": {"RO": "Rezultate financiare", "EN": "Earnings"},
+    "ev.type.ex_dividend": {"RO": "Ex-dividend", "EN": "Ex-dividend"},
+    "ev.type.dividend_payment": {"RO": "Plată dividend", "EN": "Dividend payment"},
+    "ev.eps_est": {"RO": "EPS estimat {v}", "EN": "EPS estimate {v}"},
+    "ev.col.date": {"RO": "Data", "EN": "Date"},
+    "ev.col.days": {"RO": "Peste (zile)", "EN": "In (days)"},
+    "ev.col.ticker": {"RO": "Ticker", "EN": "Ticker"},
+    "ev.col.name": {"RO": "Nume", "EN": "Name"},
+    "ev.col.type": {"RO": "Eveniment", "EN": "Event"},
+    "ev.col.detail": {"RO": "Detalii", "EN": "Details"},
+    "ev.range": {"RO": "Interval", "EN": "Range"},
+    "ev.range_days": {"RO": "{n} zile", "EN": "{n} days"},
+    "ev.filter_types": {"RO": "Tipuri de evenimente", "EN": "Event types"},
+    "ev.empty": {"RO": "Niciun eveniment în intervalul ales.", "EN": "No events in the chosen range."},
+    "ev.loading": {"RO": "📅 Se încarcă calendarul ({done}/{total})...", "EN": "📅 Loading the calendar ({done}/{total})..."},
+    "ev.source": {
+        "RO": "Sursa: Yahoo Finance. Datele pot fi estimate sau se pot schimba; ETF-urile de obicei nu au date. Actualizat la 12 ore.",
+        "EN": "Source: Yahoo Finance. Dates may be estimates and can change; ETFs usually have no data. Refreshed every 12 hours.",
+    },
+    "ev.refresh": {"RO": "🔄 Actualizează calendarul", "EN": "🔄 Refresh calendar"},
+    "ev.mail_subject": {"RO": "Calendar: {n} evenimente în curând", "EN": "Calendar: {n} upcoming events"},
+    "ev.mail_intro": {
+        "RO": "Evenimente apropiate pentru pozițiile tale (sursa: Yahoo Finance, datele pot fi estimate):",
+        "EN": "Upcoming events for your positions (source: Yahoo Finance, dates may be estimates):",
+    },
+    "set.events": {"RO": "📅 Calendar", "EN": "📅 Calendar"},
+    "set.ev_caption": {
+        "RO": "Primești un email cu evenimentele noi (rezultate, ex-dividend, plată dividend) pentru pozițiile tale. Fiecare eveniment e trimis o singură dată. Necesită SMTP configurat de un admin și evenimentul „Calendar” activ în Notificări.",
+        "EN": "Get an email with new events (earnings, ex-dividend, dividend payment) for your positions. Each event is sent once. Requires SMTP set up by an admin and the \"Calendar\" event enabled in Notifications.",
+    },
+    "set.ev_email": {"RO": "Adresa ta de email", "EN": "Your email address"},
+    "set.ev_enable": {"RO": "Trimite-mi emailuri cu evenimentele apropiate", "EN": "Email me upcoming events"},
+    "set.ev_days": {"RO": "Cu câte zile înainte", "EN": "How many days ahead"},
+    "set.ev_save": {"RO": "💾 Salvează", "EN": "💾 Save"},
+    "set.ev_saved": {"RO": "Salvat.", "EN": "Saved."},
+    "set.ev_bad_email": {"RO": "Adresă de email invalidă.", "EN": "Invalid email address."},
+    "set.ev_no_smtp": {"RO": "SMTP nu e configurat încă; emailurile nu vor pleca până când un admin îl configurează.", "EN": "SMTP is not configured yet; emails will not be sent until an admin sets it up."},
     "wl.symbol": {"RO": "Simbol Yahoo Finance (ex. NVDA, SAP.DE, VUSA.L)", "EN": "Yahoo Finance symbol (e.g. NVDA, SAP.DE, VUSA.L)"},
     "wl.isin": {"RO": "ISIN (opțional, doar ETF)", "EN": "ISIN (optional, ETFs only)"},
     "wl.add": {"RO": "Adaugă", "EN": "Add"},
@@ -254,11 +292,11 @@ def lang():
     return st.session_state.get("lang") or "RO"
 
 
-def t(key, **kw):
+def t(key, _lang=None, **kw):
     entry = _T.get(key)
     if entry is None:
         return key
-    s = entry.get(lang()) or entry.get("RO") or key
+    s = entry.get(_lang or lang()) or entry.get("RO") or key
     return s.format(**kw) if kw else s
 
 

@@ -1,4 +1,5 @@
 import alerts
+import events
 from etf import compute_etf_score, extract_etf_metrics, get_instrument
 from risk import extract_risk_metrics, compute_risk
 from yf_compat import yf, YFINANCE_AVAILABLE
@@ -378,7 +379,7 @@ def xtb_positions_for_context():
 def start_background_scheduler(user=None):
     def run_loop():
         last_core = last_div = last_rat = last_q = last_m = last_w = last_j = last_x = last_h = 0.0
-        last_hc = 0.0
+        last_hc = last_ev = last_evn = 0.0
         while True:
             cfg = load_config()
             key_id, secret = cfg.get("api_key_id"), cfg.get("api_secret")
@@ -434,6 +435,18 @@ def start_background_scheduler(user=None):
             if (time.time() - last_w) >= WATCHLIST_REFRESH_INTERVAL:
                 if start_watchlist_refresh_background():
                     last_w = time.time()
+
+            if all_tickers and (time.time() - last_ev) >= 3600:
+                # tickerele deja proaspete sunt sarite, deci un tur pe ora e ieftin
+                if events.start_events_fetch_background(all_tickers):
+                    last_ev = time.time()
+
+            if all_tickers and (time.time() - last_evn) >= 3600:
+                last_evn = time.time()
+                try:
+                    events.notify_upcoming(all_tickers, user)
+                except Exception as e:
+                    print(f"[events] {e}", flush=True)
 
             if (time.time() - last_h) >= 300:
                 try:

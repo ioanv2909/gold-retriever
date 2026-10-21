@@ -206,3 +206,7 @@ def set_email(name, email):
         rec.pop("email", None)
     _save(d)
     return None
+
+
+def email(name):
+    return (_load()["users"].get(str(name).lower()) or {}).get("email")

@@ -52,6 +52,7 @@ Infrastructure
 - `users.py` - accounts, roles, PBKDF2 password hashing, migration of legacy single-user data.
 - `background.py` - background refresh threads and their status files.
 - `notify.py`, `alerts.py`, `notify_ui.py` - email notifications: SMTP sending with throttling, alert rules (consecutive failures, backup age, XTB import, security) and the Settings tab.
+- `events.py`, `events_ui.py` - events calendar: fetches earnings and dividend dates from Yahoo Finance, the Calendar tab, per-user settings and the email digest.
 
 ## Users
 

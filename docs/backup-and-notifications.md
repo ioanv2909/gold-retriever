@@ -53,10 +53,16 @@ like the Trading 212 keys.
 | Refresh | Trading 212 or dividends refresh failed 3 times in a row (checked every refresh cycle / 10 minutes) |
 | XTB import | A report fails the cash or positions check, has unknown operation types, or cannot be parsed |
 | Security | An account is locked after repeated failed logins; a user is created, deleted, gets a new password or role |
+| Calendar | Earnings, ex-dividend or dividend payment dates for held positions within the next N days (sent to the user, not the admins) |
 
 The same alert is not resent more often than the configured interval (6 hours by
 default; 24 hours for refresh and backup-missing alerts). User changes are always sent.
-Emails never contain keys, passwords or amounts. `notify_state.json` keeps the send
+Emails never contain keys, passwords or amounts.
+
+Calendar emails go to each user's own address, set in Settings, tab Calendar, together with
+the opt-in and how many days ahead (1-30, default 7). The scheduler checks once an hour and
+sends one digest with the events not sent before; `events_notified.json` remembers them. The
+admin must also enable the Calendar event in Notifications. `notify_state.json` keeps the send
 times and the last SMTP error.
 
 The backup script sends its alert through `tools/notify_cli.py`, which reads the same

@@ -1060,7 +1060,7 @@ def render_main_view():
             return "color: #ff6b6b;"
         return "color: #9aa0a6;"
 
-    tab_pos, tab_wl = st.tabs([t("tab.positions"), t("tab.watchlist")])
+    tab_pos, tab_ev, tab_wl = st.tabs([t("tab.positions"), t("tab.events"), t("tab.watchlist")])
     with tab_pos:
         styled_table = table_df.style.format(
             {
@@ -1115,6 +1115,10 @@ def render_main_view():
             st.session_state["total_portfolio_value"] = total_portfolio_value
             st.session_state["scroll_to_top_detail"] = True
             st.rerun()
+
+    with tab_ev:
+        from events_ui import render_calendar_tab
+        render_calendar_tab(dict(zip(df_display["ticker"], df_display["name"])))
 
     if not detail_loading:
         with tab_wl:
@@ -1283,6 +1287,8 @@ if "selected_ticker" in st.session_state and "selected_row" in st.session_state:
 else:
     if st.session_state.get("_page") == "settings":
         from settings_page import render_settings
-        render_settings(_me, [(t("side.updates"), _section_updates), (t("side.xtb_import"), _section_xtb_import)])
+        from events_ui import render_settings_section as _events_settings
+        render_settings(_me, [(t("side.updates"), _section_updates), (t("side.xtb_import"), _section_xtb_import),
+                              (t("set.events"), lambda: _events_settings(_me))])
         st.stop()
     render_main_view()

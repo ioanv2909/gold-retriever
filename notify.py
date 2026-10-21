@@ -17,7 +17,7 @@ MAIL_FILE = os.path.join(DATA_ROOT, "mail.json")
 STATE_FILE = os.path.join(DATA_ROOT, "notify_state.json")
 USERS_FILE = os.path.join(DATA_ROOT, "users.json")
 
-EVENTS = ("backup", "refresh", "xtb_import", "security")
+EVENTS = ("backup", "refresh", "xtb_import", "security", "events")
 DEFAULTS = {
     "host": "", "port": 587, "security": "starttls",
     "user": "", "password": "", "sender": "",
@@ -134,12 +134,12 @@ def send_test():
         return False, msg
 
 
-def notify(event, subject, body, key=None, sync=False, min_hours=None):
-    """Trimite o alerta adminilor. Intoarce True daca a fost trimisa (sau pornita)."""
+def notify(event, subject, body, key=None, sync=False, min_hours=None, to=None):
+    """Trimite o alerta adminilor (sau adreselor din `to`). Intoarce True daca a fost trimisa (sau pornita)."""
     cfg = load_settings()
     if event not in cfg["events"] or not configured(cfg):
         return False
-    to = recipients()
+    to = list(to) if to else recipients()
     if not to:
         return False
     key = key or "%s:%s" % (event, subject)

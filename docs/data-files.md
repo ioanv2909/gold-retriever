@@ -14,6 +14,7 @@ Everything is JSON except `auth_secret`. Do not commit this folder:
 | `justetf_cache.json` | justETF data for ETFs |
 | `quality_cache.json`, `quality_status.json` | Quality scores and job progress |
 | `market_context_cache.json`, `market_context_status.json` | Benchmark (S&P 500) data and job progress |
+| `events_cache.json`, `events_status.json` | Upcoming earnings and dividend dates per ticker (Yahoo Finance, 12 h) and job progress |
 | `manual_metrics.json` | Manually entered metrics, when present |
 | `mail.json` | SMTP settings for notifications (password in plain text, mode 600) |
 | `notify_state.json` | Times of sent alerts and the last SMTP error |
@@ -28,6 +29,7 @@ Everything is JSON except `auth_secret`. Do not commit this folder:
 | `portfolio_cache.json` | Latest Trading 212 snapshot |
 | `dividends_cache.json`, `dividends_status.json` | Dividends per ticker and job progress |
 | `ratings_cache.json`, `ratings_status.json` | Analyst recommendations and job progress |
+| `events_prefs.json`, `events_notified.json` | Calendar email opt-in and days ahead; events already emailed |
 | `t212_fills.json` | Executed orders used to rebuild history |
 | `t212_first_dates.json` | First purchase dates |
 | `t212_flows.json` | Deposits and withdrawals (for XIRR) |
