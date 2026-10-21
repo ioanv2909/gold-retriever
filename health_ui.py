@@ -148,7 +148,7 @@ def _jobs():
 def _probes():
     results = []
     for src, fn in (("yahoo", health.probe_yahoo), ("justetf", health.probe_justetf),
-                    ("t212", health.probe_t212), ("smtp", health.probe_smtp)):
+                    ("t212", health.probe_t212), ("smtp", health.probe_smtp), ("sec", health.probe_sec)):
         ok, msg = fn()
         level = "gray" if ok is None else ("green" if ok else "red")
         results.append((src, level, msg))

@@ -1,3 +1,13 @@
+## 0.2.28 — 2026-10-21
+
+- Two new strategy lenses, in the Strategies tab and on the position page:
+  - Sentiment: analyst upgrades minus downgrades and raised versus lowered targets (90 days), EPS revisions, mean recommendation, short interest and its change, insider buying minus selling as a share of market cap (6 months, open-market trades only), change in large institutions' holdings, and the tone of the last 30 days of news headlines (keywords);
+  - Event-driven: how often earnings beat the estimate (last 8 quarters), the average surprise and the average price reaction the day after, and the balance of positive and negative events in the last 90 days. A 6-month timeline lists analyst rating changes, insider trades, earnings, SEC 8-K filings (US companies: acquisitions, management changes, restructurings, impairments, restatements, auditor changes, bankruptcy) and news classified by keywords (M&A, management, regulation, patents, dividends and buybacks, legal), with links. The next earnings date is shown as the next catalyst.
+- Market context line (VIX and the S&P 500 versus its 200-day average) above the lenses; it does not enter the scores.
+- SEC EDGAR requests carry the first admin's email as contact, as SEC requires; without an admin email EDGAR is not used. SEC is a new row on the Status page, with a "Test now" probe.
+- Position alerts: new "Event alerts" rule (Settings, Alerts): an email and banner for each new 8-K of the types above, analyst downgrade or insider purchase on a held position. Events already present when the rule is turned on are not announced.
+- Convergence now counts six lenses. The lenses are recomputed once after the update (new metrics).
+
 ## 0.2.27 — 2026-10-21
 
 - Strategies tab: lens scores are shown as cells shaded in one green hue, darker for higher scores (steps at 35, 50, 65 and 80), instead of bars in the theme's red, which read as negative. Every column has a tooltip explaining what it measures and how to read it.

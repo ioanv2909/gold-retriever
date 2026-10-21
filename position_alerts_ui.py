@@ -96,6 +96,16 @@ def _concentration_section():
         st.success(t("pa.saved"))
 
 
+def _events_section():
+    st.markdown("#### " + t("pa.ev_title"))
+    rule = pa.load_rules()["events"]
+    on = st.checkbox(t("pa.ev_enable"), value=rule["enabled"], key="pa_e_on")
+    st.caption(t("pa.ev_hint"))
+    if st.button(t("pa.save"), key="pa_e_save"):
+        pa.save_events_rule(on)
+        st.success(t("pa.saved"))
+
+
 def render_settings_section(me):
     st.caption(t("pa.caption"))
     _price_section(cached_holdings(me))
@@ -103,6 +113,8 @@ def render_settings_section(me):
     _score_section()
     st.divider()
     _concentration_section()
+    st.divider()
+    _events_section()
     log = pa.load_log()
     if log:
         st.divider()

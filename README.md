@@ -24,7 +24,7 @@ A self-hosted portfolio analyzer for **Trading 212** and **XTB**, built with Str
 - Per-position profit/loss, dividends, and comparison with the S&P 500 over the same holding period
 - Quality, risk and dividend scores, ETF data from justETF
 - Analyst price targets, recommendations, EPS and revenue estimates and revisions
-- Strategy lenses (value, growth, dividend discount model, dividend growth) with scores, verdicts, the signals behind them and how many lenses agree
+- Strategy lenses (value, growth, dividend discount model, dividend growth, sentiment, event-driven) with scores, verdicts, the signals behind them and how many lenses agree; event timeline with SEC 8-K filings, ratings, insider trades, earnings and classified news
 - Watchlist and loss-to-profit alerts
 - Position alerts on price, score and concentration, as an in-app banner and by email
 - Side-by-side comparison of up to five instruments (return chart, scores, valuation)

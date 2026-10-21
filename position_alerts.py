@@ -1,4 +1,5 @@
-"""Alerte pe pozitii: pret (peste/sub o valoare), scor (sub prag sau scadere) si concentrare in portofoliu.
+"""Alerte pe pozitii: pret (peste/sub o valoare), scor (sub prag sau scadere), concentrare in portofoliu si
+evenimente importante (8-K, downgrade-uri, cumparari de insideri, din lentilele de strategie).
 
 Regulile si starea sunt per utilizator. Evaluarea ruleaza in fundal; alertele declansate ajung in
 jurnal (banner in aplicatie) si, daca utilizatorul are adresa, pe email.
@@ -21,10 +22,12 @@ DEFAULT_RULES = {
     "price": [],
     "score": {"enabled": False, "kinds": list(SCORE_KINDS), "below": 50, "drop": 15},
     "concentration": {"enabled": False, "max_pct": 20},
+    "events": {"enabled": False},
 }
 SCORE_RESET = 5     # scorul trebuie sa urce cu atat peste prag ca alerta "sub prag" sa se poata repeta
 CONC_RESET = 2      # ponderea trebuie sa scada cu atat sub limita ca alerta de concentrare sa se poata repeta
 LOG_KEEP = 200
+EVENTS_KEEP = 100   # id-uri de evenimente deja vazute, per ticker
 EVAL_INTERVAL = 900
 
 
@@ -37,7 +40,7 @@ def load_rules():
     if isinstance(saved, dict):
         if isinstance(saved.get("price"), list):
             rules["price"] = saved["price"]
-        for k in ("score", "concentration"):
+        for k in ("score", "concentration", "events"):
             if isinstance(saved.get(k), dict):
                 rules[k].update({f: saved[k][f] for f in DEFAULT_RULES[k] if f in saved[k]})
     return rules
@@ -84,6 +87,12 @@ def save_score_rule(enabled, kinds, below, drop):
 def save_concentration_rule(enabled, max_pct):
     rule = {"enabled": bool(enabled), "max_pct": max(1, min(100, float(max_pct)))}
     _update_rules(lambda r: r.update(concentration=rule))
+    return rule
+
+
+def save_events_rule(enabled):
+    rule = {"enabled": bool(enabled)}
+    _update_rules(lambda r: r.update(events=rule))
     return rule
 
 
@@ -158,6 +167,28 @@ def check_concentration(rule, weights, state):
         elif pct < limit - CONC_RESET and over:
             state[ticker] = False
     return fired, state
+
+
+def check_events(rule, timelines, state):
+    """timelines: {ticker: [evenimente]}. Doar evenimentele marcate "alert". La prima vedere a unui ticker
+    evenimentele existente devin reper, fara alerta; apoi fiecare eveniment nou se anunta o data."""
+    state = copy.deepcopy(state or {})
+    fired = []
+    if not rule.get("enabled"):
+        return fired, state
+    for ticker, events in timelines.items():
+        important = [e for e in events or [] if e.get("alert") and e.get("id")]
+        seen = state.get(ticker)
+        if seen is not None:
+            fired += [{"kind": "event", "ticker": ticker, "event_kind": e.get("kind"), "date": e.get("date"),
+                       "title": e.get("title"), "link": e.get("link")} for e in important if e["id"] not in seen]
+        ids = list(seen or []) + [e["id"] for e in important if e["id"] not in (seen or [])]
+        state[ticker] = ids[-EVENTS_KEEP:]
+    return fired, state
+
+
+def timelines_of(strategy_cache, tickers):
+    return {t: ((strategy_cache.get(t) or {}).get("m") or {}).get("events") or [] for t in tickers}
 
 
 # ---------------------------------------------------------------------------
@@ -259,17 +290,21 @@ def describe(e, lang="RO"):
     if e["kind"] == "price":
         return t("pa.msg.price_" + e["op"], _lang=lang, name=name, price="%.2f %s" % (e["price"], e.get("ccy", "")),
                  target="%.2f" % e["target"]).strip()
+    if e["kind"] == "event":
+        kind = t("st.kind." + e["event_kind"], _lang=lang) if e.get("event_kind") else ""
+        return t("pa.msg.event", _lang=lang, name=name, kind=kind, date=e.get("date") or "", title=e.get("title") or "")
     if e["kind"] == "score":
         return t("pa.msg.score_" + e["reason"], _lang=lang, name=name, kind=t("pa.kind." + e["score_kind"], _lang=lang),
                  value="%.0f" % e["value"], prev="%.0f" % e["previous"], th="%.0f" % e["threshold"])
     return t("pa.msg.concentration", _lang=lang, name=name, pct="%.1f" % e["pct"], limit="%.0f" % e["limit"])
 
 
-def evaluate(user=None, now=None, holdings=None, quality=None):
+def evaluate(user=None, now=None, holdings=None, quality=None, timelines=None):
     """Ruleaza toate regulile; salveaza starea si jurnalul; trimite un email cu alertele noi. Intoarce alertele declansate."""
     now = now or time.time()
     rules = load_rules()
-    if not rules["price"] and not rules["score"]["enabled"] and not rules["concentration"]["enabled"]:
+    if not (rules["price"] or rules["score"]["enabled"] or rules["concentration"]["enabled"]
+            or rules["events"]["enabled"]):
         return []
     if holdings is None:
         holdings, quality = current_holdings()
@@ -278,6 +313,10 @@ def evaluate(user=None, now=None, holdings=None, quality=None):
     fired_p, price_alerts = check_prices(rules["price"], holdings, now)
     fired_s, state["score"] = check_scores(rules["score"], scores_of(quality or {}, holdings), state.get("score"))
     fired_c, state["concentration"] = check_concentration(rules["concentration"], weights_of(holdings), state.get("concentration"))
+    if timelines is None and rules["events"]["enabled"]:
+        import strategies
+        timelines = timelines_of(strategies.load_cache(), holdings)
+    fired_e, state["events"] = check_events(rules["events"], timelines or {}, state.get("events"))
     save_json_file(STATE_FILE, state)
     if fired_p:
         fired_ids = {a["id"] for a in price_alerts if a.get("triggered_at") == now}
@@ -288,7 +327,7 @@ def evaluate(user=None, now=None, holdings=None, quality=None):
                     a["active"], a["triggered_at"] = False, now
         _update_rules(fn)
 
-    fired = fired_p + fired_s + fired_c
+    fired = fired_p + fired_s + fired_c + fired_e
     if not fired:
         return []
     for e in fired:

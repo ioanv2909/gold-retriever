@@ -17,7 +17,8 @@ Everything is JSON except `auth_secret`. Do not commit this folder:
 | `uptime_status.json` | Host watchdog: last health check, consecutive failures, whether the admins were alerted |
 | `service_status.json` | Status page: the last requests to Yahoo, justETF, Trading 212 and SMTP (time, success, duration) and the last error of each |
 | `log_problems.json` | Log watchdog: error patterns from the last 24 hours with count, last time and an example |
-| `strategy_cache.json`, `strategy_status.json` | Raw metrics for the strategy lenses per ticker (financial statements, estimates, dividend history, 10-year bond yield), daily, and job progress |
+| `strategy_cache.json`, `strategy_status.json` | Raw metrics for the strategy lenses per ticker (financial statements, estimates, dividend history, 10-year bond yield, sentiment, event timeline) and the market context (`_market`), daily, and job progress |
+| `sec_tickers.json` | SEC ticker to CIK map for EDGAR requests, weekly |
 | `exposure_cache.json`, `exposure_status.json` | Sector, country, ETF sector weights (Yahoo Finance) and ETF country weights (justETF) per ticker, weekly, and job progress |
 | `events_cache.json`, `events_status.json` | Upcoming earnings and dividend dates per ticker (Yahoo Finance, 12 h) and job progress |
 | `manual_metrics.json` | Manually entered metrics, when present |

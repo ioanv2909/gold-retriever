@@ -11,6 +11,7 @@ refresh therefore never makes a page load slow or fail.
     Yahoo / justETF --> quality_cache.json, market_context_cache.json,
                         justetf_cache.json, ratings_cache.json, events_cache.json,
                         exposure_cache.json, strategy_cache.json
+    SEC EDGAR -------> strategy_cache.json (8-K events), sec_tickers.json
     caches ------------> app.py computes rows and totals --> screen
 
 ## Trading 212

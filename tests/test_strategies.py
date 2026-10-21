@@ -172,21 +172,22 @@ def test_extract_metrics_skips_price_ratios_across_currencies():
 def test_fetch_and_cache_refreshes_only_stale(monkeypatch):
     calls = []
 
-    def fetch(symbol, rf):
-        calls.append((symbol, rf))
+    def fetch(symbol, ctx):
+        calls.append((symbol, ctx["rf"]))
         return ({"kind": "etf"}, None) if symbol == "E" else (None, "boom")
 
-    s.fetch_and_cache(["E", "X"], resolve=str, now=1000.0, sleep=0, fetch=fetch, rf_fn=lambda: 4.2)
+    s.fetch_and_cache(["E", "X"], resolve=str, now=1000.0, sleep=0, fetch=fetch, ctx_fn=lambda: {"rf": 4.2, "market": {"vix": 15.0}})
     cache = s.load_cache()
     assert calls == [("E", 4.2), ("X", 4.2)]
     assert cache["E"]["m"] == {"kind": "etf"} and cache["X"]["error"] == "boom"
+    assert cache[s.MARKET_KEY]["vix"] == 15.0
     assert s.load_status()["in_progress"] is False
 
     calls.clear()
-    s.fetch_and_cache(["E", "X"], resolve=str, now=2000.0, sleep=0, fetch=fetch, rf_fn=lambda: 4.2)
+    s.fetch_and_cache(["E", "X"], resolve=str, now=2000.0, sleep=0, fetch=fetch, ctx_fn=lambda: {"rf": 4.2, "market": {"vix": 15.0}})
     assert calls == []
     s.fetch_and_cache(["E"], resolve=str, now=1000.0 + s.STRATEGY_REFRESH_INTERVAL, sleep=0, fetch=fetch,
-                      rf_fn=lambda: 4.2)
+                      ctx_fn=lambda: {"rf": 4.2, "market": {"vix": 15.0}})
     assert calls == [("E", 4.2)]
 
 

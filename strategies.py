@@ -1,4 +1,5 @@
-"""Lentile de strategie: ce ar spune un investitor value / growth / DDM / dividend growth despre o actiune.
+"""Lentile de strategie: ce ar spune un investitor value / growth / DDM / dividend growth / sentiment / event-driven
+despre o actiune.
 
 extract_metrics(tk, rf) citeste o data datele din Yahoo (serializabile, pentru cache); lens(name, m) le transforma
 in scor X/100, verdict si semnale; convergence() numara lentilele pozitive si negative. Indicatori, nu recomandari.
@@ -18,9 +19,10 @@ from userctx import UPath
 STRATEGY_CACHE_FILE = UPath("strategy_cache.json", shared=True)
 STRATEGY_STATUS_FILE = UPath("strategy_status.json", shared=True)
 STRATEGY_REFRESH_INTERVAL = 86400
-VERSION = 1             # se mareste cand se adauga metrici: intrarile vechi se recalculeaza
+VERSION = 2             # se mareste cand se adauga metrici: intrarile vechi se recalculeaza
+MARKET_KEY = "_market"  # contextul pietei (VIX, S&P 500 fata de SMA200), in acelasi cache
 
-LENSES = ("value", "growth", "ddm", "div_growth")
+LENSES = ("value", "growth", "ddm", "div_growth", "sentiment", "events")
 STRONG, WEAK = 65, 50   # aceleasi praguri ca la scorul de calitate
 MIN_COVERAGE = 50
 
@@ -56,6 +58,24 @@ DIV_GROWTH_INDICATORS = [
     {"key": "dgr_10y", "weight": 10, "target": 6, "red_flag": 0, "higher_is_better": True},
     {"key": "chowder", "weight": 20, "target": 12, "red_flag": 6, "higher_is_better": True},
     {"key": "payout_trend", "weight": 15, "target": 0, "red_flag": 5, "higher_is_better": False},
+]
+SENTIMENT_INDICATORS = [
+    {"key": "rating_net_90d", "weight": 15, "target": 2, "red_flag": -2, "higher_is_better": True},
+    {"key": "target_net_90d", "weight": 15, "target": 50, "red_flag": -50, "higher_is_better": True},
+    {"key": "eps_rev_90d", "weight": 15, "target": 3, "red_flag": -3, "higher_is_better": True},
+    {"key": "rec_mean", "weight": 10, "target": 1.8, "red_flag": 3.0, "higher_is_better": False},
+    {"key": "short_float", "weight": 10, "target": 2, "red_flag": 10, "higher_is_better": False},
+    {"key": "short_change", "weight": 5, "target": -10, "red_flag": 20, "higher_is_better": False},
+    # vanzarile de rutina ale conducerii sunt mici fata de capitalizare: abia vanzari mari scad scorul
+    {"key": "insider_net", "weight": 10, "target": 0.01, "red_flag": -0.1, "higher_is_better": True},
+    {"key": "inst_change", "weight": 10, "target": 2, "red_flag": -2, "higher_is_better": True},
+    {"key": "news_tone", "weight": 10, "target": 40, "red_flag": -40, "higher_is_better": True},
+]
+EVENT_INDICATORS = [
+    {"key": "beat_rate", "weight": 30, "target": 75, "red_flag": 40, "higher_is_better": True},
+    {"key": "avg_surprise", "weight": 20, "target": 5, "red_flag": -2, "higher_is_better": True},
+    {"key": "avg_reaction", "weight": 20, "target": 2, "red_flag": -2, "higher_is_better": True},
+    {"key": "event_balance", "weight": 30, "target": 2, "red_flag": -2, "higher_is_better": True},
 ]
 DDM_INDICATORS = [
     {"key": "ddm_margin", "weight": 100, "target": 10, "red_flag": -50, "higher_is_better": True},
@@ -173,8 +193,9 @@ def fetch_rf():
         return None
 
 
-def extract_metrics(tk, rf=None, today=None):
-    """Datele brute ale celor patru lentile, ca dict serializabil (pentru cache)."""
+def extract_metrics(tk, rf=None, today=None, symbol=None, ua_email=None, now=None, news_fn=None, edgar_fn=None):
+    """Datele brute ale lentilelor, ca dict serializabil (pentru cache). ua_email: contactul pentru SEC EDGAR."""
+    import signals
     import analysts
     info = tk.info or {}
     quote = str(info.get("quoteType") or "").upper()
@@ -256,6 +277,10 @@ def extract_metrics(tk, rf=None, today=None):
     m["payout"] = payout * 100 if payout and payout > 0 else None
     m["roe"] = roe * 100 if roe is not None else None
     m["beta"] = _num(info.get("beta"))
+
+    # sentiment si evenimente
+    m.update(signals.extract(tk, symbol or str(info.get("symbol") or ""), info, now=now, ua_email=ua_email,
+                             news_fn=news_fn, edgar_fn=edgar_fn))
     return m
 
 
@@ -359,6 +384,18 @@ def div_growth_lens(m, today=None):
                                                     "div_yield": yld})
 
 
+def sentiment_lens(m):
+    return _result("sentiment", SENTIMENT_INDICATORS, m, {
+        k: m.get(k) for k in ("upgrades", "downgrades", "raises", "lowers", "analysts_n", "insider_buys",
+                              "insider_sells", "news_n")})
+
+
+def events_lens(m):
+    return _result("events", EVENT_INDICATORS, m, {
+        "earnings_n": m.get("earnings_n"), "event_n": m.get("event_n"), "sec_checked": m.get("sec_checked"),
+        "events": m.get("events") or []})
+
+
 def ddm_value(d0, r, g1, g2, years=STAGE1_YEARS):
     """DDM in doua etape: g1 timp de `years` ani, apoi Gordon cu g2. r, g in %. None daca r <= g2."""
     r, g1, g2 = r / 100, g1 / 100, g2 / 100
@@ -419,7 +456,7 @@ def evaluate(m, quality=None, today=None):
         reason = "etf" if m and m.get("kind") == "etf" else "no_data"
         return {lens: _na(lens, reason) for lens in LENSES}
     return {"value": value_lens(m, quality), "growth": growth_lens(m), "ddm": ddm_lens(m, today),
-            "div_growth": div_growth_lens(m, today)}
+            "div_growth": div_growth_lens(m, today), "sentiment": sentiment_lens(m), "events": events_lens(m)}
 
 
 def convergence(results):
@@ -447,31 +484,40 @@ def _stale(entry, now):
     return now - float(entry["fetched_at"]) >= STRATEGY_REFRESH_INTERVAL
 
 
-def fetch_one(symbol, rf):
+def run_context():
+    """Datele comune unui tur: randamentul bondului, contactul SEC, contextul pietei."""
+    import signals
+    return {"rf": fetch_rf(), "ua": signals.ua_email(), "market": signals.market_context()}
+
+
+def fetch_one(symbol, ctx):
     from yf_compat import yf, YFINANCE_AVAILABLE
     if not YFINANCE_AVAILABLE:
         return None, "yfinance indisponibil"
     try:
-        return extract_metrics(yf.Ticker(symbol), rf), None
+        return extract_metrics(yf.Ticker(symbol), ctx.get("rf"), symbol=symbol, ua_email=ctx.get("ua")), None
     except Exception as e:
         return None, str(e)[:200]
 
 
-def fetch_and_cache(tickers, resolve=None, now=None, sleep=1.0, fetch=None, rf_fn=None):
+def fetch_and_cache(tickers, resolve=None, now=None, sleep=1.0, fetch=None, ctx_fn=None):
     """Recalculeaza tickerele lipsa sau mai vechi de o zi."""
     if resolve is None:
         from yahoo import resolve_yahoo_symbol as resolve
-    fetch, rf_fn = fetch or fetch_one, rf_fn or fetch_rf
+    fetch, ctx_fn = fetch or fetch_one, ctx_fn or run_context
     now = now if now is not None else time.time()
     cache = load_cache()
     todo = [t for t in tickers if _stale(cache.get(t) or {}, now)]
     total = len(todo)
     save_json_file(STRATEGY_STATUS_FILE, {"in_progress": True, "started_at": now, "total": total, "done": 0})
     try:
-        rf = rf_fn() if todo else None
+        ctx = ctx_fn() if todo else {}
+        if todo:
+            market = dict(ctx.get("market") or {}, fetched_at=now)
+            update_json_file(STRATEGY_CACHE_FILE, {}, lambda c: dict(c, **{MARKET_KEY: market}))
         for idx, ticker in enumerate(todo):
             symbol = resolve(ticker)
-            m, err = fetch(symbol, rf)
+            m, err = fetch(symbol, ctx)
             entry = {"symbol": symbol, "fetched_at": now, "v": VERSION, "m": m}
             if err:
                 entry["error"] = err

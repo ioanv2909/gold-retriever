@@ -133,3 +133,9 @@ def test_smtp_check_connects_without_sending(tmp_path, monkeypatch):
     assert ok and msg == "smtp.example.com:587"
     assert FakeSMTP.calls == [("connect", "smtp.example.com", 587), "starttls", "login", "noop"]
     assert health.status("smtp")["level"] == "green"
+
+
+def test_sec_probe_needs_an_admin_email(monkeypatch):
+    import signals
+    monkeypatch.setattr(signals, "ua_email", lambda: None)
+    assert health.probe_sec()[0] is None

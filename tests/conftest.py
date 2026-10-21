@@ -24,3 +24,10 @@ def _isolated_strategies(tmp_path, monkeypatch):
     import strategies
     monkeypatch.setattr(strategies, "STRATEGY_CACHE_FILE", str(tmp_path / "strategy_cache.json"))
     monkeypatch.setattr(strategies, "STRATEGY_STATUS_FILE", str(tmp_path / "strategy_status.json"))
+    monkeypatch.setattr(strategies, "fetch_rf", lambda: None)
+    import signals
+    # fara retea si fara data/users.json in teste
+    monkeypatch.setattr(signals, "fetch_news", lambda *a, **kw: [])
+    monkeypatch.setattr(signals, "market_context", lambda: {"vix": None, "spx_vs_sma200": None})
+    monkeypatch.setattr(signals, "ua_email", lambda: None)
+    monkeypatch.setattr(signals, "SEC_TICKERS_FILE", str(tmp_path / "sec_tickers.json"))

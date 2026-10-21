@@ -14,7 +14,11 @@ FMT = {
     "eps_rev_90d": "{:+.1f}%", "peg": "{:.2f}", "rule_of_40": "{:.0f}",
     "growth_streak": "{:.0f}", "dgr_3y": "{:+.1f}%", "dgr_5y": "{:+.1f}%", "dgr_10y": "{:+.1f}%", "chowder": "{:.1f}",
     "payout_trend": "{:+.1f} pp", "ddm_margin": "{:+.0f}%",
+    "rating_net_90d": "{:+.0f}", "target_net_90d": "{:+.0f}%", "rec_mean": "{:.2f}", "short_float": "{:.1f}%",
+    "short_change": "{:+.0f}%", "insider_net": "{:+.3f}%", "inst_change": "{:+.1f}%", "news_tone": "{:+.0f}",
+    "beat_rate": "{:.0f}%", "avg_surprise": "{:+.1f}%", "avg_reaction": "{:+.1f}%", "event_balance": "{:+.0f}",
 }
+TONES = {1: "🟢", 0: "⚪", -1: "🔴"}
 FILTERS = ("all", "positive", "negative")
 # o singura nuanta (verde), mai inchisa cu scorul; treptele urmeaza pragurile 50 / 65 ale lentilelor
 SHADES = ((35, "#eef7f1", "#1a1a1a"), (50, "#d3eddc", "#1a1a1a"), (65, "#a6dbb9", "#10301f"),
@@ -41,12 +45,38 @@ def _rf():
 
 @st.cache_data(ttl=21600, show_spinner=False)
 def get_metrics(yahoo_symbol):
+    import signals
     if not YFINANCE_AVAILABLE:
         return None
     try:
-        return strategies.extract_metrics(yf.Ticker(yahoo_symbol), _rf())
+        return strategies.extract_metrics(yf.Ticker(yahoo_symbol), _rf(), symbol=yahoo_symbol,
+                                          ua_email=signals.ua_email())
     except Exception:
         return None
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def _live_market():
+    import signals
+    return signals.market_context()
+
+
+def _market(cache):
+    mk = cache.get(strategies.MARKET_KEY) or {}
+    return mk if mk.get("vix") is not None or mk.get("spx_vs_sma200") is not None else _live_market()
+
+
+def _market_text(mk):
+    """Contextul pietei intr-o linie: VIX si S&P 500 fata de SMA200."""
+    parts = []
+    vix = mk.get("vix")
+    if vix is not None:
+        mood = "calm" if vix < 15 else "normal" if vix < 25 else "tense"
+        parts.append(t("st.market_vix", v="%.1f" % vix, mood=t("st.market_mood." + mood)))
+    spx = mk.get("spx_vs_sma200")
+    if spx is not None:
+        parts.append(t("st.market_spx_" + ("above" if spx >= 0 else "below"), p="%+.1f" % spx))
+    return t("st.market", parts=" · ".join(parts)) if parts else None
 
 
 def _quality(ticker, qcache=None):
@@ -102,6 +132,33 @@ def _ddm_details(x):
     st.caption(t("st.ddm_sens_note"))
 
 
+def _next_earnings(ticker):
+    import events
+    up = [e for e in events.upcoming(events.load_cache(), [ticker], days=90) if e["type"] == "earnings"]
+    return up[0] if up else None
+
+
+def _events_details(ticker, x):
+    nxt = _next_earnings(ticker)
+    if nxt:
+        st.markdown(t("st.next_earnings", d=nxt["date"], n=nxt["days"]))
+    evs = x.get("events") or []
+    if evs:
+        st.markdown("**" + t("st.timeline") + "**")
+        st.dataframe(pd.DataFrame([{
+            t("st.tl.date"): e["date"],
+            t("st.tl.source"): t("st.src." + e["source"]),
+            t("st.tl.kind"): t("st.kind." + e["kind"]) if e.get("kind") else "",
+            t("st.tl.tone"): TONES.get(e["tone"], "⚪"),
+            t("st.tl.title"): e["title"],
+            t("st.tl.link"): e.get("link"),
+        } for e in evs]), hide_index=True, width="stretch",
+            column_config={t("st.tl.link"): st.column_config.LinkColumn(t("st.tl.link"), display_text="↗")})
+    else:
+        st.caption(t("st.timeline_empty"))
+    st.caption(t("st.sec_on") if x.get("sec_checked") else t("st.sec_off"))
+
+
 def render_strategy_section(ticker, yahoo_symbol, position_row):
     """Sectiunea Strategii din pagina unei actiuni: un card pe lentila, apoi detaliile fiecareia."""
     st.subheader(t("st.title"))
@@ -114,8 +171,13 @@ def render_strategy_section(ticker, yahoo_symbol, position_row):
     pos, neg, known = strategies.convergence(results)
     st.caption(_conv_text(pos, neg, known))
 
-    cols = st.columns(len(strategies.LENSES))
-    for c, lens in zip(cols, strategies.LENSES):
+    market = _market_text(_market(strategies.load_cache()))
+    if market:
+        st.caption(market)
+
+    lenses = list(strategies.LENSES)
+    cols = [c for _ in range(0, len(lenses), 3) for c in st.columns(3)]
+    for c, lens in zip(cols, lenses):
         r = results[lens]
         with c.container(border=True):
             st.markdown("**%s**" % t("st.lens." + lens))
@@ -137,6 +199,13 @@ def render_strategy_section(ticker, yahoo_symbol, position_row):
                     st.caption(t("st.piotroski_note", p=x["piotroski_raw"], n=x["piotroski_n"]))
                 if x.get("pe") and x.get("pe_hist"):
                     st.caption(t("st.pe_note", pe="%.1f" % x["pe"], h="%.1f" % x["pe_hist"]))
+            if lens == "sentiment":
+                x = r["extra"]
+                st.caption(t("st.sent_counts", up=x.get("upgrades") or 0, down=x.get("downgrades") or 0,
+                             r=x.get("raises") or 0, l=x.get("lowers") or 0, b=x.get("insider_buys") or 0,
+                             s=x.get("insider_sells") or 0, n=x.get("news_n") or 0))
+            if lens == "events":
+                _events_details(ticker, r["extra"])
             if lens == "div_growth":
                 x = r["extra"]
                 avg, cur = position_row.get("averagePrice"), position_row.get("currentPrice")
@@ -169,6 +238,7 @@ def _matrix(vdf, cache):
         rows.append({
             "ticker": tk, "name": rec.get("name") or "",
             "value": score("value"), "growth": score("growth"), "ddm": score("ddm"), "div_growth": score("div_growth"),
+            "sentiment": score("sentiment"), "events": score("events"),
             "ddm_margin": ddm["extra"].get("margin") if ddm["applicable"] else None,
             "conv": t("st.na.etf") if etf else (_conv_text(pos, neg, known) if entry else t("st.na.no_data")),
             "note": t("st.trap") if res["value"]["level"] == "trap" else "",
@@ -196,6 +266,10 @@ def render_strategies_tab(vdf):
     if status.get("in_progress"):
         st.caption(t("st.loading", done=status.get("done", 0), total=status.get("total", 0)))
 
+    market = _market_text(_market(cache))
+    if market:
+        st.caption(market)
+
     rows = _matrix(vdf, cache)
     if flt == "positive":
         rows = [r for r in rows if r["_pos"] >= 2 and r["_pos"] > r["_neg"]]
@@ -216,7 +290,7 @@ def render_strategies_tab(vdf):
             "ticker": st.column_config.TextColumn(t("st.col.ticker"), help=t("st.col.ticker_help")),
             "name": st.column_config.TextColumn(t("st.col.name"), help=t("st.col.name_help")),
             "value": score_col("value"), "growth": score_col("growth"), "ddm": score_col("ddm"),
-            "div_growth": score_col("div_growth"),
+            "div_growth": score_col("div_growth"), "sentiment": score_col("sentiment"), "events": score_col("events"),
             "ddm_margin": st.column_config.Column(t("st.col.ddm_margin"), help=t("st.col.ddm_margin_help")),
             "conv": st.column_config.TextColumn(t("st.col.conv"), help=t("st.col.conv_help")),
             "note": st.column_config.TextColumn(t("st.col.note"), help=t("st.col.note_help")),

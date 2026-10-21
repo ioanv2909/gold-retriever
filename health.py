@@ -11,7 +11,7 @@ import time
 
 DATA_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 HEALTH_FILE = os.path.join(DATA_ROOT, "service_status.json")
-SOURCES = ("yahoo", "justetf", "t212", "smtp")
+SOURCES = ("yahoo", "justetf", "t212", "smtp", "sec")
 KEEP = 300               # ultimele evenimente per sursa
 HOUR = 3600
 RED_AFTER = 15 * 60      # rosu daca ultima cerere a esuat si nu a mers nimic in ultimele 15 minute
@@ -174,6 +174,25 @@ def probe_t212():
         t.error = None if t.ok else "HTTP %s" % r.status_code
         if r.status_code == 429:
             return False, "HTTP 429: rate limit, try again in 30 s"
+        return t.ok, "HTTP %s" % r.status_code
+
+
+def probe_sec():
+    """O cerere la SEC EDGAR (rapoartele Microsoft), cu emailul de contact al unui admin."""
+    import requests
+    import signals
+    ua = signals.ua_email()
+    if not ua:
+        return None, "no admin email (Settings, Notifications)"
+    with timed("sec") as t:
+        try:
+            r = requests.get("https://data.sec.gov/submissions/CIK0000789019.json", headers=signals.sec_headers(ua),
+                             timeout=signals.SEC_TIMEOUT)
+        except Exception as e:
+            t.ok, t.error = False, "%s: %s" % (type(e).__name__, str(e)[:150])
+            return False, t.error
+        t.ok = r.status_code == 200
+        t.error = None if t.ok else "HTTP %s" % r.status_code
         return t.ok, "HTTP %s" % r.status_code
 
 

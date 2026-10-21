@@ -146,3 +146,29 @@ def test_evaluate_without_email_still_logs(env):
 
 def test_evaluate_skips_when_no_rules(env):
     assert pa.evaluate("bob", holdings=None) == []
+
+
+def _ev(i, alert=True, kind="management"):
+    return {"id": "sec:%d" % i, "date": "2026-10-0%d" % i, "kind": kind, "title": "8-K 5.02", "alert": alert,
+            "source": "sec", "tone": 0}
+
+
+def test_events_first_sight_is_baseline_then_new_ones_fire():
+    rule = {"enabled": True}
+    fired, state = pa.check_events(rule, {"KO": [_ev(1), _ev(2, alert=False)]}, {})
+    assert fired == [] and state == {"KO": ["sec:1"]}
+    fired, state = pa.check_events(rule, {"KO": [_ev(3, kind="restatement"), _ev(1)]}, state)
+    assert [(f["ticker"], f["event_kind"], f["date"]) for f in fired] == [("KO", "restatement", "2026-10-03")]
+    fired, state = pa.check_events(rule, {"KO": [_ev(3), _ev(1)]}, state)
+    assert fired == []
+    assert pa.check_events({"enabled": False}, {"KO": [_ev(4)]}, state)[0] == []
+
+
+def test_evaluate_event_alert_message(env):
+    pa.save_events_rule(True)
+    assert pa.load_rules()["events"] == {"enabled": True}
+    assert pa.evaluate("bob", now=1.0, holdings=HOLD, quality={}, timelines={"KO": [_ev(1)]}) == []
+    fired = pa.evaluate("bob", now=2.0, holdings=HOLD, quality={}, timelines={"KO": [_ev(1), _ev(2)]})
+    assert len(fired) == 1
+    (_, _, body), _ = env[0]
+    assert "Coca-Cola (KO): Management (2026-10-02) — 8-K 5.02" in body
