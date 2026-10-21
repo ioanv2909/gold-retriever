@@ -1,0 +1,74 @@
+import json
+
+import pytest
+
+import exposure as ex
+
+META = {
+    "AAPL": {"kind": "stock", "sector": "Technology", "country": "United States", "sectors": {}},
+    "SAP": {"kind": "stock", "sector": "Technology", "country": "Germany", "sectors": {}},
+    "SPY": {"kind": "etf", "sector": None, "country": None,
+            "sectors": {"Technology": 0.5, "Healthcare": 0.3, "Energy": 0.1}},
+}
+ROWS = [
+    {"ticker": "AAPL", "value": 300.0, "currency": "USD"},
+    {"ticker": "SAP", "value": 200.0, "currency": "EUR"},
+    {"ticker": "SPY", "value": 400.0, "currency": "USD"},
+    {"ticker": "NEW", "value": 100.0, "currency": "GBP"},
+    {"ticker": "ZERO", "value": 0.0, "currency": "USD"},
+]
+
+
+def as_dict(items):
+    return {k: (round(v, 6), round(p, 6)) for k, v, p in items}
+
+
+def test_parse_meta_stock_and_etf():
+    assert ex.parse_meta({"quoteType": "EQUITY", "sector": "Technology", "country": "Germany"}) == {
+        "kind": "stock", "sector": "Technology", "country": "Germany", "sectors": {}}
+    m = ex.parse_meta({"quoteType": "ETF"}, {"technology": 0.4, "realestate": 0.02, "energy": 0, "bad": "x"})
+    assert m["kind"] == "etf" and m["sectors"] == {"Technology": 0.4, "Real Estate": 0.02}
+    assert ex.parse_meta({})["kind"] == "other"
+
+
+def test_sector_breakdown_looks_through_etfs():
+    out = as_dict(ex.breakdown(ROWS, META, "sector"))
+    assert out["Technology"][0] == pytest.approx(300 + 200 + 200)
+    assert out["Healthcare"][0] == pytest.approx(120)
+    assert out[ex.OTHER][0] == pytest.approx(40)
+    assert out[ex.UNKNOWN][0] == pytest.approx(100)
+    assert sum(p for _, p in out.values()) == pytest.approx(100)
+    assert ex.breakdown(ROWS, META, "sector")[0][0] == "Technology"
+
+
+def test_country_and_currency():
+    out = as_dict(ex.breakdown(ROWS, META, "country"))
+    assert out == {"United States": (300, 30), ex.ETF: (400, 40), "Germany": (200, 20), ex.UNKNOWN: (100, 10)}
+    out = as_dict(ex.breakdown(ROWS, META, "currency"))
+    assert out == {"USD": (700, 70), "EUR": (200, 20), "GBP": (100, 10)}
+
+
+def test_empty_portfolio():
+    assert ex.breakdown([], META, "sector") == []
+    assert ex.breakdown([{"ticker": "A", "value": None}], META, "currency") == []
+
+
+def test_fetch_only_missing_or_stale(tmp_path, monkeypatch):
+    monkeypatch.setattr(ex, "EXPOSURE_CACHE_FILE", str(tmp_path / "c.json"))
+    monkeypatch.setattr(ex, "EXPOSURE_STATUS_FILE", str(tmp_path / "s.json"))
+    (tmp_path / "c.json").write_text(json.dumps({
+        "FRESH": {"kind": "stock", "fetched_at": 1000.0},
+        "OLD": {"kind": "stock", "fetched_at": 1000.0 - ex.EXPOSURE_REFRESH_INTERVAL},
+    }))
+    calls = []
+
+    def fake(symbol):
+        calls.append(symbol)
+        return (None, "404") if symbol == "BAD.Y" else (ex.parse_meta({"quoteType": "EQUITY", "sector": "Energy"}), None)
+
+    monkeypatch.setattr(ex, "fetch_meta", fake)
+    cache = ex.fetch_and_cache(["FRESH", "OLD", "BAD"], resolve=lambda t: t + ".Y", now=1000.0, sleep=0)
+    assert calls == ["OLD.Y", "BAD.Y"]
+    assert cache["OLD"]["sector"] == "Energy" and cache["BAD"]["error"] == "404" and cache["BAD"]["kind"] == "other"
+    assert set(json.loads((tmp_path / "c.json").read_text())) == {"FRESH", "OLD", "BAD"}
+    assert ex.load_status()["in_progress"] is False

@@ -1,5 +1,6 @@
 ## Unreleased
 
+- Exposure tab on the main page: breakdown of the selected portfolios by sector, country and currency, in the display currency, as bar charts with tables. ETFs are split by their sector weights (look-through); Yahoo has no country breakdown for ETFs, so they show as a separate country bucket. Sector and country data come from Yahoo Finance and are refreshed weekly in the background.
 - Analysts section on the position page (Yahoo Finance): mean, median, low and high price targets with upside and a range chart, recommendation distribution over the last four months, EPS and revenue estimates (current/next quarter and year) with growth, EPS estimate revisions (vs 30 and 90 days ago, up/down revisions) and the latest rating changes by firm. Replaces the old single-line target block.
 - New "Target %" column in the positions table: upside to the analysts' mean target, refreshed with the ratings every 12 hours.
 - Position alerts (Settings, Alerts), checked every 15 minutes in the background:
