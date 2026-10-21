@@ -9,7 +9,7 @@ refresh therefore never makes a page load slow or fail.
                         dividends_cache.json, t212_fills.json, t212_flows.json
     XTB xlsx upload --> xtb.json (+ xtb_prices.json from Yahoo)
     Yahoo / justETF --> quality_cache.json, market_context_cache.json,
-                        justetf_cache.json, ratings_cache.json
+                        justetf_cache.json, ratings_cache.json, events_cache.json
     caches ------------> app.py computes rows and totals --> screen
 
 ## Trading 212
@@ -52,7 +52,8 @@ cached for 10 minutes. Penny currencies (GBX) are normalised to GBP.
 `portfolio_history.json` and `portfolio_history_multi.json` hold value and
 cost points over time. The reconstructed files fill the past; new points are
 recorded on refresh. The chart can start at an amount threshold and be
-filtered by period (3H, 1D, 1W, 1M, 1Y, YTD, Max).
+filtered by period (3H, 1D, 1W, 1M, 1Y, YTD, Max). YTD is the default, and the
+period chosen here is carried over to the position charts.
 
 ## Refresh
 
@@ -60,3 +61,7 @@ filtered by period (3H, 1D, 1W, 1M, 1Y, YTD, Max).
 - Automatic: a background scheduler at the interval saved in the config.
 - Dividends, ratings, quality and prices run in separate threads with status
   files, so progress can be shown and a failure in one does not block the rest.
+- Events calendar: once an hour the scheduler fetches earnings and dividend
+  dates (Yahoo Finance) for tickers older than 12 hours into `events_cache.json`,
+  then sends the user a digest of new events if they opted in (Settings ->
+  Calendar). Already sent events are kept in `events_notified.json`.

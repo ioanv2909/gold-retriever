@@ -1,7 +1,15 @@
-## Unreleased
+## 0.2.6 — 2026-10-21
 
 - Calendar: new tab with upcoming earnings, ex-dividend and dividend payment dates for held positions (Yahoo Finance, refreshed every 12 hours), filterable by range and event type.
 - Calendar emails: each user can opt in (Settings, Calendar) to a digest of new events N days ahead, sent to their own address; each event is emailed once.
+
+## 0.2.1 – 0.2.5 — 2026-10-21
+
+- Quality and risk scores are shown as `X/100` (Romanian and English).
+- Version number is derived automatically from git tags (last `v*` tag plus commits since) and shown in Settings, About.
+- Charts open on the YTD period by default, and the period chosen on the main chart carries over to position charts.
+- Position chart period labels are translated in English (1D/1W/1M/3M/1Y/5Y).
+- Unit tests for the quality/risk checklist; project notes for contributors (`CLAUDE.md`).
 
 ## 0.2.0 — 2026-10-20
 
