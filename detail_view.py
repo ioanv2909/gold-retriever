@@ -99,6 +99,7 @@ def _render_price_chart_inner(ticker, yahoo_symbol, fill_date, avg_price_t212):
         st.session_state[_pkey] = _g2d.get(st.session_state.get("_hist_range_pref", "YTD"), "YTD")
     period_choice = st.radio(
         tr("dv.period"), list(CHART_PERIODS.keys()), horizontal=True, key=_pkey,
+        format_func=lambda _k: tr("dv.per." + _k),
     )
     yf_period, yf_interval = CHART_PERIODS[period_choice]
     hist, err = fetch_price_chart_history(yahoo_symbol, yf_period, yf_interval)
