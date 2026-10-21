@@ -1,3 +1,7 @@
+## 0.2.15 — 2026-10-21
+
+- Settings: language switch (RO/EN) in the page header, as on the main page; the open tab stays the same.
+
 ## 0.2.14 — 2026-10-21
 
 - Settings keep the open tab in the address (`?page=settings&tab=alerts`), so a refresh or a shared link opens the same tab; only the open tab is rendered.
