@@ -1,3 +1,8 @@
+## 0.2.20 — 2026-10-21
+
+- Fix: the exposure refresh could hang forever on a justETF request (the library sets no timeout), leaving the remaining ETFs in "ETF (no breakdown)". Requests now time out after 20 seconds and the queue moves on; a failed ETF is retried after a day.
+- Exposure: stocks without a country on Yahoo take it from the ISIN prefix (issuer country), and instruments Yahoo does not classify are also looked up on justETF.
+
 ## 0.2.19 — 2026-10-21
 
 - Exposure: ETFs are now split by country too, using the country breakdown from justETF (by ISIN), instead of a single "ETF (no breakdown)" bucket. Fetched weekly with the other exposure data; if justETF is unavailable, it is retried after a day. ETFs without country data on justETF keep the separate bucket.

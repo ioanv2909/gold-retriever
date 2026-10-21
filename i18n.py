@@ -274,8 +274,8 @@ _T = {
     "ex.bucket.other_countries": {"RO": "ETF: alte țări", "EN": "ETF: other countries"},
     "ex.bucket.rest": {"RO": "Altele ({n})", "EN": "Other ({n})"},
     "ex.note": {
-        "RO": "Valorile sunt pentru portofoliile și moneda selectate mai sus. Sector: la ETF-uri se folosește defalcarea pe sectoare a fondului. Țară: sediul companiei; la ETF-uri, defalcarea pe țări din justETF (după ISIN), unde există. Monedă: moneda în care se tranzacționează instrumentul, nu cea a activelor din ETF. Surse: Yahoo Finance și justETF, actualizate săptămânal.",
-        "EN": "Values are for the portfolios and currency selected above. Sector: for ETFs the fund's sector breakdown is used. Country: company headquarters; for ETFs, the country breakdown from justETF (by ISIN), where available. Currency: the currency the instrument trades in, not that of the ETF's holdings. Sources: Yahoo Finance and justETF, refreshed weekly.",
+        "RO": "Valorile sunt pentru portofoliile și moneda selectate mai sus. Sector: la ETF-uri se folosește defalcarea pe sectoare a fondului. Țară: sediul companiei (sau țara din ISIN, dacă Yahoo nu o are); la ETF-uri, defalcarea pe țări din justETF (după ISIN), unde există. Monedă: moneda în care se tranzacționează instrumentul, nu cea a activelor din ETF. Surse: Yahoo Finance și justETF, actualizate săptămânal.",
+        "EN": "Values are for the portfolios and currency selected above. Sector: for ETFs the fund's sector breakdown is used. Country: company headquarters (or the ISIN country when Yahoo has none); for ETFs, the country breakdown from justETF (by ISIN), where available. Currency: the currency the instrument trades in, not that of the ETF's holdings. Sources: Yahoo Finance and justETF, refreshed weekly.",
     },
     "ex.sector.Technology": {"RO": "Tehnologie", "EN": "Technology"},
     "ex.sector.Financial Services": {"RO": "Servicii financiare", "EN": "Financial Services"},

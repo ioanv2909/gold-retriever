@@ -5,6 +5,9 @@ ambele look-through; ETF-urile fara date raman intr-o categorie separata. Moneda
 """
 import threading
 import time
+import types
+
+import requests
 
 from core import load_json_file, read_status, save_json_file, update_json_file
 from userctx import UPath
@@ -13,6 +16,18 @@ EXPOSURE_CACHE_FILE = UPath("exposure_cache.json", shared=True)
 EXPOSURE_STATUS_FILE = UPath("exposure_status.json", shared=True)
 EXPOSURE_REFRESH_INTERVAL = 7 * 86400
 COUNTRIES_RETRY = 86400  # justETF indisponibil sau ISIN negasit: reincercare dupa o zi
+JUSTETF_TIMEOUT = 20     # secunde; biblioteca nu pune timeout, iar o cerere blocata oprea toata coada
+
+# prefixul ISIN al unei actiuni = tara emitentului; numele ca la Yahoo. Folosit doar cand Yahoo nu da tara.
+ISIN_COUNTRIES = {
+    "US": "United States", "CA": "Canada", "MX": "Mexico", "BR": "Brazil", "AR": "Argentina", "GB": "United Kingdom",
+    "IE": "Ireland", "DE": "Germany", "FR": "France", "NL": "Netherlands", "BE": "Belgium", "LU": "Luxembourg",
+    "CH": "Switzerland", "AT": "Austria", "IT": "Italy", "ES": "Spain", "PT": "Portugal", "DK": "Denmark",
+    "SE": "Sweden", "NO": "Norway", "FI": "Finland", "PL": "Poland", "CZ": "Czech Republic", "HU": "Hungary",
+    "RO": "Romania", "GR": "Greece", "JP": "Japan", "CN": "China", "HK": "Hong Kong", "TW": "Taiwan",
+    "KR": "South Korea", "SG": "Singapore", "IN": "India", "AU": "Australia", "NZ": "New Zealand", "IL": "Israel",
+    "ZA": "South Africa", "BM": "Bermuda", "KY": "Cayman Islands", "JE": "Jersey", "GG": "Guernsey",
+}
 
 DIMENSIONS = ("sector", "country", "currency")
 # chei din funds_data.sector_weightings -> numele de sector folosite la actiuni
@@ -68,11 +83,31 @@ def parse_countries(items):
     return out
 
 
+class _TimeoutSession(requests.Session):
+    def request(self, *args, **kwargs):
+        kwargs.setdefault("timeout", JUSTETF_TIMEOUT)
+        return super().request(*args, **kwargs)
+
+
+def _justetf():
+    """Biblioteca justetf_scraping, cu timeout impus pe sesiunea ei HTTP (o creeaza ea, fara timeout)."""
+    import justetf_scraping
+    from justetf_scraping import etf_profile
+    if not getattr(etf_profile, "_gr_timeout", False):
+        etf_profile.requests = types.SimpleNamespace(Session=_TimeoutSession)
+        etf_profile._gr_timeout = True
+    return justetf_scraping
+
+
+def country_from_isin(isin):
+    return ISIN_COUNTRIES.get(str(isin or "")[:2].upper())
+
+
 def fetch_countries(isin):
     """Tarile unui ETF din justETF. Varianta extinsa (lista completa) intoarce uneori o lista goala cand
     pagina nu are "load more"; atunci se reincearca fara extindere."""
     try:
-        import justetf_scraping
+        justetf_scraping = _justetf()
     except ImportError:
         return None
     for expand in (True, False):
@@ -144,7 +179,12 @@ def load_status():
 def _stale(entry, isin, now):
     if entry.get("fetched_at") is None or now - float(entry["fetched_at"]) >= EXPOSURE_REFRESH_INTERVAL:
         return True
-    if entry.get("kind") != "etf" or not isin:
+    if not isin:
+        return False
+    # actiune fara tara la Yahoo sau instrument neclasificat: inca necompletat din ISIN / justETF
+    if entry.get("kind") in ("stock", "other") and not entry.get("country") and not entry.get("isin_checked"):
+        return True
+    if entry.get("kind") != "etf":
         return False
     # intrari de dinainte de tarile din justETF (inca necautate) sau cu eroare mai veche de o zi
     if "countries" not in entry:
@@ -171,11 +211,18 @@ def fetch_and_cache(tickers, resolve=None, now=None, sleep=1.0, isins=None, coun
                          symbol=symbol, fetched_at=now)
             if err:
                 entry["error"] = err
-            if entry.get("kind") == "etf" and isins.get(ticker):
-                countries = countries_fn(isins[ticker])
+            isin = isins.get(ticker)
+            if isin and entry.get("kind") in ("etf", "other"):
+                countries = countries_fn(isin)
                 entry["countries"] = countries or {}
                 if countries is None:
                     entry["countries_error"] = True
+                elif countries and entry["kind"] == "other":
+                    entry["kind"] = "etf"  # justETF il cunoaste ca fond
+            if isin and entry.get("kind") == "stock" and not entry.get("country"):
+                entry["country"] = country_from_isin(isin)
+            if isin:
+                entry["isin_checked"] = True
             cache[ticker] = entry
             update_json_file(EXPOSURE_CACHE_FILE, {}, lambda c, t=ticker: dict(c, **{t: cache[t]}))
             save_json_file(EXPOSURE_STATUS_FILE, {"in_progress": True, "started_at": None, "total": total, "done": idx + 1})

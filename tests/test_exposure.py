@@ -90,14 +90,14 @@ def test_country_breakdown_looks_through_etfs():
 
 
 def test_fetch_countries_falls_back_without_expansion(monkeypatch):
-    import sys, types
+    import types
     calls = []
 
     def overview(isin, include_gettex=True, expand_allocations=True):
         calls.append(expand_allocations)
         return {"countries": [] if expand_allocations else [{"name": "United States", "percentage": 97.5}]}
 
-    monkeypatch.setitem(sys.modules, "justetf_scraping", types.SimpleNamespace(get_etf_overview=overview))
+    monkeypatch.setattr(ex, "_justetf", lambda: types.SimpleNamespace(get_etf_overview=overview))
     assert ex.fetch_countries("IE00B5BMR087") == pytest.approx({"United States": 0.975})
     assert calls == [True, False]
 
@@ -107,7 +107,7 @@ def test_etf_countries_fetched_and_retried(tmp_path, monkeypatch):
     monkeypatch.setattr(ex, "EXPOSURE_STATUS_FILE", str(tmp_path / "s.json"))
     (tmp_path / "c.json").write_text(json.dumps({
         "OLD_ETF": {"kind": "etf", "sectors": {}, "fetched_at": 1000.0},          # dinainte de tari: se reia
-        "STOCK": {"kind": "stock", "fetched_at": 1000.0},
+        "STOCK": {"kind": "stock", "country": "United States", "fetched_at": 1000.0},
     }))
     monkeypatch.setattr(ex, "fetch_meta", lambda s: (ex.parse_meta({"quoteType": "ETF"}), None))
     asked = []
@@ -129,3 +129,40 @@ def test_etf_countries_fetched_and_retried(tmp_path, monkeypatch):
     ex.fetch_and_cache(["NEW_ETF"], resolve=str, now=2000.0 + ex.COUNTRIES_RETRY, sleep=0, isins=isins,
                        countries_fn=countries)
     assert asked == ["DOWN"]
+
+
+def test_stock_without_yahoo_country_uses_isin(tmp_path, monkeypatch):
+    monkeypatch.setattr(ex, "EXPOSURE_CACHE_FILE", str(tmp_path / "c.json"))
+    monkeypatch.setattr(ex, "EXPOSURE_STATUS_FILE", str(tmp_path / "s.json"))
+    # intrare veche, fara tara: se reia o data, apoi nu mai e "stale"
+    (tmp_path / "c.json").write_text(json.dumps({"NOCTRY": {"kind": "stock", "country": None, "fetched_at": 1000.0}}))
+    monkeypatch.setattr(ex, "fetch_meta", lambda s: (ex.parse_meta({"quoteType": "EQUITY", "sector": "Energy"}), None))
+    asked = []
+    cache = ex.fetch_and_cache(["NOCTRY", "ZZ"], resolve=str, now=2000.0, sleep=0,
+                               isins={"NOCTRY": "NL0000235190", "ZZ": "XX123"}, countries_fn=asked.append)
+    assert cache["NOCTRY"]["country"] == "Netherlands" and cache["NOCTRY"]["isin_checked"] is True
+    assert cache["ZZ"]["country"] is None and asked == []  # prefix necunoscut; actiunile nu se cauta pe justETF
+    ex.fetch_and_cache(["ZZ"], resolve=str, now=2100.0, sleep=0, isins={"ZZ": "XX123"},
+                       countries_fn=asked.append)
+    assert ex.load_cache()["ZZ"]["fetched_at"] == 2000.0  # verificat deja, nu se reia
+
+
+def test_unclassified_found_on_justetf_becomes_etf(tmp_path, monkeypatch):
+    monkeypatch.setattr(ex, "EXPOSURE_CACHE_FILE", str(tmp_path / "c.json"))
+    monkeypatch.setattr(ex, "EXPOSURE_STATUS_FILE", str(tmp_path / "s.json"))
+    monkeypatch.setattr(ex, "fetch_meta", lambda s: (ex.parse_meta({"quoteType": "NONE"}), None))
+    cache = ex.fetch_and_cache(["X"], resolve=str, now=1.0, sleep=0, isins={"X": "IE1"},
+                               countries_fn=lambda isin: {"Japan": 1.0})
+    assert cache["X"]["kind"] == "etf" and cache["X"]["countries"] == {"Japan": 1.0}
+
+
+def test_justetf_session_gets_a_timeout(monkeypatch):
+    seen = {}
+
+    def fake_request(self, method, url, **kwargs):
+        seen.update(kwargs)
+        return "ok"
+
+    monkeypatch.setattr(ex.requests.Session, "request", fake_request)
+    assert ex._TimeoutSession().get("https://example.invalid") == "ok"
+    assert seen["timeout"] == ex.JUSTETF_TIMEOUT
