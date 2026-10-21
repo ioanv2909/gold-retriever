@@ -15,8 +15,10 @@ port 8501, uid 1000). Public repo: ioanv2909/gold-retriever, branch main.
 - New UI strings go in `i18n.py` with both RO and EN entries.
 - CHANGELOG: never leave an "Unreleased" section (Settings > About shows the file as is). Put the entry under
   `## X.Y.Z — date` for the version the commit will get: last `v*` tag patch + commits since the tag + 1.
-- Run tests before committing: `.venv/bin/python -m pytest -q` (150 tests, also run in CI).
-- Ask before `git push`, `./tools/deploy.sh`, anything with `docker` or `rm`.
+- Run tests before committing: `.venv/bin/python -m pytest -q` (156 tests, also run in CI).
+- Commit, `git push` and `./tools/deploy.sh` are pre-approved once the tests pass: do them without asking,
+  then report the result (version, health check, log errors). Still ask before anything that deletes or
+  changes data (`rm`, `data/`, git history rewrites) and before other `docker` commands.
 
 ## Deploy
 `./tools/deploy.sh` rebuilds and restarts the container and writes `build_info.json`
@@ -25,15 +27,23 @@ port 8501, uid 1000). Public repo: ioanv2909/gold-retriever, branch main.
 ## Layout
 - `app.py` main view; `detail_view.py` per-position page; `settings_page.py` settings;
   `core.py` shared logic and `CHART_PERIODS`; `xtb.py`, `xtb_prices.py` XTB import;
-  `notify.py`, `notify_ui.py`, `alerts.py` email notifications; `logwatch.py` log watchdog; `health.py`, `health_ui.py` status page; `events.py`, `events_ui.py` events calendar; `position_alerts.py`, `position_alerts_ui.py` price/score/concentration alerts; `background.py` refresh loop;
+  `notify.py`, `notify_ui.py`, `alerts.py` email notifications; `logwatch.py` log watchdog; `health.py`, `health_ui.py` status page; `uptime.py` + `tools/uptime_check.py` host watchdog (cron of user ioanv, every 5 min); `events.py`, `events_ui.py` events calendar; `position_alerts.py`, `position_alerts_ui.py` price/score/concentration alerts; `background.py` refresh loop;
   `auth.py`, `users.py`, `userctx.py` multi-user; `checklist.py` quality/risk scoring; `dividend_score.py` dividend score; `analysts.py`, `analysts_ui.py` analyst data; `exposure.py`, `exposure_ui.py` sector/country/currency exposure; `compare.py`, `compare_ui.py` ticker comparison; `i18n.py` strings; `url_tabs.py` tabs bound to `?tab=` (main page and settings).
 - Per-user data: `data/users/<name>/`; shared files in `data/`.
 - Docs: `docs/` (architecture, data-flow, data-files, backup-and-notifications). `CHANGELOG.md`.
 - Backup: `tools/backup-goldretriever.sh` (cron, Synology share), status in `data/backup_status.json`.
 
-## Planned work (in order)
-1. Events calendar for held positions (earnings, ex-dividend, payments) with email notice. Done.
-2. Dividend score (safety, growth, consistency, yield). Done.
-3. Alerts on price/score/concentration using the existing notify system. Done.
-4. Analyst targets and estimates from yfinance. Done.
-5. Later: exposure by sector/country/currency (done), ticker comparison (done), new broker connector.
+## Done (v0.2.6 – v0.2.25, see CHANGELOG.md)
+Events calendar with email digest, dividend score, position alerts (price/score/concentration), analyst data,
+exposure by sector/country/currency (ETF look-through via Yahoo and justETF), ticker comparison, URL-bound
+tabs, log watchdog, admin status page, Yahoo 401 retry, host uptime watchdog (cron).
+
+## Planned work
+1. New broker connector. Waiting for the user: which broker, API or file export, a sample export.
+
+## Notes for future work
+- Tests must never write into `data/`: modules that persist state get an autouse fixture in
+  `tests/conftest.py` pointing them to `tmp_path` (see `health`).
+- `rm` on `data/` is blocked by the Claude Code permission settings even when the user approves; do not
+  work around it (no Python `os.remove`), ask the user to run it on the host.
+- External HTTP calls need a timeout (the justETF library has none; `exposure._TimeoutSession` adds it).

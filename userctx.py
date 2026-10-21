@@ -1,3 +1,4 @@
+import contextlib
 import os
 import re
 import threading
@@ -11,6 +12,17 @@ _made = set()
 
 def set_user(name):
     _tl.user = name
+
+
+@contextlib.contextmanager
+def as_user(name):
+    """Fisierele per utilizator (UPath) se rezolva temporar pentru alt utilizator; apoi se revine."""
+    previous = getattr(_tl, "user", None)
+    _tl.user = name
+    try:
+        yield
+    finally:
+        _tl.user = previous
 
 
 def current_user():

@@ -53,6 +53,7 @@ like the Trading 212 keys.
 | Refresh | Trading 212 or dividends refresh failed 3 times in a row (checked every refresh cycle / 10 minutes) |
 | XTB import | A report fails the cash or positions check, has unknown operation types, or cannot be parsed |
 | Security | An account is locked after repeated failed logins; a user is created, deleted, gets a new password or role |
+| App not responding | The host watchdog's health check failed twice in a row (and once when the app is back) |
 | Log errors | A new error pattern appears in the application log (not seen in the last 24 hours); at most one email every 30 minutes |
 | Position alerts | A price alert, score alert or concentration alert set by the user fires (sent to the user, not the admins) |
 | Calendar | Earnings, ex-dividend or dividend payment dates for held positions within the next N days (sent to the user, not the admins) |
@@ -71,6 +72,20 @@ stdout/stderr (including Python logging from Streamlit and yfinance), skips know
 warnings, HTTP 404 for ETFs without fundamentals, Streamlit context warnings), groups the rest by pattern
 and keeps the last 24 hours in `log_problems.json`. Admins see the list in Settings, Notifications. It
 cannot report a crashed or stopped container; check `docker ps` / the health endpoint for that.
+
+### Host watchdog
+
+`tools/uptime_check.py` (standard library only) checks `http://localhost:8501/_stcore/health`. Two
+failed checks in a row send one "App not responding" email to the admins; the first good check after
+that sends "App is responding again". Enable the "App not responding" event in Notifications. Install it
+in the crontab of the user that owns `data/` (uid 1000):
+
+```
+*/5 * * * * /usr/bin/python3 /DATA/AppData/gold-retriever/tools/uptime_check.py >> /home/ioanv/uptime-goldretriever.log 2>&1
+```
+
+Its last result is in `data/uptime_status.json` and on the Status page ("Host watchdog"), which turns
+yellow if the cron job stops running.
 
 Settings, tab Status (admin) shows the state of Yahoo Finance, justETF, Trading 212, SMTP and the
 backup, and of every background job, with a green / yellow / red / gray indicator. "Test now" makes one

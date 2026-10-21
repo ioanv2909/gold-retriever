@@ -44,7 +44,31 @@ def _sources():
             t("hs.col.last_error"): err or "—",
         })
     rows.append(_backup_row())
+    rows.append(_uptime_row())
     return rows
+
+
+def _uptime_row():
+    """Watchdog-ul de pe gazda (cron): daca ruleaza si ce a vazut la ultima verificare."""
+    import uptime
+    s = uptime.load()
+    last = s.get("last_check")
+    if not last:
+        level, text = "gray", t("up.not_installed")
+    elif time.time() - last > 3 * uptime.CHECK_EVERY:
+        level, text = "yellow", t("up.not_running")
+    elif not s.get("last_ok_check"):
+        level, text = "red", t("hs.level.red")
+    else:
+        level, text = "green", t("hs.level.green")
+    return {
+        t("hs.col.service"): t("hs.src.uptime"),
+        t("hs.col.state"): _dot(level, text),
+        t("hs.col.last_ok"): _ago(s.get("last_ok")),
+        t("hs.col.requests"): t("up.last_check", ago=_ago(last)) if last else "—",
+        t("hs.col.ms"): "—",
+        t("hs.col.last_error"): s.get("detail") if last and not s.get("last_ok_check") else "—",
+    }
 
 
 def _backup_row():
@@ -67,37 +91,55 @@ def _backup_row():
     }
 
 
-def _jobs():
+SHARED_JOBS = ("quality", "market", "events", "exposure")
+USER_JOBS = ("dividends", "ratings", "xtb_prices", "watchlist")
+
+
+def _job_files():
     import core
     import events
     import exposure
     from background import MARKET_CONTEXT_STATUS_FILE, QUALITY_STATUS_FILE
-    jobs = [
-        ("dividends", core.DIVIDENDS_STATUS_FILE, core.DIVIDENDS_REFRESH_INTERVAL),
-        ("ratings", core.RATINGS_STATUS_FILE, core.RATINGS_REFRESH_INTERVAL),
-        ("quality", QUALITY_STATUS_FILE, core.QUALITY_REFRESH_INTERVAL),
-        ("market", MARKET_CONTEXT_STATUS_FILE, core.MARKET_CONTEXT_REFRESH_INTERVAL),
-        ("events", events.EVENTS_STATUS_FILE, 3600),
-        ("exposure", exposure.EXPOSURE_STATUS_FILE, 3600),
-        ("xtb_prices", core.XTB_PRICES_STATUS_FILE, core.XTB_PRICES_REFRESH_INTERVAL),
-        ("watchlist", core.WATCHLIST_STATUS_FILE, core.WATCHLIST_REFRESH_INTERVAL),
-    ]
-    rows = []
-    for key, path, interval in jobs:
-        try:
-            mtime = os.path.getmtime(path)
-        except OSError:
-            mtime = None
-        raw = core.load_json_file(path, {}) if mtime else {}
-        level, why = health.job_level(raw, core.read_status(path) if mtime else {}, mtime, interval)
-        progress = "%s/%s" % (raw.get("done", 0), raw.get("total", 0)) if raw.get("total") else "—"
-        rows.append({
-            t("hs.col.job"): t("hs.job." + key),
-            t("hs.col.state"): _dot(level, t("hs.job_state." + why)),
-            t("hs.col.last_run"): _ago(mtime),
-            t("hs.col.progress"): progress,
-            t("hs.col.interval"): t("hs.every_m", n=interval // 60) if interval < 3600 else t("hs.every_h", n=interval // 3600),
-        })
+    return {
+        "dividends": (core.DIVIDENDS_STATUS_FILE, core.DIVIDENDS_REFRESH_INTERVAL),
+        "ratings": (core.RATINGS_STATUS_FILE, core.RATINGS_REFRESH_INTERVAL),
+        "quality": (QUALITY_STATUS_FILE, core.QUALITY_REFRESH_INTERVAL),
+        "market": (MARKET_CONTEXT_STATUS_FILE, core.MARKET_CONTEXT_REFRESH_INTERVAL),
+        "events": (events.EVENTS_STATUS_FILE, 3600),
+        "exposure": (exposure.EXPOSURE_STATUS_FILE, 3600),
+        "xtb_prices": (core.XTB_PRICES_STATUS_FILE, core.XTB_PRICES_REFRESH_INTERVAL),
+        "watchlist": (core.WATCHLIST_STATUS_FILE, core.WATCHLIST_REFRESH_INTERVAL),
+    }
+
+
+def _job_row(key, path, interval, who):
+    import core
+    try:
+        mtime = os.path.getmtime(path)
+    except OSError:
+        mtime = None
+    raw = core.load_json_file(path, {}) if mtime else {}
+    level, why = health.job_level(raw, core.read_status(path) if mtime else {}, mtime, interval)
+    return {
+        t("hs.col.job"): t("hs.job." + key),
+        t("hs.col.user"): who,
+        t("hs.col.state"): _dot(level, t("hs.job_state." + why)),
+        t("hs.col.last_run"): _ago(mtime),
+        t("hs.col.progress"): "%s/%s" % (raw.get("done", 0), raw.get("total", 0)) if raw.get("total") else "—",
+        t("hs.col.interval"): t("hs.every_m", n=interval // 60) if interval < 3600 else t("hs.every_h", n=interval // 3600),
+    }
+
+
+def _jobs():
+    """Joburile comune o data; cele per utilizator pentru fiecare utilizator."""
+    import users
+    from userctx import as_user
+    files = _job_files()
+    rows = [_job_row(k, *files[k], t("hs.all_users")) for k in SHARED_JOBS]
+    for name in users.names():
+        with as_user(name):
+            # caile se rezolva in interiorul blocului, pentru utilizatorul respectiv
+            rows += [_job_row(k, os.fspath(files[k][0]), files[k][1], name) for k in USER_JOBS]
     return rows
 
 

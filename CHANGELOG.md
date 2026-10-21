@@ -1,3 +1,8 @@
+## 0.2.25 — 2026-10-21
+
+- Host watchdog: `tools/uptime_check.py`, run from cron every 5 minutes, checks the app's health endpoint and emails the admins when it fails twice in a row, and once more when it is back (new event "App not responding"). It covers what the in-app log watchdog cannot: the app being down. Its state is a row on the Status page.
+- Status page: per-user background jobs (dividends, ratings, XTB prices, watchlist) are listed for every user, not only for the admin looking at the page.
+
 ## 0.2.24 — 2026-10-21
 
 - Status page (Settings, Status; admins only) with a green / yellow / red / gray indicator and text on every row:
