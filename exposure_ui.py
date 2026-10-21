@@ -8,6 +8,7 @@ from i18n import t
 
 BAR = "#2a78d6"
 MAX_BARS = 12
+VIEWS = ("composition", "rotation", "factors")
 
 
 def _label(dim, key):
@@ -54,11 +55,24 @@ def render_exposure_tab(vdf, display_ccy):
     status = exposure.load_status()
     isins = {r["ticker"]: r.get("isin") for r in vdf.to_dict("records") if r.get("ticker") and r.get("isin")}
     missing = [r["ticker"] for r in rows if r["ticker"] not in meta]
+    # vederea sta in URL (?ex_view=rotation); copia de rezerva o reface cand tab-ul se redeschide
+    if "ex_view" not in st.session_state and "ex_view" not in st.query_params and st.session_state.get("_saved_ex_view"):
+        st.session_state["ex_view"] = st.session_state["_saved_ex_view"]
+    view = st.segmented_control(t("ex.view"), VIEWS, key="ex_view", bind="query-params", default="composition",
+                                format_func=lambda k: t("ex.view." + k), label_visibility="collapsed") or "composition"
+    st.session_state["_saved_ex_view"] = view
     if status.get("in_progress"):
         st.caption(t("ex.loading", done=status.get("done", 0), total=status.get("total", 0)))
     elif missing and st.button(t("ex.fetch", n=len(missing)), key="ex_fetch"):
         exposure.start_fetch_background(missing, isins)
         st.rerun()
+    if view != "composition":
+        import portfolio_lenses_ui
+        if view == "rotation":
+            portfolio_lenses_ui.render_rotation(rows, meta)
+        else:
+            portfolio_lenses_ui.render_factors(vdf)
+        return
 
     cols = st.columns(3)
     for col, dim in zip(cols, exposure.DIMENSIONS):

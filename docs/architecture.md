@@ -51,6 +51,7 @@ Calculations
 - `logwatch.py` - log watchdog: tees stdout/stderr, groups error lines by pattern, emails admins on new patterns; list in Settings, Notifications.
 - `url_tabs.py` - tabs bound to the `?tab=` URL parameter with stable ids (main page and settings), so refresh and links keep the open tab.
 - `compare.py`, `compare_ui.py` - side-by-side comparison of up to five instruments: normalized return chart and a table of period stats, scores and valuation.
+- `rotation.py`, `factors.py`, `portfolio_lenses_ui.py` - sector rotation (RRG of SPDR sector ETFs versus SPY) and factor exposure (regression on factor ETFs), the Rotation and Factors views of the Exposure tab; prices downloaded on demand (cached 15 minutes).
 - `exposure.py`, `exposure_ui.py` - portfolio exposure by sector and country (ETFs split by their sector weights from Yahoo and country weights from justETF) and currency, and the Exposure tab.
 - `analysts.py`, `analysts_ui.py` - analyst price targets, recommendations, estimates, revisions and rating changes from Yahoo Finance, and the Analysts section on the position page.
 - `signals.py` - data for the Sentiment and Event-driven lenses: rating changes, insider trades, institutions, short interest, news headlines classified by keywords, earnings surprises and price reactions, SEC EDGAR 8-K filings, market context (VIX, S&P 500 vs SMA200).

@@ -1,3 +1,9 @@
+## 0.2.29 — 2026-10-21
+
+- Exposure tab: a selector between Composition (the sector, country and currency charts), Sector rotation and Factors, kept in the URL (`?ex_view=`). The new views download prices only when opened.
+- Sector rotation: a Relative Rotation Graph of the 11 SPDR sector ETFs versus SPY (weekly prices, 5-week tails), with the four phases (Leading, Weakening, Lagging, Improving), the share of your portfolio in each phase (ETFs split by sector), bigger dots for the sectors you hold, and a table of each sector's return versus the S&P 500 over 1, 3, 6 and 12 months.
+- Factors: a regression of the current portfolio's weekly returns over two years on the market (SPY) and on factor ETFs minus the market (small caps IWM, value VLUE, momentum MTUM, quality QUAL, low volatility USMV, dividend SCHD). It shows the market beta, R², the coverage and the tilt on each factor, with statistically weak tilts faded.
+
 ## 0.2.28 — 2026-10-21
 
 - Two new strategy lenses, in the Strategies tab and on the position page:
