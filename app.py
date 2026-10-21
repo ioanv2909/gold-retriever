@@ -1320,8 +1320,9 @@ else:
         from settings_page import render_settings
         from events_ui import render_settings_section as _events_settings
         from position_alerts_ui import render_settings_section as _alerts_settings
-        render_settings(_me, [(t("side.updates"), _section_updates), (t("side.xtb_import"), _section_xtb_import),
-                              (t("set.events"), lambda: _events_settings(_me)),
-                              (t("set.alerts"), lambda: _alerts_settings(_me))])
+        render_settings(_me, [("updates", t("side.updates"), _section_updates),
+                              ("xtb", t("side.xtb_import"), _section_xtb_import),
+                              ("calendar", t("set.events"), lambda: _events_settings(_me)),
+                              ("alerts", t("set.alerts"), lambda: _alerts_settings(_me))])
         st.stop()
     render_main_view()

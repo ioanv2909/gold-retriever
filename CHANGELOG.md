@@ -1,3 +1,7 @@
+## 0.2.14 — 2026-10-21
+
+- Settings keep the open tab in the address (`?page=settings&tab=alerts`), so a refresh or a shared link opens the same tab; only the open tab is rendered.
+
 ## 0.2.13 — 2026-10-21
 
 - Settings have their own address (`?page=settings`), so a page refresh stays on Settings instead of going back to the main page.

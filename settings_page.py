@@ -69,19 +69,38 @@ def render_settings(me, sections=()):
     if top[0].button(_L("← Înapoi", "← Back"), key="settings_back"):
         st.session_state.pop("_page", None)
         st.query_params.pop("page", None)
+        st.query_params.pop("tab", None)
+        st.session_state.pop("settings_tab", None)
         st.rerun()
     top[1].markdown("## ⚙️ " + _L("Setări", "Settings"))
 
-    entries = [("🔑 Trading 212", _tab_t212)]
+    # (id, eticheta, functie); id-ul apare in URL (?tab=...), deci nu depinde de limba
+    entries = [("t212", "🔑 Trading 212", _tab_t212)]
     entries += list(sections)
     if users.role(me) == "admin":
-        entries.append(("👥 " + _L("Utilizatori", "Users"), lambda: _tab_users(me)))
-    entries.append(("ℹ️ " + _L("Despre", "About"), _tab_about))
+        entries.append(("users", "👥 " + _L("Utilizatori", "Users"), lambda: _tab_users(me)))
+    entries.append(("about", "ℹ️ " + _L("Despre", "About"), _tab_about))
 
     if users.role(me) == "admin":
         from notify_ui import render_notifications
-        entries.insert(len(entries) - 1, ("🔔 " + _L("Notificări", "Notifications"), lambda: render_notifications(me)))
-    tabs = st.tabs([e[0] for e in entries])
-    for tab, (_, fn) in zip(tabs, entries):
+        entries.insert(len(entries) - 1, ("notifications", "🔔 " + _L("Notificări", "Notifications"),
+                                          lambda: render_notifications(me)))
+    label_by_id = {i: label for i, label, _ in entries}
+    id_by_label = {label: i for i, label, _ in entries}
+    wanted = st.query_params.get("tab")
+    if wanted not in label_by_id:
+        wanted = entries[0][0]
+        st.query_params.pop("tab", None)
+    # URL-ul castiga (link, refresh, schimbarea limbii schimba eticheta); dupa un click, callback-ul le aliniaza
+    if st.session_state.get("settings_tab") != label_by_id[wanted]:
+        st.session_state.pop("settings_tab", None)
+
+    def _sync_tab():
+        st.query_params["tab"] = id_by_label.get(st.session_state.get("settings_tab"), entries[0][0])
+
+    tabs = st.tabs([e[1] for e in entries], default=label_by_id[wanted], key="settings_tab", on_change=_sync_tab)
+    for tab, (_, _, fn) in zip(tabs, entries):
+        if tab.open is False:
+            continue  # se randeaza doar tabul deschis
         with tab:
             fn()
