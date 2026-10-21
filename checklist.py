@@ -47,7 +47,7 @@ def build_checklist(
         else:
             status = "red"
 
-        detail = f"Scor {quality_total:.0f}"
+        detail = f"{quality_total:.0f}/100"
         if quality_rating:
             detail += f" ({quality_rating})"
 
@@ -82,7 +82,7 @@ def build_checklist(
                 "key": "risk",
                 "label": "Risc",
                 "status": status,
-                "detail": f"Scor risc {risk_total:.0f} (mai mare = mai sigur)",
+                "detail": f"{risk_total:.0f}/100 (mai mare = mai sigur)",
             }
         )
 

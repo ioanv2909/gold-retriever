@@ -416,8 +416,8 @@ _PATTERNS.extend(_PATTERNS4)
 
 
 _PATTERNS5 = [
-    (r"Scor (\d+) \((.*?)\)", lambda m: "Score %s (%s)" % (m.group(1), _x_exact(m.group(2)))),
-    (r"Scor risc (\d+) \(mai mare = mai sigur\)", r"Risk score \1 (higher = safer)"),
+    (r"(\d+)/100 \(mai mare = mai sigur\)", r"\1/100 (higher = safer)"),
+    (r"(\d+)/100 \((.*?)\)", lambda m: "%s/100 (%s)" % (m.group(1), _x_exact(m.group(2)))),
     (r"(\d+) din (\d+) indicatori în zona roșie", r"\1 of \2 indicators in the red zone"),
     (r"Pondere în portofoliu după cumpărare: ([\d.]+)%", r"Portfolio weight after purchase: \1%"),
     (r"Semafoarele sunt reguli generale, nu un verdict; verde peste tot nu înseamnă „cumpără”\.",
