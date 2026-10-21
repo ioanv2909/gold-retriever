@@ -14,7 +14,7 @@ Everything is JSON except `auth_secret`. Do not commit this folder:
 | `justetf_cache.json` | justETF data for ETFs |
 | `quality_cache.json`, `quality_status.json` | Quality, risk and dividend scores and job progress |
 | `market_context_cache.json`, `market_context_status.json` | Benchmark (S&P 500) data and job progress |
-| `exposure_cache.json`, `exposure_status.json` | Sector, country and ETF sector weights per ticker (Yahoo Finance, weekly) and job progress |
+| `exposure_cache.json`, `exposure_status.json` | Sector, country, ETF sector weights (Yahoo Finance) and ETF country weights (justETF) per ticker, weekly, and job progress |
 | `events_cache.json`, `events_status.json` | Upcoming earnings and dividend dates per ticker (Yahoo Finance, 12 h) and job progress |
 | `manual_metrics.json` | Manually entered metrics, when present |
 | `mail.json` | SMTP settings for notifications (password in plain text, mode 600) |

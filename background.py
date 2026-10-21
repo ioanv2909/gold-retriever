@@ -360,6 +360,20 @@ from xtb import instruments as xtb_instruments
 from history_multi import record_multi_point
 
 
+def ticker_isins(tickers):
+    """{ticker: ISIN} din instrumentele Trading 212 si XTB (pentru tarile ETF din justETF)."""
+    xtb_isins = {i["ticker"]: i.get("isin") for i in xtb_instruments() if i.get("ticker")}
+    out = {}
+    for t in tickers:
+        try:
+            isin = (get_instrument(t) or {}).get("isin") or xtb_isins.get(t)
+        except Exception:
+            isin = xtb_isins.get(t)
+        if isin:
+            out[t] = isin
+    return out
+
+
 def xtb_tickers():
     return [i["ticker"] for i in xtb_instruments() if i.get("ticker")]
 
@@ -468,7 +482,7 @@ def start_background_scheduler(user=None):
 
             if all_tickers and (time.time() - last_ex) >= 3600:
                 # doar tickerele noi sau mai vechi de o saptamana se cer din nou
-                if exposure.start_fetch_background(all_tickers):
+                if exposure.start_fetch_background(all_tickers, ticker_isins(all_tickers)):
                     last_ex = time.time()
 
             if all_tickers and (time.time() - last_evn) >= 3600:

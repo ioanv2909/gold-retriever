@@ -27,7 +27,7 @@ A self-hosted portfolio analyzer for **Trading 212** and **XTB**, built with Str
 - Watchlist and loss-to-profit alerts
 - Position alerts on price, score and concentration, as an in-app banner and by email
 - Side-by-side comparison of up to five instruments (return chart, scores, valuation)
-- Exposure by sector (with ETF look-through), country and currency
+- Exposure by sector, country (both with ETF look-through) and currency
 - Events calendar: upcoming earnings, ex-dividend and dividend payment dates for held positions, with an optional email digest per user
 - Email notifications (SMTP) to admins for failed backups, failed refreshes, XTB import problems and security events
 - Detail page for every instrument

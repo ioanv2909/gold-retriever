@@ -1,3 +1,7 @@
+## 0.2.19 — 2026-10-21
+
+- Exposure: ETFs are now split by country too, using the country breakdown from justETF (by ISIN), instead of a single "ETF (no breakdown)" bucket. Fetched weekly with the other exposure data; if justETF is unavailable, it is retried after a day. ETFs without country data on justETF keep the separate bucket.
+
 ## 0.2.18 — 2026-10-21
 
 - Compare: the chosen instruments and period are kept in the address (`?tab=compare&cmp=AAPL&cmp=KO&cmp_period=1A`), so a refresh or a link reopens the same comparison; switching to another tab and back keeps them too.

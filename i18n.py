@@ -271,10 +271,11 @@ _T = {
     "ex.bucket.etf": {"RO": "ETF (fără defalcare)", "EN": "ETF (no breakdown)"},
     "ex.bucket.unknown": {"RO": "Necunoscut", "EN": "Unknown"},
     "ex.bucket.other": {"RO": "ETF: altele (cash, obligațiuni)", "EN": "ETF: other (cash, bonds)"},
+    "ex.bucket.other_countries": {"RO": "ETF: alte țări", "EN": "ETF: other countries"},
     "ex.bucket.rest": {"RO": "Altele ({n})", "EN": "Other ({n})"},
     "ex.note": {
-        "RO": "Valorile sunt pentru portofoliile și moneda selectate mai sus. Sector: la ETF-uri se folosește defalcarea pe sectoare a fondului. Țară: sediul companiei; Yahoo nu are defalcare pe țări pentru ETF-uri. Monedă: moneda în care se tranzacționează instrumentul, nu cea a activelor din ETF. Sursa: Yahoo Finance, actualizat săptămânal.",
-        "EN": "Values are for the portfolios and currency selected above. Sector: for ETFs the fund's sector breakdown is used. Country: company headquarters; Yahoo has no country breakdown for ETFs. Currency: the currency the instrument trades in, not that of the ETF's holdings. Source: Yahoo Finance, refreshed weekly.",
+        "RO": "Valorile sunt pentru portofoliile și moneda selectate mai sus. Sector: la ETF-uri se folosește defalcarea pe sectoare a fondului. Țară: sediul companiei; la ETF-uri, defalcarea pe țări din justETF (după ISIN), unde există. Monedă: moneda în care se tranzacționează instrumentul, nu cea a activelor din ETF. Surse: Yahoo Finance și justETF, actualizate săptămânal.",
+        "EN": "Values are for the portfolios and currency selected above. Sector: for ETFs the fund's sector breakdown is used. Country: company headquarters; for ETFs, the country breakdown from justETF (by ISIN), where available. Currency: the currency the instrument trades in, not that of the ETF's holdings. Sources: Yahoo Finance and justETF, refreshed weekly.",
     },
     "ex.sector.Technology": {"RO": "Tehnologie", "EN": "Technology"},
     "ex.sector.Financial Services": {"RO": "Servicii financiare", "EN": "Financial Services"},

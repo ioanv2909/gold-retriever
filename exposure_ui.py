@@ -11,6 +11,8 @@ MAX_BARS = 12
 
 
 def _label(dim, key):
+    if key == exposure.OTHER and dim == "country":
+        return t("ex.bucket.other_countries")
     if key in (exposure.ETF, exposure.UNKNOWN, exposure.OTHER):
         return t("ex.bucket." + key.strip("_"))
     if dim == "sector":
@@ -50,11 +52,12 @@ def render_exposure_tab(vdf, display_ccy):
             for r in vdf.to_dict("records") if r.get("ticker")]
     meta = exposure.load_cache()
     status = exposure.load_status()
+    isins = {r["ticker"]: r.get("isin") for r in vdf.to_dict("records") if r.get("ticker") and r.get("isin")}
     missing = [r["ticker"] for r in rows if r["ticker"] not in meta]
     if status.get("in_progress"):
         st.caption(t("ex.loading", done=status.get("done", 0), total=status.get("total", 0)))
     elif missing and st.button(t("ex.fetch", n=len(missing)), key="ex_fetch"):
-        exposure.start_fetch_background(missing)
+        exposure.start_fetch_background(missing, isins)
         st.rerun()
 
     cols = st.columns(3)

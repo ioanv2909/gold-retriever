@@ -72,3 +72,60 @@ def test_fetch_only_missing_or_stale(tmp_path, monkeypatch):
     assert cache["OLD"]["sector"] == "Energy" and cache["BAD"]["error"] == "404" and cache["BAD"]["kind"] == "other"
     assert set(json.loads((tmp_path / "c.json").read_text())) == {"FRESH", "OLD", "BAD"}
     assert ex.load_status()["in_progress"] is False
+
+
+def test_parse_countries():
+    out = ex.parse_countries([{"name": "United States", "percentage": 59.77}, {"name": "Other", "percentage": 9.3},
+                              {"name": "", "percentage": 5}, {"name": "Japan", "percentage": "bad"}, None])
+    assert out == pytest.approx({"United States": 0.5977, ex.OTHER: 0.093})
+    assert ex.parse_countries(None) == {}
+
+
+def test_country_breakdown_looks_through_etfs():
+    meta = dict(META, SPY=dict(META["SPY"], countries={"United States": 0.9, ex.OTHER: 0.05}))
+    out = as_dict(ex.breakdown(ROWS, meta, "country"))
+    assert out["United States"][0] == pytest.approx(300 + 360)
+    assert out[ex.OTHER][0] == pytest.approx(20 + 20)  # "Other" din justETF + restul pana la 100%
+    assert ex.ETF not in out
+
+
+def test_fetch_countries_falls_back_without_expansion(monkeypatch):
+    import sys, types
+    calls = []
+
+    def overview(isin, include_gettex=True, expand_allocations=True):
+        calls.append(expand_allocations)
+        return {"countries": [] if expand_allocations else [{"name": "United States", "percentage": 97.5}]}
+
+    monkeypatch.setitem(sys.modules, "justetf_scraping", types.SimpleNamespace(get_etf_overview=overview))
+    assert ex.fetch_countries("IE00B5BMR087") == pytest.approx({"United States": 0.975})
+    assert calls == [True, False]
+
+
+def test_etf_countries_fetched_and_retried(tmp_path, monkeypatch):
+    monkeypatch.setattr(ex, "EXPOSURE_CACHE_FILE", str(tmp_path / "c.json"))
+    monkeypatch.setattr(ex, "EXPOSURE_STATUS_FILE", str(tmp_path / "s.json"))
+    (tmp_path / "c.json").write_text(json.dumps({
+        "OLD_ETF": {"kind": "etf", "sectors": {}, "fetched_at": 1000.0},          # dinainte de tari: se reia
+        "STOCK": {"kind": "stock", "fetched_at": 1000.0},
+    }))
+    monkeypatch.setattr(ex, "fetch_meta", lambda s: (ex.parse_meta({"quoteType": "ETF"}), None))
+    asked = []
+
+    def countries(isin):
+        asked.append(isin)
+        return None if isin == "DOWN" else {"Japan": 1.0}
+
+    isins = {"OLD_ETF": "IE1", "NEW_ETF": "DOWN", "STOCK": "US1"}
+    cache = ex.fetch_and_cache(["OLD_ETF", "NEW_ETF", "STOCK"], resolve=str, now=2000.0, sleep=0,
+                               isins=isins, countries_fn=countries)
+    assert asked == ["IE1", "DOWN"]
+    assert cache["OLD_ETF"]["countries"] == {"Japan": 1.0}
+    assert cache["NEW_ETF"]["countries"] == {} and cache["NEW_ETF"]["countries_error"] is True
+    # eroarea se reincearca dupa o zi, nu la fiecare tur
+    asked.clear()
+    ex.fetch_and_cache(["NEW_ETF"], resolve=str, now=2000.0 + 3600, sleep=0, isins=isins, countries_fn=countries)
+    assert asked == []
+    ex.fetch_and_cache(["NEW_ETF"], resolve=str, now=2000.0 + ex.COUNTRIES_RETRY, sleep=0, isins=isins,
+                       countries_fn=countries)
+    assert asked == ["DOWN"]
