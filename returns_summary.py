@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 import streamlit as st
 
 from i18n import t
+from privacy import mask
 
 from userctx import UPath
 FLOWS_FILE = UPath("t212_flows.json")
@@ -144,7 +145,7 @@ def _estimate(name, rows, ccy=""):
     wage = sum(c * a for c, _, a in rows) / cost
     r = pl / cost
     annual = (1 + r) ** (1 / wage) - 1 if wage >= 1 else None
-    txt = t("ret.est", name=name, ccy=ccy, cost=f"{cost:,.0f}", pl=f"{pl:+,.0f}", r=f"{r * 100:+.1f}", wage=f"{wage:.2f}")
+    txt = t("ret.est", name=name, ccy=ccy, cost=mask(f"{cost:,.0f}"), pl=mask(f"{pl:+,.0f}"), r=f"{r * 100:+.1f}", wage=f"{wage:.2f}")
     txt += t("ret.annual_est", a=f"{annual * 100:+.1f}") if annual is not None else t("ret.under_year")
     return txt
 
@@ -158,7 +159,7 @@ def _xirr_line(name, flows, final_value, now, extra="", ccy=""):
     invested = -sum(a for _, a in flows if a < 0)
     back = sum(a for _, a in flows if a > 0)
     net = final_value + back - invested
-    txt = t("ret.xirr_line", name=name, ccy=ccy, inv=f"{invested:,.0f}", val=f"{final_value:,.0f}", net=f"{net:+,.0f}", pct=f"{net / invested * 100:+.1f}")
+    txt = t("ret.xirr_line", name=name, ccy=ccy, inv=mask(f"{invested:,.0f}"), val=mask(f"{final_value:,.0f}"), net=mask(f"{net:+,.0f}"), pct=f"{net / invested * 100:+.1f}")
     x = xirr(flows + [(now, final_value)])
     if x is not None and years >= 1:
         txt += t("ret.xirr_tail", x=f"{x * 100:+.1f}", extra=extra)

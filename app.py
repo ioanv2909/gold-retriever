@@ -136,6 +136,8 @@ def _watch_background_jobs():
 from portfolio_model import portfolio_options, default_currency, build_rows
 from url_tabs import url_tabs
 import mobile
+import privacy
+from privacy import mask as _mask
 from history_multi import multi_history_records
 from xtb import instruments as _xtb_instruments
 
@@ -192,16 +194,16 @@ def _render_cash(sel_portfolios, display_ccy, cash, compact=False):
         conv = free * _fx(t212_ccy, display_ccy)
         tot += conv
         sub = t("main.cash_sub", blocked=f"{cash.get('blocked', 0.0):,.2f}", result=f"{cash.get('result', 0.0):,.2f}")
-        rows.append((t("main.cash_t212"), f"{free:,.2f} {t212_ccy}",
-                     "" if t212_ccy == display_ccy else f"≈ {conv:,.2f} {display_ccy}"))
+        rows.append((t("main.cash_t212"), _mask(f"{free:,.2f} {t212_ccy}"),
+                     "" if t212_ccy == display_ccy else _mask(f"≈ {conv:,.2f} {display_ccy}")))
     items, xtot = _xtb_cash_items(sel_portfolios, display_ccy)
     for it in items:
-        rows.append((t("main.cash_acct", label=it["label"]), f"{it['amount']:,.2f} {it['ccy']}",
-                     "" if it["ccy"] == display_ccy else f"≈ {it['disp']:,.2f} {display_ccy}"))
+        rows.append((t("main.cash_acct", label=it["label"]), _mask(f"{it['amount']:,.2f} {it['ccy']}"),
+                     "" if it["ccy"] == display_ccy else _mask(f"≈ {it['disp']:,.2f} {display_ccy}")))
     tot += xtot
     if not rows:
         return
-    label = f"💵 {t('main.cash_total')} · {tot:,.2f} {display_ccy}"
+    label = f"💵 {t('main.cash_total')} · " + _mask(f"{tot:,.2f} {display_ccy}")
     with st.container(key="cash_row_c"):
         st.markdown(
             "<style>.st-key-cash_row_c button p {font-size:1.15rem; font-weight:600;}"
@@ -215,7 +217,7 @@ def _render_cash(sel_portfolios, display_ccy, cash, compact=False):
         with pop:
             for lb, val, eq in rows:
                 st.markdown(f"**{lb}:** {val}" + (f" · {eq}" if eq else ""))
-            if sub:
+            if sub and not privacy.hidden():
                 st.caption(sub)
 
 
@@ -677,7 +679,10 @@ def render_main_view():
                     st.rerun()
 
     if not detail_loading:
-        st.subheader(t("app.summary"))
+        _sum_t, _sum_eye = st.columns([5, 2], vertical_alignment="bottom")
+        _sum_t.subheader(t("app.summary"))
+        with _sum_eye:
+            privacy.toggle_button("privacy_toggle")
 
 
     div_status = load_dividends_status()
@@ -815,21 +820,24 @@ def render_main_view():
 
     if not detail_loading:
         col1, col2, col3, col4 = st.container(key="summary_metrics").columns(4)
+        # in modul de confidentialitate delta valorii de piata e randamentul %, nu P/L-ul in bani
         if _native:
-            col1.metric("💰 Total Investit", f"{invested:,.2f}")
-            col2.metric("📊 Valoare de Piață (Nerealizat)", f"{market_value:,.2f}", f"{ppl:,.2f}")
+            col1.metric("💰 Total Investit", _mask(f"{invested:,.2f}"))
+            col2.metric("📊 Valoare de Piață (Nerealizat)", _mask(f"{market_value:,.2f}"),
+                        f"{yield_pct:+.2f}%" if privacy.hidden() else f"{ppl:,.2f}")
             col3.metric("📈 Randament", f"{yield_pct:.2f}%")
-            col4.metric("💵 Total Dividende Încasate", f"{total_dividende:,.2f}")
+            col4.metric("💵 Total Dividende Încasate", _mask(f"{total_dividende:,.2f}"))
         else:
             _m_inv = float(vdf["cost_disp"].sum())
             _m_val = float(vdf["value_disp"].sum())
             _m_pl = float(vdf["pl_disp"].sum())
             _m_div = float(vdf["div_disp"].sum())
             _m_yield = (_m_pl / _m_inv * 100.0) if _m_inv else 0.0
-            col1.metric(f"💰 Total Investit ({display_ccy})", f"{_m_inv:,.2f}")
-            col2.metric(f"📊 Valoare de Piață ({display_ccy})", f"{_m_val:,.2f}", f"{_m_pl:,.2f}")
+            col1.metric(f"💰 Total Investit ({display_ccy})", _mask(f"{_m_inv:,.2f}"))
+            col2.metric(f"📊 Valoare de Piață ({display_ccy})", _mask(f"{_m_val:,.2f}"),
+                        f"{_m_yield:+.2f}%" if privacy.hidden() else f"{_m_pl:,.2f}")
             col3.metric("📈 Randament", f"{_m_yield:.2f}%")
-            col4.metric(f"💵 Total Dividende Încasate ({display_ccy})", f"{_m_div:,.2f}")
+            col4.metric(f"💵 Total Dividende Încasate ({display_ccy})", _mask(f"{_m_div:,.2f}"))
 
         portfolio_history = multi_history_records(sel_portfolios, display_ccy)
         if _native and len(portfolio_history) < 2:
@@ -893,7 +901,7 @@ def render_main_view():
                 _pl_d = float(_pl_ser.iloc[-1] - _pl_ser.iloc[0])
                 _inv_avg = float(history_df["invested"].mean())
                 st.metric(
-                    t("hist.variation", rng=range_choice), f"{_pl_d:+,.2f} {display_ccy}",
+                    t("hist.variation", rng=range_choice), _mask(f"{_pl_d:+,.2f} {display_ccy}"),
                     f"{_pl_d / _inv_avg * 100:+.2f}%" if _inv_avg else None,
                 )
                 if not _compact:
@@ -943,6 +951,10 @@ def render_main_view():
             history_fig.update_layout(legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0))
             history_fig.update_layout(hovermode="x unified")
             history_fig.update_traces(hovertemplate="%{y:,.2f}")
+            if privacy.hidden():
+                # forma curbei ramane, valorile nu (fara axa Y si fara hover)
+                history_fig.update_yaxes(showticklabels=False)
+                history_fig.update_traces(hoverinfo="skip", hovertemplate=None)
             _x1 = pd.Timestamp.now(tz="Europe/Bucharest").tz_localize(None)
             if range_choice == "YTD":
                 _x0 = pd.Timestamp(_x1.year, 1, 1)
@@ -1082,8 +1094,10 @@ def render_main_view():
         "Scor div.": pd.to_numeric(df_display["Scor div."], errors="coerce"),
         "Conturi": df_display["accounts"],
     })
+    if privacy.hidden():
+        table_df = table_df.drop(columns=["Cant.", f"Cost achiz. ({_c})", f"Val. curentă ({_c})", f"P/L ({_c})", f"Div. ({_c})"])
     if _compact:
-        table_df = table_df[["Nume", f"Val. curentă ({_c})", f"P/L ({_c})", "Randament %"]]
+        table_df = table_df[[c for c in ("Nume", f"Val. curentă ({_c})", f"P/L ({_c})", "Randament %") if c in table_df.columns]]
 
     def colorize(value):
         if value is None or pd.isna(value):
@@ -1368,6 +1382,7 @@ else:
         render_settings(_me, [("updates", t("side.updates"), _section_updates),
                               ("xtb", t("side.xtb_import"), _section_xtb_import),
                               ("calendar", t("set.events"), lambda: _events_settings(_me)),
-                              ("alerts", t("set.alerts"), lambda: _alerts_settings(_me))])
+                              ("alerts", t("set.alerts"), lambda: _alerts_settings(_me)),
+                              ("privacy", t("priv.tab"), privacy.render_settings_section)])
         st.stop()
     render_main_view()

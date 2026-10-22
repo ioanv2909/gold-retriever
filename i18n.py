@@ -830,6 +830,18 @@ _T = {
     "st.conv_profile": {"RO": "Profil {p} —", "EN": "{p} profile —"},
     "st.outside_note": {"RO": "Coloanele gri sunt lentile din afara profilului tău: nu intră în convergență.", "EN": "Grey columns are lenses outside your profile: they do not count towards convergence."},
     "hs.job.strategies": {"RO": "Lentile de strategie", "EN": "Strategy lenses"},
+    "priv.tab": {"RO": "🔒 Confidențialitate", "EN": "🔒 Privacy"},
+    "priv.title": {"RO": "Sume ascunse", "EN": "Hidden amounts"},
+    "priv.on_start": {"RO": "Deschide sesiunea cu sumele ascunse", "EN": "Start the session with amounts hidden"},
+    "priv.help": {
+        "RO": "Valorile, costul, P/L-ul, dividendele și numerarul apar ca •••••; procentele și graficele rămân. "
+              "Butonul de lângă Sumar le arată sau le ascunde până la sfârșitul sesiunii.",
+        "EN": "Values, cost, P/L, dividends and cash show as •••••; percentages and charts stay. "
+              "The button next to Summary shows or hides them until the session ends.",
+    },
+    "priv.saved": {"RO": "Setare salvată.", "EN": "Setting saved."},
+    "priv.show": {"RO": "Arată sumele", "EN": "Show amounts"},
+    "priv.hide": {"RO": "Ascunde sumele", "EN": "Hide amounts"},
     "mob.full": {"RO": "🖥️ Versiune completă", "EN": "🖥️ Full version"},
     "mob.compact": {"RO": "📱 Versiune pentru telefon", "EN": "📱 Phone version"},
     "mob.settings_desktop": {

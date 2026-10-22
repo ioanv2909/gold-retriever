@@ -4,6 +4,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 import mobile
+import privacy
 
 import exposure
 from i18n import t
@@ -39,7 +40,7 @@ def _chart(items, ccy):
         y=labels, x=[p for _, _, p in items], orientation="h", marker={"color": BAR, "cornerradius": 4},
         text=[f"{p:.1f}%" for _, _, p in items], textposition="outside", cliponaxis=False,
         customdata=[v for _, v, _ in items],
-        hovertemplate="%{y}: %{x:.1f}% · %{customdata:,.0f} " + ccy + "<extra></extra>"))
+        hovertemplate="%{y}: %{x:.1f}%" + ("" if privacy.hidden() else " · %{customdata:,.0f} " + ccy) + "<extra></extra>"))
     fig.update_layout(height=40 + 30 * len(items), margin={"l": 10, "r": 50, "t": 10, "b": 10}, bargap=0.3,
                       xaxis={"visible": False, "range": [0, max(p for _, _, p in items) * 1.15]},
                       yaxis={"autorange": "reversed"}, showlegend=False)
@@ -87,7 +88,10 @@ def render_exposure_tab(vdf, display_ccy):
             items = _fold(items, dim)
             mobile.plotly_chart(_chart(items, display_ccy), width="stretch", key="ex_chart_" + dim)
             with st.expander(t("ex.table")):
-                st.dataframe(pd.DataFrame([{
+                _tbl = pd.DataFrame([{
                     t("ex.col.category"): k, t("ex.col.value", ccy=display_ccy): round(v, 2), "%": round(p, 1),
-                } for k, v, p in items]), hide_index=True, width="stretch")
+                } for k, v, p in items])
+                if privacy.hidden():
+                    _tbl = _tbl.drop(columns=[t("ex.col.value", ccy=display_ccy)])
+                st.dataframe(_tbl, hide_index=True, width="stretch")
     st.caption(t("ex.note"))

@@ -1,3 +1,8 @@
+## 0.2.35 — 2026-10-22
+
+- Privacy mode: Settings > 🔒 Privacy has an option to start the session with amounts hidden. Hidden amounts show as •••••: the summary totals (the market value then shows the return % instead of the P/L), the history chart's Y axis and hover, the profit change of the period, cash, the returns over period, the amount columns of the positions table (quantity, cost, value, P/L, dividends), the exposure amounts and, on the position page, quantity, value, cost, P/L, dividends and the XTB purchase tables. Percentages, prices and charts stay.
+- A 👁 Show amounts / 🙈 Hide amounts button next to the Summary heading switches them for the rest of the session, with or without the setting.
+
 ## 0.2.34 — 2026-10-22
 
 - Phone version: the price chart offers only 1M, 3M, 1Y, 5Y and Max, so the buttons fit on one row. A period not offered on the phone (1D, 1W, YTD) opens as the nearest one (1M or 1Y).

@@ -32,3 +32,10 @@ def _isolated_strategies(tmp_path, monkeypatch):
     monkeypatch.setattr(signals, "ua_email", lambda: None)
     monkeypatch.setattr(signals, "SEC_TICKERS_FILE", str(tmp_path / "sec_tickers.json"))
     monkeypatch.setattr(strategies, "PROFILE_FILE", str(tmp_path / "strategy_profile.json"))
+
+
+@pytest.fixture(autouse=True)
+def _isolated_privacy(tmp_path, monkeypatch):
+    """Setarea de confidentialitate se scrie in data/; in teste merge intr-un director temporar."""
+    import privacy
+    monkeypatch.setattr(privacy, "PRIVACY_FILE", str(tmp_path / "privacy.json"))
