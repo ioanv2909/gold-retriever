@@ -1,3 +1,7 @@
+## 0.2.34 — 2026-10-22
+
+- Phone version: the price chart offers only 1M, 3M, 1Y, 5Y and Max, so the buttons fit on one row. A period not offered on the phone (1D, 1W, YTD) opens as the nearest one (1M or 1Y).
+
 ## 0.2.33 — 2026-10-22
 
 - Phone version: the period choice of the price chart (position page) and of the portfolio history chart is a row of large buttons spanning the screen width instead of small radio dots. The price chart's Enlarge button and buy-marker note are hidden on the phone.

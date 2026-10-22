@@ -145,8 +145,14 @@ def _render_price_chart_inner(ticker, yahoo_symbol, fill_date, avg_price_t212):
     if _pkey not in st.session_state:
         _g2d = {"3H": "1Z", "1D": "1Z", "1W": "1S", "1M": "1L", "1Y": "1A", "YTD": "YTD", "Max": "Max"}
         st.session_state[_pkey] = _g2d.get(st.session_state.get("_hist_range_pref", "YTD"), "YTD")
+    _periods = list(CHART_PERIODS.keys())
+    if mobile.compact():
+        # pe telefon doar 5 butoane, ca sa incapa pe un rand
+        _periods = ["1L", "3L", "1A", "5A", "Max"]
+        _near = {"1Z": "1L", "1S": "1L", "YTD": "1A"}
+        st.session_state[_pkey] = _near.get(st.session_state[_pkey], st.session_state[_pkey])
     period_choice = mobile.period_picker(
-        tr("dv.period"), list(CHART_PERIODS.keys()), key=_pkey,
+        tr("dv.period"), _periods, key=_pkey,
         format_func=lambda _k: tr("dv.per." + _k),
     )
     yf_period, yf_interval = CHART_PERIODS[period_choice]
