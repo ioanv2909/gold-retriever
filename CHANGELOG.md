@@ -1,3 +1,7 @@
+## 0.2.39 — 2026-10-22
+
+- The login page shows only "GoldRetriever" next to the logo, so it fits on one line on a phone.
+
 ## 0.2.38 — 2026-10-22
 
 - The login page shows the app name (GoldRetriever — Portfolio Analyzer) next to the logo, above the sign-in form.
