@@ -1,3 +1,9 @@
+## 0.2.40 — 2026-10-22
+
+- The Streamlit top bar (activity indicator and the three-dot menu) is gone on every page, including the login page; the page starts right at the top.
+- Theme (same as system, light, dark) moved to Settings > 🎨 Appearance. It is kept in the browser, separately on each device, and the page reloads when it changes. On the phone, Settings opens with this section only.
+- 🖨️ Print page moved to the user menu 👤 (it closes the menu, then opens the browser's print dialog).
+
 ## 0.2.39 — 2026-10-22
 
 - The login page shows only "GoldRetriever" next to the logo, so it fits on one line on a phone.

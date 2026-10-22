@@ -239,8 +239,6 @@ def render_detail_view(position_row, total_portfolio_value, api_key_id, api_secr
 
     _HEADER_CSS = """<style>
 [data-testid="stMainBlockContainer"], .block-container {padding-top: 0.5rem !important;}
-[data-testid="stHeader"] {background: transparent !important; pointer-events: none !important; z-index: 100 !important;}
-[data-testid="stHeader"] * {pointer-events: none !important;}
 .st-key-detail_header {
     position: sticky; top: 0; z-index: 999;
     background: var(--background-color, #0e1117);

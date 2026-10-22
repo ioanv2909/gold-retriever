@@ -98,6 +98,9 @@ st.set_page_config(page_title="GoldRetriever", layout="wide", page_icon="assets/
 
 os.makedirs("data", exist_ok=True)
 
+import appearance
+appearance.hide_streamlit_header()
+
 import users as _users
 from auth import require_login
 for _u in _users.names():
@@ -1371,6 +1374,9 @@ if "selected_ticker" in st.session_state and "selected_row" in st.session_state:
     render_detail_view(st.session_state["selected_row"], st.session_state.get("total_portfolio_value", 0), api_key_id, api_secret)
 else:
     if st.session_state.get("_page") == "settings" and mobile.compact():
+        # pe telefon doar aspectul (tema se tine separat in fiecare browser); restul pe desktop
+        appearance.render_settings_section()
+        st.divider()
         st.info(t("mob.settings_desktop"))
         if st.button(t("mob.full"), key="settings_full_view"):
             mobile.set_mode("full")
@@ -1388,6 +1394,7 @@ else:
                               ("xtb", t("side.xtb_import"), _section_xtb_import),
                               ("calendar", t("set.events"), lambda: _events_settings(_me)),
                               ("alerts", t("set.alerts"), lambda: _alerts_settings(_me)),
-                              ("privacy", t("priv.tab"), privacy.render_settings_section)])
+                              ("privacy", t("priv.tab"), privacy.render_settings_section),
+                              ("appearance", t("app.tab"), appearance.render_settings_section)])
         st.stop()
     render_main_view()

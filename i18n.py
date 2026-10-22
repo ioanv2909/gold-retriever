@@ -842,13 +842,24 @@ _T = {
     },
     "priv.saved": {"RO": "Setare salvată.", "EN": "Setting saved."},
     "lang.switch": {"RO": "Switch to English", "EN": "Treci la română"},
+    "app.tab": {"RO": "🎨 Aspect", "EN": "🎨 Appearance"},
+    "app.theme": {"RO": "Temă", "EN": "Theme"},
+    "app.theme_now": {"RO": "Tema afișată acum: {th}", "EN": "Theme shown now: {th}"},
+    "app.theme.system": {"RO": "💻 Ca sistemul", "EN": "💻 Same as system"},
+    "app.theme.light": {"RO": "☀️ Luminoasă", "EN": "☀️ Light"},
+    "app.theme.dark": {"RO": "🌙 Întunecată", "EN": "🌙 Dark"},
+    "app.theme_help": {
+        "RO": "Tema se ține în browser (pe fiecare dispozitiv separat); pagina se reîncarcă la schimbare.",
+        "EN": "The theme is kept in the browser (separately on each device); the page reloads on change.",
+    },
+    "app.print": {"RO": "🖨️ Tipărește pagina", "EN": "🖨️ Print page"},
     "priv.show": {"RO": "Arată sumele", "EN": "Show amounts"},
     "priv.hide": {"RO": "Ascunde sumele", "EN": "Hide amounts"},
     "mob.full": {"RO": "🖥️ Versiune completă", "EN": "🖥️ Full version"},
     "mob.compact": {"RO": "📱 Versiune pentru telefon", "EN": "📱 Phone version"},
     "mob.settings_desktop": {
-        "RO": "Setările nu sunt disponibile în versiunea pentru telefon. Deschide-le de pe desktop sau treci la versiunea completă.",
-        "EN": "Settings are not available in the phone version. Open them on a desktop or switch to the full version.",
+        "RO": "Celelalte setări nu sunt disponibile în versiunea pentru telefon. Deschide-le de pe desktop sau treci la versiunea completă.",
+        "EN": "The other settings are not available in the phone version. Open them on a desktop or switch to the full version.",
     },
 }
 

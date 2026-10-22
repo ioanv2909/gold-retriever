@@ -295,7 +295,10 @@ def user_menu(me):
         if _btn(t("mob.full") if _compact else t("mob.compact"), "menu_view"):
             mobile.set_mode("full" if _compact else "compact")
             st.rerun()
-        if not _compact and _btn("⚙️ " + _tr("settings"), "menu_settings"):
+        if _btn(t("app.print"), "menu_print"):
+            import appearance
+            appearance.print_page()
+        if _btn("⚙️ " + _tr("settings"), "menu_settings"):
             # URL-ul dedicat pastreaza pagina la refresh; pagina pozitiei se inchide
             for k in ("selected_ticker", "selected_row", "_url_ticker"):
                 st.session_state.pop(k, None)
