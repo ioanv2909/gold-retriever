@@ -29,7 +29,7 @@ from watchlist import add_to_watchlist, load_watchlist, load_watchlist_cache, re
 from xtb import accounts_summary, import_xtb, instruments as xtb_instruments, parse_xtb_file, remove_account, save_isin
 from xtb_prices import load_xtb_prices, save_symbol_override, start_xtb_prices_refresh_background
 from isin_tools import isin_issues, resolve_isin, suggest_isin
-from i18n import LANGS, col, install_translation, t, x as _tx
+from i18n import LANGS, col, install_translation, lang_button, t, x as _tx
 
 install_translation()
 
@@ -645,19 +645,24 @@ def render_main_view():
     from auth import user_menu as _user_menu
     _compact = mobile.compact()
     _hdr = st.container(key="app_header")
-    _c_logo, _c_title, _c_lang, _c_user = _hdr.columns([1, 13, 3, 3], vertical_alignment="center")
-    with _c_logo:
-        if os.path.exists("assets/icon-192.png"):
-            import base64 as _b64
-            with open("assets/icon-192.png", "rb") as _f:
-                st.markdown(
-                    '<img src="data:image/png;base64,%s" width="64">' % _b64.b64encode(_f.read()).decode(),
-                    unsafe_allow_html=True,
-                )
-    with _c_title:
-        st.title(t("app.title"))
+    # pe telefon fara sigla si titlu (sigla apare la login), doar limba si utilizatorul
+    if _compact:
+        _c_lang, _c_user = _hdr.columns([1, 3], vertical_alignment="center")
+    else:
+        _c_logo, _c_title, _c_lang, _c_user = _hdr.columns([1, 14, 2, 3], vertical_alignment="center")
+    if not _compact:
+        with _c_logo:
+            if os.path.exists("assets/icon-192.png"):
+                import base64 as _b64
+                with open("assets/icon-192.png", "rb") as _f:
+                    st.markdown(
+                        '<img src="data:image/png;base64,%s" width="64">' % _b64.b64encode(_f.read()).decode(),
+                        unsafe_allow_html=True,
+                    )
+        with _c_title:
+            st.title(t("app.title"))
     with _c_lang:
-        st.segmented_control("Language", LANGS, key="lang", label_visibility="collapsed")
+        lang_button("lang_switch")
     with _c_user:
         _user_menu(_me)
 

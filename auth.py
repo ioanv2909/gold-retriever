@@ -1,3 +1,4 @@
+import os
 import time
 
 import alerts
@@ -101,6 +102,8 @@ def require_login():
     with ph.container():
         _, mid, _ = st.columns([1, 1, 1])
         with mid:
+            if os.path.exists("assets/icon-192.png"):
+                st.image("assets/icon-192.png", width=96)
             st.markdown("### " + _tr("title_setup" if setup else "title_login"))
             if setup:
                 st.info(_tr("setup_info"))

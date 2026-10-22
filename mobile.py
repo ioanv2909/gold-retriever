@@ -16,8 +16,6 @@ _CSS = """<style>
 .st-key-app_header [data-testid="stHorizontalBlock"] {flex-wrap: nowrap !important; gap: 0.5rem;}
 .st-key-app_header [data-testid="stColumn"] {min-width: 0 !important; width: auto !important; flex: 0 1 auto !important;}
 .st-key-app_header [data-testid="stColumn"]:nth-child(2) {flex: 1 1 auto !important;}
-.st-key-app_header h1 {font-size: 1.2rem !important; padding: 0 !important;}
-.st-key-app_header img {width: 36px !important;}
 .st-key-summary_metrics [data-testid="stHorizontalBlock"] {flex-wrap: wrap !important;}
 .st-key-summary_metrics [data-testid="stColumn"] {flex: 1 1 45% !important; min-width: 45% !important;}
 [data-testid="stMetricValue"] {font-size: 1.3rem;}

@@ -78,3 +78,18 @@ def test_period_picker_uses_buttons_on_phone():
     assert "PICK:1A" in [m.value for m in at.markdown]
     at = AppTest.from_function(_picker_page).run()
     assert at.radio[0].value == "1L"
+
+
+def _lang_page():
+    import streamlit as st
+    from i18n import lang_button
+
+    lang_button("lb")
+    st.markdown("LANG:" + st.session_state.get("lang", "RO"))
+
+
+def test_language_button_shows_the_other_language_and_switches():
+    at = AppTest.from_function(_lang_page).run()
+    assert at.button[0].label == "🌐 EN"
+    at.button[0].click().run()
+    assert "LANG:EN" in [m.value for m in at.markdown] and at.button[0].label == "🌐 RO"

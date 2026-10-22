@@ -841,6 +841,7 @@ _T = {
               "The button next to Summary shows or hides them until the session ends.",
     },
     "priv.saved": {"RO": "Setare salvată.", "EN": "Setting saved."},
+    "lang.switch": {"RO": "Switch to English", "EN": "Treci la română"},
     "priv.show": {"RO": "Arată sumele", "EN": "Show amounts"},
     "priv.hide": {"RO": "Ascunde sumele", "EN": "Hide amounts"},
     "mob.full": {"RO": "🖥️ Versiune completă", "EN": "🖥️ Full version"},
@@ -854,6 +855,15 @@ _T = {
 
 def lang():
     return st.session_state.get("lang") or "RO"
+
+
+def lang_button(key):
+    """Un singur buton, cu limba in care treci (ocupa mai putin decat ambele limbi)."""
+    other = LANGS[1 - LANGS.index(lang())] if lang() in LANGS else LANGS[0]
+    if st.button("🌐 " + other, key=key, help=t("lang.switch")):
+        st.session_state["lang"] = other
+        st.session_state["_lang"] = other
+        st.rerun()
 
 
 def t(key, _lang=None, **kw):

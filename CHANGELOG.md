@@ -1,3 +1,9 @@
+## 0.2.37 — 2026-10-22
+
+- The language selector is a single 🌐 button with the language you switch to (🌐 EN in Romanian, 🌐 RO in English), on the main page and in Settings.
+- The login page shows the logo above the title.
+- Phone version: the main page header has no logo and no title, only the language button and the user menu.
+
 ## 0.2.36 — 2026-10-22
 
 - Privacy mode: the "start the session with amounts hidden" setting is separate for the phone and the desktop (Settings > 🔒 Privacy). The old common setting applies to both until one is changed. Switching between the phone and full versions from the user menu applies that version's setting.

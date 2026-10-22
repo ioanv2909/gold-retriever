@@ -5,7 +5,7 @@ import os
 import streamlit as st
 
 import users
-from i18n import LANGS, t
+from i18n import lang_button, t
 from url_tabs import reset as reset_tabs, url_tabs
 from core import CONFIG_FILE, load_config, save_config
 
@@ -76,7 +76,7 @@ def render_settings(me, sections=()):
     top[1].markdown("## ⚙️ " + _L("Setări", "Settings"))
     with top[2]:
         # aceeasi cheie ca in pagina principala, deci limba se salveaza la fel
-        st.segmented_control("Language", LANGS, key="lang", label_visibility="collapsed")
+        lang_button("lang_switch_settings")
 
     # (id, eticheta, functie); id-ul apare in URL (?tab=...), deci nu depinde de limba
     entries = [("t212", "🔑 Trading 212", _tab_t212)]
