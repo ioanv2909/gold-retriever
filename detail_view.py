@@ -30,6 +30,7 @@ from position_alerts_ui import cached_holdings, render_quick_price_alert
 from analysts_ui import render_analyst_section
 from strategies_ui import render_strategy_section
 from userctx import current_user
+import mobile
 from mobile import desktop_only
 from t212_api import fetch_account_currency, fetch_order_history_for_ticker
 from yahoo import fetch_benchmark_return, fetch_price_chart_history, fetch_sector_etf_reference, fetch_yahoo_analysis, fetch_yahoo_currency_hint, guess_yahoo_symbol
@@ -183,7 +184,7 @@ def _render_price_chart_inner(ticker, yahoo_symbol, fill_date, avg_price_t212):
         showlegend=False, xaxis_title=None, yaxis_title=None,
         template="plotly_dark",
     )
-    st.plotly_chart(fig, width="stretch", key=f"price_chart_{ticker}")
+    mobile.plotly_chart(fig, width="stretch", key=f"price_chart_{ticker}")
     _pc_big = st.button(tr("hist.enlarge"), key=f"price_enlarge_{ticker}")
     if _pc_big:
         _show_big_price(fig, ticker)
@@ -206,7 +207,7 @@ def _show_big_price(fig, ticker):
     def _dlg():
         big = go.Figure(fig)
         big.update_layout(height=560)
-        st.plotly_chart(big, width="stretch", key=f"price_chart_big_{ticker}")
+        mobile.plotly_chart(big, width="stretch", key=f"price_chart_big_{ticker}")
     _dlg()
 
 
@@ -457,7 +458,7 @@ def render_detail_view(position_row, total_portfolio_value, api_key_id, api_secr
                             )
                             if fig_g is not None:
                                 st.markdown(f"**{r_label}**", help=indicator_tooltip("etf", r_key))
-                                st.plotly_chart(fig_g, width="stretch", key=f"egauge_{ticker}_{r_key}")
+                                mobile.plotly_chart(fig_g, width="stretch", key=f"egauge_{ticker}_{r_key}")
                             else:
                                 st.caption(f"{r_label}: n/a")
 
@@ -543,7 +544,7 @@ def render_detail_view(position_row, total_portfolio_value, api_key_id, api_secr
                             )
                             if fig_g is not None:
                                 st.markdown(f"**{r_label}**", help=indicator_tooltip("quality", r_key))
-                                st.plotly_chart(fig_g, width="stretch", key=f"gauge_{ticker}_{r_key}")
+                                mobile.plotly_chart(fig_g, width="stretch", key=f"gauge_{ticker}_{r_key}")
                             else:
                                 st.caption(f"{r_label}: n/a")
 
@@ -622,7 +623,7 @@ def render_detail_view(position_row, total_portfolio_value, api_key_id, api_secr
                         )
                         if fig_g is not None:
                             st.markdown(f"**{r_label}**", help=indicator_tooltip("risk", r_key))
-                            st.plotly_chart(fig_g, width="stretch", key=f"rgauge_{ticker}_{r_key}")
+                            mobile.plotly_chart(fig_g, width="stretch", key=f"rgauge_{ticker}_{r_key}")
                         else:
                             st.caption(f"{r_label}: n/a")
 
@@ -833,7 +834,7 @@ def render_detail_view(position_row, total_portfolio_value, api_key_id, api_secr
                             )
                             if fig_g is not None:
                                 st.markdown(f"**{label}**", help=indicator_tooltip("valuation", key))
-                                st.plotly_chart(fig_g, width="stretch", key=f"vgauge_{ticker}_{key}")
+                                mobile.plotly_chart(fig_g, width="stretch", key=f"vgauge_{ticker}_{key}")
                             else:
                                 st.caption(f"{label}: n/a")
 

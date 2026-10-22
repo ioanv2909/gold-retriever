@@ -3,6 +3,8 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
+import mobile
+
 import exposure
 from i18n import t
 
@@ -83,7 +85,7 @@ def render_exposure_tab(vdf, display_ccy):
                 st.caption(t("ex.no_data"))
                 continue
             items = _fold(items, dim)
-            st.plotly_chart(_chart(items, display_ccy), width="stretch", key="ex_chart_" + dim)
+            mobile.plotly_chart(_chart(items, display_ccy), width="stretch", key="ex_chart_" + dim)
             with st.expander(t("ex.table")):
                 st.dataframe(pd.DataFrame([{
                     t("ex.col.category"): k, t("ex.col.value", ccy=display_ccy): round(v, 2), "%": round(p, 1),

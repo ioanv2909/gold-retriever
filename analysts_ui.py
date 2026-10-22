@@ -3,6 +3,8 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
+import mobile
+
 import analysts
 from i18n import t
 from yf_compat import yf, YFINANCE_AVAILABLE
@@ -140,11 +142,11 @@ def render_analyst_section(yahoo_symbol, price, ccy, key):
         c[2].metric(t("an.low_high"), f"{_fmt(tg['low'])} – {_fmt(tg['high'])}",
                     f"{_pct(analysts.upside(tg['low'], ref))} / {_pct(analysts.upside(tg['high'], ref))}", delta_color="off")
         c[3].metric(t("an.n_analysts"), n if n is not None else "n/a")
-        st.plotly_chart(_target_chart(tg, ref, ccy), width="stretch", key=f"an_tg_{key}")
+        mobile.plotly_chart(_target_chart(tg, ref, ccy), width="stretch", key=f"an_tg_{key}")
 
     if data.get("recommendations"):
         st.markdown("**" + t("an.recs_title") + "**")
-        st.plotly_chart(_rec_chart(data["recommendations"]), width="stretch", key=f"an_rec_{key}")
+        mobile.plotly_chart(_rec_chart(data["recommendations"]), width="stretch", key=f"an_rec_{key}")
 
     if data.get("eps"):
         eps_ccy = next((e.get("currency") for e in data["eps"].values() if e.get("currency")), "")

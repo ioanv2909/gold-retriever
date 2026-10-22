@@ -40,3 +40,22 @@ def test_query_param_forces_mode_and_sticks_for_the_session():
 
 def test_desktop_by_default():
     assert _mode(AppTest.from_function(_page).run()) == "MODE:full"
+
+
+def _chart_page():
+    import plotly.graph_objects as go
+    import streamlit as st
+    import mobile
+
+    fig = go.Figure(go.Scatter(x=[1, 2], y=[3, 4]))
+    mobile.plotly_chart(fig, key="c")
+    st.session_state["_fig_layout"] = fig.layout
+
+
+def test_chart_ignores_drag_on_phone_only():
+    at = AppTest.from_function(_chart_page)
+    at.query_params["view"] = "compact"
+    lay = at.run().session_state["_fig_layout"]
+    assert lay.dragmode is False and lay.xaxis.fixedrange and lay.yaxis.fixedrange
+    lay = AppTest.from_function(_chart_page).run().session_state["_fig_layout"]
+    assert lay.dragmode is None and not lay.xaxis.fixedrange

@@ -1,3 +1,7 @@
+## 0.2.32 — 2026-10-22
+
+- Phone version: touching and dragging a chart no longer selects a region and zooms; the page scrolls instead. Tapping a point still shows its values. The chart toolbar is hidden on the phone.
+
 ## 0.2.31 — 2026-10-22
 
 - Phone version: on a phone (detected from the browser) the same app shows less. Main page: the positions table keeps only name, current value, P/L and return; the Strategies, Exposure and Compare tabs, the filters, the table notes and the history chart's captions and Enlarge button are hidden; the header and the summary metrics are laid out for a narrow screen. Position page: chart, holdings, scores, dividend score, analysts, signals and notes stay; orders, benchmark comparison, valuation, extra indicators, growth, ownership, technical, historical performance, strategy lenses and the buy checklist are hidden. Settings are not available on the phone.

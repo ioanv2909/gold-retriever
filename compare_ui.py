@@ -3,6 +3,8 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
+import mobile
+
 import compare
 from core import CHART_PERIODS, load_json_file, QUALITY_CACHE_FILE
 from i18n import t
@@ -172,7 +174,7 @@ def render_compare_tab(vdf):
     labels = {s: (opts[s][0] if s in opts else (infos[s].get("name") or s)) for s in symbols}
     colors = {s: COLORS[slot] for s, slot in _color_slots(symbols).items()}
     if not norm.empty:
-        st.plotly_chart(_chart(norm, labels, colors), width="stretch", key="cmp_chart")
+        mobile.plotly_chart(_chart(norm, labels, colors), width="stretch", key="cmp_chart")
 
     rows = []
     with st.spinner(t("cmp.scores")):

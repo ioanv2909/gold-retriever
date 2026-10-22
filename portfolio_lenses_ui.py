@@ -5,6 +5,8 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
+import mobile
+
 import exposure
 import factors
 import rotation
@@ -78,7 +80,7 @@ def render_rotation(rows, meta):
     for c, q in zip(cols, rotation.QUADRANTS):
         c.metric(t("rot.q." + q), "%.0f%%" % by_q[q], help=t("rot.q_help." + q))
     st.caption(t("rot.other", p="%.0f" % (100 - sum(by_q[q] for q in rotation.QUADRANTS))))
-    st.plotly_chart(_rrg_chart(points, pct), width="stretch", key="rot_chart")
+    mobile.plotly_chart(_rrg_chart(points, pct), width="stretch", key="rot_chart")
     st.caption(t("rot.chart_note"))
 
     rel = rotation.relative_returns(closes)
@@ -149,7 +151,7 @@ def render_factors(vdf):
     c1.metric(t("fac.beta"), "%.2f" % res["beta"], help=t("fac.beta_help"))
     c2.metric("R²", "%.0f%%" % (res["r2"] * 100) if res["r2"] is not None else "n/a", help=t("fac.r2_help"))
     c3.metric(t("fac.coverage"), "%.0f%%" % coverage, help=t("fac.coverage_help", n=res["n"]))
-    st.plotly_chart(_factor_chart(res), width="stretch", key="fac_chart")
+    mobile.plotly_chart(_factor_chart(res), width="stretch", key="fac_chart")
     st.caption(t("fac.chart_note"))
     with st.expander(t("ex.table")):
         st.dataframe(pd.DataFrame([{

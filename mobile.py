@@ -56,3 +56,13 @@ def inject_css():
 def desktop_only(key):
     """Container ascuns pe telefon (codul ruleaza in continuare, ca variabilele calculate inauntru sa existe)."""
     return st.container(key=("mobhide_" if compact() else "desk_") + key)
+
+
+def plotly_chart(fig, **kwargs):
+    """st.plotly_chart; pe telefon graficul nu mai prinde drag-ul (zoom pe regiune), ca pagina sa se poata derula."""
+    if compact():
+        fig.update_layout(dragmode=False)
+        fig.update_xaxes(fixedrange=True)
+        fig.update_yaxes(fixedrange=True)
+        kwargs.setdefault("config", {"scrollZoom": False, "displayModeBar": False})
+    return st.plotly_chart(fig, **kwargs)

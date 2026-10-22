@@ -251,7 +251,7 @@ def _history_dialog(fig):
 def _history_dialog_inner(fig):
     big = go.Figure(fig)
     big.update_layout(height=560)
-    st.plotly_chart(big, width="stretch", key="portfolio_history_chart_big")
+    mobile.plotly_chart(big, width="stretch", key="portfolio_history_chart_big")
 
 
 def _section_updates():
@@ -955,7 +955,7 @@ def render_main_view():
             if len(history_df) <= 40:
                 history_fig.update_traces(mode="lines+markers", marker=dict(size=5))
             with _hc_left:
-                st.plotly_chart(history_fig, width="stretch", key="portfolio_history_chart")
+                mobile.plotly_chart(history_fig, width="stretch", key="portfolio_history_chart")
                 _enlarge = not _compact and st.button(t("hist.enlarge"), key="history_enlarge")
             if _enlarge:
                 _history_dialog(history_fig)
