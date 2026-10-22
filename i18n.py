@@ -832,7 +832,8 @@ _T = {
     "hs.job.strategies": {"RO": "Lentile de strategie", "EN": "Strategy lenses"},
     "priv.tab": {"RO": "🔒 Confidențialitate", "EN": "🔒 Privacy"},
     "priv.title": {"RO": "Sume ascunse", "EN": "Hidden amounts"},
-    "priv.on_start": {"RO": "Deschide sesiunea cu sumele ascunse", "EN": "Start the session with amounts hidden"},
+    "priv.on_start_phone": {"RO": "📱 Pe telefon: deschide sesiunea cu sumele ascunse", "EN": "📱 On the phone: start the session with amounts hidden"},
+    "priv.on_start_desktop": {"RO": "🖥️ Pe desktop: deschide sesiunea cu sumele ascunse", "EN": "🖥️ On the desktop: start the session with amounts hidden"},
     "priv.help": {
         "RO": "Valorile, costul, P/L-ul, dividendele și numerarul apar ca •••••; procentele și graficele rămân. "
               "Butonul de lângă Sumar le arată sau le ascunde până la sfârșitul sesiunii.",

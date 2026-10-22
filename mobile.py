@@ -45,6 +45,7 @@ def compact():
 
 def set_mode(mode):
     st.session_state[_KEY] = mode
+    st.session_state.pop("_amounts_hidden", None)  # se reaplica setarea de confidentialitate a noului mod
     st.query_params[PARAM] = mode
 
 

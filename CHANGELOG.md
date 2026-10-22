@@ -1,3 +1,7 @@
+## 0.2.36 — 2026-10-22
+
+- Privacy mode: the "start the session with amounts hidden" setting is separate for the phone and the desktop (Settings > 🔒 Privacy). The old common setting applies to both until one is changed. Switching between the phone and full versions from the user menu applies that version's setting.
+
 ## 0.2.35 — 2026-10-22
 
 - Privacy mode: Settings > 🔒 Privacy has an option to start the session with amounts hidden. Hidden amounts show as •••••: the summary totals (the market value then shows the return % instead of the P/L), the history chart's Y axis and hover, the profit change of the period, cash, the returns over period, the amount columns of the positions table (quantity, cost, value, P/L, dividends), the exposure amounts and, on the position page, quantity, value, cost, P/L, dividends and the XTB purchase tables. Percentages, prices and charts stay.

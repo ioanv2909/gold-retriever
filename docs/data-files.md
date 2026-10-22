@@ -37,7 +37,7 @@ Everything is JSON except `auth_secret`. Do not commit this folder:
 | `ratings_cache.json`, `ratings_status.json` | Analyst recommendations, upside to the mean price target, and job progress |
 | `alert_rules.json`, `alert_rules_state.json`, `alert_log.json` | Position alert rules (price, score, concentration, events), their state between checks, and the last 200 fired alerts |
 | `strategy_profile.json` | Investor profile for the strategy lenses (which lenses count towards convergence) |
-| `privacy.json` | Privacy setting: start the session with amounts hidden |
+| `privacy.json` | Privacy setting: start the session with amounts hidden, separately on the phone and the desktop |
 | `events_prefs.json`, `events_notified.json` | Calendar email opt-in and days ahead; events already emailed |
 | `t212_fills.json` | Executed orders used to rebuild history |
 | `t212_first_dates.json` | First purchase dates |
