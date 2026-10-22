@@ -102,8 +102,18 @@ def require_login():
     with ph.container():
         _, mid, _ = st.columns([1, 1, 1])
         with mid:
+            # sigla si numele aplicatiei, apoi titlul formularului
+            from i18n import t
+            logo = ""
             if os.path.exists("assets/icon-192.png"):
-                st.image("assets/icon-192.png", width=96)
+                import base64
+                with open("assets/icon-192.png", "rb") as f:
+                    logo = '<img src="data:image/png;base64,%s" width="64">' % base64.b64encode(f.read()).decode()
+            st.markdown(
+                '<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem">%s'
+                '<span style="font-size:1.6rem;font-weight:700;line-height:1.2">%s</span></div>' % (logo, t("app.title")),
+                unsafe_allow_html=True,
+            )
             st.markdown("### " + _tr("title_setup" if setup else "title_login"))
             if setup:
                 st.info(_tr("setup_info"))

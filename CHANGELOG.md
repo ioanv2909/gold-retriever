@@ -1,3 +1,7 @@
+## 0.2.38 — 2026-10-22
+
+- The login page shows the app name (GoldRetriever — Portfolio Analyzer) next to the logo, above the sign-in form.
+
 ## 0.2.37 — 2026-10-22
 
 - The language selector is a single 🌐 button with the language you switch to (🌐 EN in Romanian, 🌐 RO in English), on the main page and in Settings.
