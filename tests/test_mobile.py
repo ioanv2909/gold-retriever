@@ -59,3 +59,22 @@ def test_chart_ignores_drag_on_phone_only():
     assert lay.dragmode is False and lay.xaxis.fixedrange and lay.yaxis.fixedrange
     lay = AppTest.from_function(_chart_page).run().session_state["_fig_layout"]
     assert lay.dragmode is None and not lay.xaxis.fixedrange
+
+
+def _picker_page():
+    import streamlit as st
+    import mobile
+
+    st.markdown("PICK:" + mobile.period_picker("P", ["1L", "3L", "1A"], key="p"))
+
+
+def test_period_picker_uses_buttons_on_phone():
+    at = AppTest.from_function(_picker_page)
+    at.query_params["view"] = "compact"
+    at.session_state["p"] = "3L"
+    at.run()
+    assert not at.radio and at.button_group[0].value == "3L"
+    at.button_group[0].set_value("1A").run()
+    assert "PICK:1A" in [m.value for m in at.markdown]
+    at = AppTest.from_function(_picker_page).run()
+    assert at.radio[0].value == "1L"

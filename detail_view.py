@@ -145,8 +145,8 @@ def _render_price_chart_inner(ticker, yahoo_symbol, fill_date, avg_price_t212):
     if _pkey not in st.session_state:
         _g2d = {"3H": "1Z", "1D": "1Z", "1W": "1S", "1M": "1L", "1Y": "1A", "YTD": "YTD", "Max": "Max"}
         st.session_state[_pkey] = _g2d.get(st.session_state.get("_hist_range_pref", "YTD"), "YTD")
-    period_choice = st.radio(
-        tr("dv.period"), list(CHART_PERIODS.keys()), horizontal=True, key=_pkey,
+    period_choice = mobile.period_picker(
+        tr("dv.period"), list(CHART_PERIODS.keys()), key=_pkey,
         format_func=lambda _k: tr("dv.per." + _k),
     )
     yf_period, yf_interval = CHART_PERIODS[period_choice]
@@ -185,6 +185,8 @@ def _render_price_chart_inner(ticker, yahoo_symbol, fill_date, avg_price_t212):
         template="plotly_dark",
     )
     mobile.plotly_chart(fig, width="stretch", key=f"price_chart_{ticker}")
+    if mobile.compact():
+        return
     _pc_big = st.button(tr("hist.enlarge"), key=f"price_enlarge_{ticker}")
     if _pc_big:
         _show_big_price(fig, ticker)

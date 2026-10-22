@@ -15,7 +15,7 @@ port 8501, uid 1000). Public repo: ioanv2909/gold-retriever, branch main.
 - New UI strings go in `i18n.py` with both RO and EN entries.
 - CHANGELOG: never leave an "Unreleased" section (Settings > About shows the file as is). Put the entry under
   `## X.Y.Z — date` for the version the commit will get: last `v*` tag patch + commits since the tag + 1.
-- Run tests before committing: `.venv/bin/python -m pytest -q` (227 tests, also run in CI).
+- Run tests before committing: `.venv/bin/python -m pytest -q` (228 tests, also run in CI).
 - Commit, `git push` and `./tools/deploy.sh` are pre-approved once the tests pass: do them without asking,
   then report the result (version, health check, log errors). Still ask before anything that deletes or
   changes data (`rm`, `data/`, git history rewrites) and before other `docker` commands.

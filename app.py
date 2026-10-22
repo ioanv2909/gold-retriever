@@ -853,9 +853,9 @@ def render_main_view():
             st.checkbox(t("hist.hide_small", thr=f"{_thr:,.0f} {display_ccy}"), value=True, key="hist_hide_small")
             _hc_left, _hc_right = st.columns(2)
             with _hc_left:
-                range_choice = st.radio(
+                range_choice = mobile.period_picker(
                     "Perioadă", ["3H", "1D", "1W", "1M", "1Y", "YTD", "Max"],
-                    horizontal=True, key="history_range", label_visibility="collapsed",
+                    key="history_range", label_visibility="collapsed",
                 )
             st.session_state["_hist_range_pref"] = range_choice
             _now = pd.Timestamp(datetime.now())

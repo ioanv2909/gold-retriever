@@ -1,3 +1,7 @@
+## 0.2.33 — 2026-10-22
+
+- Phone version: the period choice of the price chart (position page) and of the portfolio history chart is a row of large buttons spanning the screen width instead of small radio dots. The price chart's Enlarge button and buy-marker note are hidden on the phone.
+
 ## 0.2.32 — 2026-10-22
 
 - Phone version: touching and dragging a chart no longer selects a region and zooms; the page scrolls instead. Tapping a point still shows its values. The chart toolbar is hidden on the phone.

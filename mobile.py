@@ -66,3 +66,13 @@ def plotly_chart(fig, **kwargs):
         fig.update_yaxes(fixedrange=True)
         kwargs.setdefault("config", {"scrollZoom": False, "displayModeBar": False})
     return st.plotly_chart(fig, **kwargs)
+
+
+def period_picker(label, options, key, format_func=None, label_visibility="visible"):
+    """Alegerea perioadei unui grafic: radio pe desktop, butoane mari (segmented control) pe telefon."""
+    kw = {"key": key, "label_visibility": label_visibility}
+    if format_func:
+        kw["format_func"] = format_func
+    if compact():
+        return st.segmented_control(label, options, required=True, width="stretch", **kw)
+    return st.radio(label, options, horizontal=True, **kw)
