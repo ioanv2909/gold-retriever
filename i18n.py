@@ -830,6 +830,12 @@ _T = {
     "st.conv_profile": {"RO": "Profil {p} —", "EN": "{p} profile —"},
     "st.outside_note": {"RO": "Coloanele gri sunt lentile din afara profilului tău: nu intră în convergență.", "EN": "Grey columns are lenses outside your profile: they do not count towards convergence."},
     "hs.job.strategies": {"RO": "Lentile de strategie", "EN": "Strategy lenses"},
+    "mob.full": {"RO": "🖥️ Versiune completă", "EN": "🖥️ Full version"},
+    "mob.compact": {"RO": "📱 Versiune pentru telefon", "EN": "📱 Phone version"},
+    "mob.settings_desktop": {
+        "RO": "Setările nu sunt disponibile în versiunea pentru telefon. Deschide-le de pe desktop sau treci la versiunea completă.",
+        "EN": "Settings are not available in the phone version. Open them on a desktop or switch to the full version.",
+    },
 }
 
 

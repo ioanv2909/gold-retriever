@@ -30,6 +30,7 @@ from position_alerts_ui import cached_holdings, render_quick_price_alert
 from analysts_ui import render_analyst_section
 from strategies_ui import render_strategy_section
 from userctx import current_user
+from mobile import desktop_only
 from t212_api import fetch_account_currency, fetch_order_history_for_ticker
 from yahoo import fetch_benchmark_return, fetch_price_chart_history, fetch_sector_etf_reference, fetch_yahoo_analysis, fetch_yahoo_currency_hint, guess_yahoo_symbol
 from xtb_positions import xtb_holdings
@@ -634,9 +635,9 @@ def render_detail_view(position_row, total_portfolio_value, api_key_id, api_secr
     _render_dividend_score(yahoo_symbol, is_etf)
 
     st.divider()
-    checklist_box = st.container()
+    checklist_box = desktop_only("dv_checklist")
 
-    def _render_orders():
+    def _orders_body():
         if not is_watch:
             st.markdown("---")
 
@@ -680,41 +681,45 @@ def render_detail_view(position_row, total_portfolio_value, api_key_id, api_secr
                             for c in _show_df.columns})
                     st.dataframe(_show_df, width="stretch", hide_index=True)
 
+    def _render_orders():
+        with desktop_only("dv_orders"):
+            _orders_body()
 
-    st.markdown("---")
+    with desktop_only("dv_benchmark"):
+        st.markdown("---")
 
-    # --- comparație cu piața ---
-    if not is_watch:
-        st.subheader(tr("dv.perf_title"))
-    if is_watch:
-        pass
-    elif not YFINANCE_AVAILABLE:
-        st.caption(tr("dv.needs_yf"))
-    elif zile_detinut is None or fill_date is None:
-        st.info(tr("dv.no_fill_date"))
-    else:
-        col_bench, _ = st.columns([2, 3])
-        with col_bench:
-            benchmark_symbol = st.text_input(
-                tr("dv.bench_index"), value="^SP500TR", key=f"bench_{ticker}",
-                help="^SP500TR = S&P 500 Total Return (include dividende reinvestite).",
-            )
-
-        bench_total, bench_err = fetch_benchmark_return(benchmark_symbol, fill_date.strftime("%Y-%m-%d"))
-        position_total = position_row.get("randament_total_%", 0.0)
-
-        if bench_err:
-            st.warning(bench_err)
+        # --- comparație cu piața ---
+        if not is_watch:
+            st.subheader(tr("dv.perf_title"))
+        if is_watch:
+            pass
+        elif not YFINANCE_AVAILABLE:
+            st.caption(tr("dv.needs_yf"))
+        elif zile_detinut is None or fill_date is None:
+            st.info(tr("dv.no_fill_date"))
         else:
-            delta = position_total - bench_total
-            b1, b2, b3 = st.columns(3)
-            b1.metric(tr("dv.your_return"), f"{position_total:+.2f}%")
-            b2.metric(tr("dv.bench_period", sym=benchmark_symbol), f"{bench_total:+.2f}%")
-            b3.metric(tr("dv.difference"), f"{delta:+.2f} pp")
-            if delta > 0:
-                st.success(tr("dv.beat", sym=benchmark_symbol, d=f"{delta:+.2f}"))
+            col_bench, _ = st.columns([2, 3])
+            with col_bench:
+                benchmark_symbol = st.text_input(
+                    tr("dv.bench_index"), value="^SP500TR", key=f"bench_{ticker}",
+                    help="^SP500TR = S&P 500 Total Return (include dividende reinvestite).",
+                )
+
+            bench_total, bench_err = fetch_benchmark_return(benchmark_symbol, fill_date.strftime("%Y-%m-%d"))
+            position_total = position_row.get("randament_total_%", 0.0)
+
+            if bench_err:
+                st.warning(bench_err)
             else:
-                st.error(tr("dv.under", sym=benchmark_symbol, d=f"{abs(delta):.2f}"))
+                delta = position_total - bench_total
+                b1, b2, b3 = st.columns(3)
+                b1.metric(tr("dv.your_return"), f"{position_total:+.2f}%")
+                b2.metric(tr("dv.bench_period", sym=benchmark_symbol), f"{bench_total:+.2f}%")
+                b3.metric(tr("dv.difference"), f"{delta:+.2f} pp")
+                if delta > 0:
+                    st.success(tr("dv.beat", sym=benchmark_symbol, d=f"{delta:+.2f}"))
+                else:
+                    st.error(tr("dv.under", sym=benchmark_symbol, d=f"{abs(delta):.2f}"))
 
     st.markdown("---")
 
@@ -744,261 +749,262 @@ def render_detail_view(position_row, total_portfolio_value, api_key_id, api_secr
 
     is_etf_page = is_etf
 
-    # --- valuation fundamental ---
-    if not is_etf_page:
-        st.subheader(tr("dv.valuation_title"))
-        v1, v2, v3, v4, v5 = st.columns(5)
-        v1.metric(
-            "P/E (trailing)", f"{data['trailing_pe']:.2f}" if data['trailing_pe'] is not None else "n/a",
-            help=sector_help(
-                "Preț / profit pe acțiune din ultimele 12 luni. Arată de câți ani de profit curent ai nevoie ca "
-                "să-ți recuperezi investiția.", "pe",
-            ),
-        )
-        v2.metric(
-            "P/E (forward)", f"{data['forward_pe']:.2f}" if data['forward_pe'] is not None else "n/a",
-            help="Ca P/E trailing, dar cu profitul estimat pentru anul viitor. Mai mic decât trailing = piața "
-                 "așteaptă creștere a profitului; mai mare = așteaptă scădere.",
-        )
-        v3.metric(
-            "P/B", f"{data['price_to_book']:.2f}" if data['price_to_book'] is not None else "n/a",
-            help=sector_help("Preț / valoare contabilă pe acțiune. Sub 1 poate însemna preț sub 'valoarea din carte'.", "pb"),
-        )
-        v4.metric(
-            "P/S", f"{data['price_to_sales']:.2f}" if data['price_to_sales'] is not None else "n/a",
-            help="Preț / vânzări pe acțiune. Util mai ales pentru companii încă neprofitabile, unde P/E nu are sens "
-                 f"(reper uzual sector, aproximativ: {sector_typical.get('ps') if sector_typical else 'n/a'}).",
-        )
-        v5.metric(
-            "EV/EBITDA", f"{data['ev_to_ebitda']:.2f}" if data['ev_to_ebitda'] is not None else "n/a",
-            help="Valoare firmă (capitalizare + datorii - cash) / EBITDA. Compară companii cu structuri de capital "
-                 f"diferite mai corect decât P/E (reper uzual sector: {sector_typical.get('ev_ebitda') if sector_typical else 'n/a'}).",
-        )
-
-        v6, v7, v8 = st.columns(3)
-        v6.metric(
-            "PEG", f"{data['peg_ratio']:.2f}" if data['peg_ratio'] is not None else "n/a",
-            help="P/E împărțit la rata de creștere estimată a profitului. Sub 1 = potențial subevaluată relativ la creștere.",
-        )
-        div_y = data['dividend_yield_pct']
-        v7.metric(
-            "Dividend yield", f"{div_y:.2f}%" if div_y else "n/a",
-            help="Dividendul anual ca procent din prețul curent. 2-4% moderat, peste 5-6% generos dar verifică sustenabilitatea.",
-        )
-        if data.get("market_cap"):
-            v8.metric(
-                "Capitalizare de piață", f"{data['market_cap']:,.0f} {data.get('currency', '')}",
-                help="Nu am o sursă gratuită fiabilă pentru 'media capitalizării pe industrie' — depinde enorm de "
-                     "câte companii mari/mici sunt incluse în comparație, deci nu o afișez ca reper aici.",
+    with desktop_only("dv_fundamentals"):
+        # --- valuation fundamental ---
+        if not is_etf_page:
+            st.subheader(tr("dv.valuation_title"))
+            v1, v2, v3, v4, v5 = st.columns(5)
+            v1.metric(
+                "P/E (trailing)", f"{data['trailing_pe']:.2f}" if data['trailing_pe'] is not None else "n/a",
+                help=sector_help(
+                    "Preț / profit pe acțiune din ultimele 12 luni. Arată de câți ani de profit curent ai nevoie ca "
+                    "să-ți recuperezi investiția.", "pe",
+                ),
+            )
+            v2.metric(
+                "P/E (forward)", f"{data['forward_pe']:.2f}" if data['forward_pe'] is not None else "n/a",
+                help="Ca P/E trailing, dar cu profitul estimat pentru anul viitor. Mai mic decât trailing = piața "
+                     "așteaptă creștere a profitului; mai mare = așteaptă scădere.",
+            )
+            v3.metric(
+                "P/B", f"{data['price_to_book']:.2f}" if data['price_to_book'] is not None else "n/a",
+                help=sector_help("Preț / valoare contabilă pe acțiune. Sub 1 poate însemna preț sub 'valoarea din carte'.", "pb"),
+            )
+            v4.metric(
+                "P/S", f"{data['price_to_sales']:.2f}" if data['price_to_sales'] is not None else "n/a",
+                help="Preț / vânzări pe acțiune. Util mai ales pentru companii încă neprofitabile, unde P/E nu are sens "
+                     f"(reper uzual sector, aproximativ: {sector_typical.get('ps') if sector_typical else 'n/a'}).",
+            )
+            v5.metric(
+                "EV/EBITDA", f"{data['ev_to_ebitda']:.2f}" if data['ev_to_ebitda'] is not None else "n/a",
+                help="Valoare firmă (capitalizare + datorii - cash) / EBITDA. Compară companii cu structuri de capital "
+                     f"diferite mai corect decât P/E (reper uzual sector: {sector_typical.get('ev_ebitda') if sector_typical else 'n/a'}).",
             )
 
-        valuation_values = {
-            "pe": data["trailing_pe"],
-            "pe_fwd": data["forward_pe"],
-            "peg": data["peg_ratio"],
-            "ev_ebitda": data["ev_to_ebitda"],
-            "ps": data["price_to_sales"],
-            "pb": data["price_to_book"],
-            "roe": data["roe_pct"],
-        }
-        valuation_gauge_rows, valuation_notes = valuation_rows(valuation_values)
-        n_red, n_usable = red_count(valuation_gauge_rows)
-        checklist_valuation_red = n_red
-        checklist_valuation_usable = n_usable
+            v6, v7, v8 = st.columns(3)
+            v6.metric(
+                "PEG", f"{data['peg_ratio']:.2f}" if data['peg_ratio'] is not None else "n/a",
+                help="P/E împărțit la rata de creștere estimată a profitului. Sub 1 = potențial subevaluată relativ la creștere.",
+            )
+            div_y = data['dividend_yield_pct']
+            v7.metric(
+                "Dividend yield", f"{div_y:.2f}%" if div_y else "n/a",
+                help="Dividendul anual ca procent din prețul curent. 2-4% moderat, peste 5-6% generos dar verifică sustenabilitatea.",
+            )
+            if data.get("market_cap"):
+                v8.metric(
+                    "Capitalizare de piață", f"{data['market_cap']:,.0f} {data.get('currency', '')}",
+                    help="Nu am o sursă gratuită fiabilă pentru 'media capitalizării pe industrie' — depinde enorm de "
+                         "câte companii mari/mici sunt incluse în comparație, deci nu o afișez ca reper aici.",
+                )
 
-        if n_usable > 0:
-            for chunk_start in range(0, len(valuation_gauge_rows), 3):
-                cols = st.columns(3)
-                for i, row in enumerate(valuation_gauge_rows[chunk_start:chunk_start + 3]):
-                    with cols[i]:
-                        key = row["key"]
-                        label = row["label"]
-                        if not row["usable"]:
-                            st.caption(f"{label}: n/a")
-                            continue
+            valuation_values = {
+                "pe": data["trailing_pe"],
+                "pe_fwd": data["forward_pe"],
+                "peg": data["peg_ratio"],
+                "ev_ebitda": data["ev_to_ebitda"],
+                "ps": data["price_to_sales"],
+                "pb": data["price_to_book"],
+                "roe": data["roe_pct"],
+            }
+            valuation_gauge_rows, valuation_notes = valuation_rows(valuation_values)
+            n_red, n_usable = red_count(valuation_gauge_rows)
+            checklist_valuation_red = n_red
+            checklist_valuation_usable = n_usable
 
-                        fig_g = make_gauge(
-                            label=label,
-                            value=row["value"],
-                            target=row["target"],
-                            red_flag=row["red_flag"],
-                            higher_is_better=False,
-                            show_label=False,
-                        )
-                        if fig_g is not None:
-                            st.markdown(f"**{label}**", help=indicator_tooltip("valuation", key))
-                            st.plotly_chart(fig_g, width="stretch", key=f"vgauge_{ticker}_{key}")
-                        else:
-                            st.caption(f"{label}: n/a")
+            if n_usable > 0:
+                for chunk_start in range(0, len(valuation_gauge_rows), 3):
+                    cols = st.columns(3)
+                    for i, row in enumerate(valuation_gauge_rows[chunk_start:chunk_start + 3]):
+                        with cols[i]:
+                            key = row["key"]
+                            label = row["label"]
+                            if not row["usable"]:
+                                st.caption(f"{label}: n/a")
+                                continue
 
-            st.caption(tr("dv.red_zone", r=n_red, n=n_usable))
-            for note in valuation_notes:
-                st.caption(note)
+                            fig_g = make_gauge(
+                                label=label,
+                                value=row["value"],
+                                target=row["target"],
+                                red_flag=row["red_flag"],
+                                higher_is_better=False,
+                                show_label=False,
+                            )
+                            if fig_g is not None:
+                                st.markdown(f"**{label}**", help=indicator_tooltip("valuation", key))
+                                st.plotly_chart(fig_g, width="stretch", key=f"vgauge_{ticker}_{key}")
+                            else:
+                                st.caption(f"{label}: n/a")
 
-        st.markdown("---")
+                st.caption(tr("dv.red_zone", r=n_red, n=n_usable))
+                for note in valuation_notes:
+                    st.caption(note)
 
-    # --- indicatori suplimentari (inspirați din stilul finviz) ---
-    st.subheader(tr("dv.extra_title"))
-    yccy = data.get("currency", "")
-    x1, x2, x3, x4, x5 = st.columns(5)
-    x1.metric("Enterprise Value", f"{data['enterprise_value']:,.0f} {yccy}" if data['enterprise_value'] else "n/a",
-              help="Capitalizare de piață + datorii − numerar. Valoarea totală a firmei, indiferent cum e finanțată.")
-    x2.metric("Book/sh", f"{data['book_value_per_share']:.2f} {yccy}" if data['book_value_per_share'] else "n/a",
-              help="Valoare contabilă pe acțiune (active − datorii, împărțit la nr. de acțiuni).")
-    x3.metric("Cash/sh", f"{data['cash_per_share']:.2f} {yccy}" if data['cash_per_share'] else "n/a",
-              help="Numerar și echivalente pe acțiune.")
-    x4.metric("Quick Ratio", f"{data['quick_ratio']:.2f}" if data['quick_ratio'] is not None else "n/a",
-              help="Active lichide / datorii curente (fără stocuri). Peste 1 = poate acoperi datoriile pe termen scurt fără să vândă stocuri.")
-    x5.metric("Current Ratio", f"{data['current_ratio']:.2f}" if data['current_ratio'] is not None else "n/a",
-              help="Active curente / datorii curente. Reper: peste 1.5-2 e considerat confortabil, sub 1 poate semnala probleme de lichiditate.")
+            st.markdown("---")
 
-    x6, x7, x8, x9, x10 = st.columns(5)
-    x6.metric("Debt/Equity", f"{data['debt_to_equity']:.2f}" if data['debt_to_equity'] is not None else "n/a",
-              help="Datorii totale / capitaluri proprii. Reper orientativ: sub 1 conservator, peste 2 îndatorare ridicată — variază mult pe sector.")
-    x7.metric("Payout Ratio", f"{data['payout_ratio_pct']:.1f}%" if data['payout_ratio_pct'] is not None else "n/a",
-              help="Cât din profit se plătește ca dividend. Peste ~80-100% poate fi nesustenabil pe termen lung.")
-    x8.metric("Short % Float", f"{data['short_pct_float_pct']:.2f}%" if data['short_pct_float_pct'] is not None else "n/a",
-              help="Cât din acțiunile tranzacționabile sunt vândute short. Peste 10-15% poate însemna sentiment negativ puternic sau risc de 'short squeeze'.")
-    x9.metric("Short Ratio", f"{data['short_ratio']:.2f}" if data['short_ratio'] is not None else "n/a",
-              help="Zile necesare ca toate pozițiile short să fie acoperite, la volumul mediu de tranzacționare.")
-    x10.metric("Rel Volume", f"{data['rel_volume']:.2f}x" if data['rel_volume'] is not None else "n/a",
-               help="Volumul de azi față de volumul mediu. Peste 2x poate indica interes/mișcare neobișnuită.")
+        # --- indicatori suplimentari (inspirați din stilul finviz) ---
+        st.subheader(tr("dv.extra_title"))
+        yccy = data.get("currency", "")
+        x1, x2, x3, x4, x5 = st.columns(5)
+        x1.metric("Enterprise Value", f"{data['enterprise_value']:,.0f} {yccy}" if data['enterprise_value'] else "n/a",
+                  help="Capitalizare de piață + datorii − numerar. Valoarea totală a firmei, indiferent cum e finanțată.")
+        x2.metric("Book/sh", f"{data['book_value_per_share']:.2f} {yccy}" if data['book_value_per_share'] else "n/a",
+                  help="Valoare contabilă pe acțiune (active − datorii, împărțit la nr. de acțiuni).")
+        x3.metric("Cash/sh", f"{data['cash_per_share']:.2f} {yccy}" if data['cash_per_share'] else "n/a",
+                  help="Numerar și echivalente pe acțiune.")
+        x4.metric("Quick Ratio", f"{data['quick_ratio']:.2f}" if data['quick_ratio'] is not None else "n/a",
+                  help="Active lichide / datorii curente (fără stocuri). Peste 1 = poate acoperi datoriile pe termen scurt fără să vândă stocuri.")
+        x5.metric("Current Ratio", f"{data['current_ratio']:.2f}" if data['current_ratio'] is not None else "n/a",
+                  help="Active curente / datorii curente. Reper: peste 1.5-2 e considerat confortabil, sub 1 poate semnala probleme de lichiditate.")
 
-    x11, x12, x13 = st.columns(3)
-    x11.metric("Avg Volume", f"{data['avg_volume']:,.0f}" if data['avg_volume'] is not None else "n/a")
-    x12.metric("Prev Close", f"{data['prev_close']:.2f} {yccy}" if data['prev_close'] is not None else "n/a")
-    x13.metric("Change %", f"{data['change_pct']:+.2f}%" if data['change_pct'] is not None else "n/a")
+        x6, x7, x8, x9, x10 = st.columns(5)
+        x6.metric("Debt/Equity", f"{data['debt_to_equity']:.2f}" if data['debt_to_equity'] is not None else "n/a",
+                  help="Datorii totale / capitaluri proprii. Reper orientativ: sub 1 conservator, peste 2 îndatorare ridicată — variază mult pe sector.")
+        x7.metric("Payout Ratio", f"{data['payout_ratio_pct']:.1f}%" if data['payout_ratio_pct'] is not None else "n/a",
+                  help="Cât din profit se plătește ca dividend. Peste ~80-100% poate fi nesustenabil pe termen lung.")
+        x8.metric("Short % Float", f"{data['short_pct_float_pct']:.2f}%" if data['short_pct_float_pct'] is not None else "n/a",
+                  help="Cât din acțiunile tranzacționabile sunt vândute short. Peste 10-15% poate însemna sentiment negativ puternic sau risc de 'short squeeze'.")
+        x9.metric("Short Ratio", f"{data['short_ratio']:.2f}" if data['short_ratio'] is not None else "n/a",
+                  help="Zile necesare ca toate pozițiile short să fie acoperite, la volumul mediu de tranzacționare.")
+        x10.metric("Rel Volume", f"{data['rel_volume']:.2f}x" if data['rel_volume'] is not None else "n/a",
+                   help="Volumul de azi față de volumul mediu. Peste 2x poate indica interes/mișcare neobișnuită.")
 
-    st.markdown("---")
-
-    # --- creștere & profitabilitate ---
-    if not is_etf_page:
-        st.subheader("📈 Creștere & Profitabilitate")
-        g1, g2, g3, g4 = st.columns(4)
-        g1.metric("EPS (TTM)", f"{data['eps_ttm']:.2f}" if data['eps_ttm'] is not None else "n/a",
-                  help="Profit net pe acțiune din ultimele 12 luni.")
-        g2.metric("EPS estimat (anul viitor)", f"{data['eps_forward']:.2f}" if data['eps_forward'] is not None else "n/a",
-                  help="Estimarea consensului de analiști pentru EPS anul viitor.")
-        g3.metric("Creștere EPS estimată (5 ani)", f"{data['eps_5y_growth_pct']:+.1f}%/an" if data['eps_5y_growth_pct'] is not None else "n/a",
-                  help="Estimare de consens a analiștilor pentru creșterea medie anuală a profitului pe următorii 5 ani — "
-                       "best-effort, nu toate titlurile au acest câmp disponibil în Yahoo Finance.")
-        g4.metric("Creștere EPS (YoY)", f"{data['earnings_growth_yoy_pct']:+.1f}%" if data['earnings_growth_yoy_pct'] is not None else "n/a",
-                  help="Creșterea profitului față de aceeași perioadă anul trecut.")
-
-        g5, g6, g7 = st.columns(3)
-        g5.metric("Creștere vânzări (YoY)", f"{data['revenue_growth_yoy_pct']:+.1f}%" if data['revenue_growth_yoy_pct'] is not None else "n/a",
-                  help="Creșterea veniturilor față de aceeași perioadă anul trecut.")
-        g6.metric("Creștere vânzări (CAGR 3 ani)", f"{data['sales_growth_3y_cagr_pct']:+.1f}%/an" if data['sales_growth_3y_cagr_pct'] is not None else "n/a",
-                  help="Rata anuală compusă de creștere a veniturilor pe ultimii ani disponibili în situațiile financiare anuale (până la 3 ani).")
-        g7.metric("Marjă brută", f"{data['gross_margin_pct']:.1f}%" if data['gross_margin_pct'] is not None else "n/a",
-                  help="Cât din venituri rămâne după costul direct al bunurilor/serviciilor vândute.")
-
-        g8, g9, g10, g11 = st.columns(4)
-        g8.metric("Marjă operațională", f"{data['operating_margin_pct']:.1f}%" if data['operating_margin_pct'] is not None else "n/a",
-                  help="Profit operațional / venituri — eficiența operațiunilor de bază, înainte de dobânzi și taxe.")
-        g9.metric("Marjă de profit netă", f"{data['profit_margin_pct']:.1f}%" if data['profit_margin_pct'] is not None else "n/a",
-                  help="Profit net / venituri — cât din fiecare unitate vândută ajunge profit curat.")
-        g10.metric("ROE", f"{data['roe_pct']:.1f}%" if data['roe_pct'] is not None else "n/a",
-                   help="Return on Equity — profit net / capitaluri proprii. Reper: peste ~15% e considerat solid, dar variază pe sector.")
-        g11.metric("ROA", f"{data['roa_pct']:.1f}%" if data['roa_pct'] is not None else "n/a",
-                   help="Return on Assets — profit net / total active. Arată eficiența folosirii activelor pentru a genera profit "
-                        "(ROIC nu e disponibil direct în Yahoo Finance fără calcule suplimentare din situațiile financiare — omis aici).")
+        x11, x12, x13 = st.columns(3)
+        x11.metric("Avg Volume", f"{data['avg_volume']:,.0f}" if data['avg_volume'] is not None else "n/a")
+        x12.metric("Prev Close", f"{data['prev_close']:.2f} {yccy}" if data['prev_close'] is not None else "n/a")
+        x13.metric("Change %", f"{data['change_pct']:+.2f}%" if data['change_pct'] is not None else "n/a")
 
         st.markdown("---")
 
-    # --- proprietate ---
-    if not is_etf_page:
-        st.subheader("👤 Proprietate & Insideri")
-        o1, o2, o3 = st.columns(3)
-        o1.metric("Deținere insideri", f"{data['insider_ownership_pct']:.2f}%" if data['insider_ownership_pct'] is not None else "n/a",
-                  help="Cât din companie e deținut de conducere/insideri. Deținere mare poate însemna aliniere de interese cu acționarii.")
-        o2.metric("Deținere instituțională", f"{data['institutional_ownership_pct']:.2f}%" if data['institutional_ownership_pct'] is not None else "n/a",
-                  help="Cât din companie e deținut de fonduri/instituții. Deținere mare = validare din partea investitorilor mari, dar și risc de mișcări bruște la ieșiri masive.")
-        o3.metric("Tranzacții insideri (recent)", data.get("insider_tx_summary") or "n/a",
-                  help=data.get("insider_tx_summary_full") or "Rezumatul ultimelor tranzacții raportate de conducere — cumpărările insiderilor sunt urmărite ca semnal de încredere.")
+        # --- creștere & profitabilitate ---
+        if not is_etf_page:
+            st.subheader("📈 Creștere & Profitabilitate")
+            g1, g2, g3, g4 = st.columns(4)
+            g1.metric("EPS (TTM)", f"{data['eps_ttm']:.2f}" if data['eps_ttm'] is not None else "n/a",
+                      help="Profit net pe acțiune din ultimele 12 luni.")
+            g2.metric("EPS estimat (anul viitor)", f"{data['eps_forward']:.2f}" if data['eps_forward'] is not None else "n/a",
+                      help="Estimarea consensului de analiști pentru EPS anul viitor.")
+            g3.metric("Creștere EPS estimată (5 ani)", f"{data['eps_5y_growth_pct']:+.1f}%/an" if data['eps_5y_growth_pct'] is not None else "n/a",
+                      help="Estimare de consens a analiștilor pentru creșterea medie anuală a profitului pe următorii 5 ani — "
+                           "best-effort, nu toate titlurile au acest câmp disponibil în Yahoo Finance.")
+            g4.metric("Creștere EPS (YoY)", f"{data['earnings_growth_yoy_pct']:+.1f}%" if data['earnings_growth_yoy_pct'] is not None else "n/a",
+                      help="Creșterea profitului față de aceeași perioadă anul trecut.")
 
-        st.markdown("---")
+            g5, g6, g7 = st.columns(3)
+            g5.metric("Creștere vânzări (YoY)", f"{data['revenue_growth_yoy_pct']:+.1f}%" if data['revenue_growth_yoy_pct'] is not None else "n/a",
+                      help="Creșterea veniturilor față de aceeași perioadă anul trecut.")
+            g6.metric("Creștere vânzări (CAGR 3 ani)", f"{data['sales_growth_3y_cagr_pct']:+.1f}%/an" if data['sales_growth_3y_cagr_pct'] is not None else "n/a",
+                      help="Rata anuală compusă de creștere a veniturilor pe ultimii ani disponibili în situațiile financiare anuale (până la 3 ani).")
+            g7.metric("Marjă brută", f"{data['gross_margin_pct']:.1f}%" if data['gross_margin_pct'] is not None else "n/a",
+                      help="Cât din venituri rămâne după costul direct al bunurilor/serviciilor vândute.")
 
-    # --- tehnic / momentum ---
-    st.subheader("📉 Tehnic & Momentum")
-    if data.get("price_clean_notes"):
-        st.caption(f"ℹ️ Istoricul de preț de la Yahoo a fost corectat pentru calculele de mai jos: {data['price_clean_notes']}.")
-    price = data["current_price"]
-    checklist_price = price
-    t1, t2, t3, t4 = st.columns(4)
-    t1.metric("Preț curent (Yahoo)", f"{price:.2f} {data.get('currency', '')}")
+            g8, g9, g10, g11 = st.columns(4)
+            g8.metric("Marjă operațională", f"{data['operating_margin_pct']:.1f}%" if data['operating_margin_pct'] is not None else "n/a",
+                      help="Profit operațional / venituri — eficiența operațiunilor de bază, înainte de dobânzi și taxe.")
+            g9.metric("Marjă de profit netă", f"{data['profit_margin_pct']:.1f}%" if data['profit_margin_pct'] is not None else "n/a",
+                      help="Profit net / venituri — cât din fiecare unitate vândută ajunge profit curat.")
+            g10.metric("ROE", f"{data['roe_pct']:.1f}%" if data['roe_pct'] is not None else "n/a",
+                       help="Return on Equity — profit net / capitaluri proprii. Reper: peste ~15% e considerat solid, dar variază pe sector.")
+            g11.metric("ROA", f"{data['roa_pct']:.1f}%" if data['roa_pct'] is not None else "n/a",
+                       help="Return on Assets — profit net / total active. Arată eficiența folosirii activelor pentru a genera profit "
+                            "(ROIC nu e disponibil direct în Yahoo Finance fără calcule suplimentare din situațiile financiare — omis aici).")
 
-    if data["week52_high"] is not None and data["week52_low"] is not None:
-        pct_from_high = (price / data["week52_high"] - 1) * 100
-        checklist_drawdown_52w = pct_from_high
-        pct_from_low = (price / data["week52_low"] - 1) * 100
-        t2.metric("Față de max. 52 săpt.", f"{pct_from_high:+.1f}%", f"max: {data['week52_high']:.2f}",
-                  help="Cât e prețul curent față de maximul din ultimele 52 săptămâni.")
-        t3.metric("Față de min. 52 săpt.", f"{pct_from_low:+.1f}%", f"min: {data['week52_low']:.2f}",
-                  help="Cât e prețul curent față de minimul din ultimele 52 săptămâni.")
-    else:
-        t2.metric("Față de max. 52 săpt.", "n/a")
-        t3.metric("Față de min. 52 săpt.", "n/a")
+            st.markdown("---")
 
-    rsi = data["rsi14"]
-    if rsi is not None and not np.isnan(rsi):
-        rsi_label = "supracumpărat" if rsi > 70 else ("supravândut" if rsi < 30 else "neutru")
-        t4.metric("RSI (14)", f"{rsi:.1f}", rsi_label,
-                  help="Reper clasic: peste 70 = supracumpărat, sub 30 = supravândut, 30-70 = neutru.")
-    else:
-        t4.metric("RSI (14)", "n/a")
+        # --- proprietate ---
+        if not is_etf_page:
+            st.subheader("👤 Proprietate & Insideri")
+            o1, o2, o3 = st.columns(3)
+            o1.metric("Deținere insideri", f"{data['insider_ownership_pct']:.2f}%" if data['insider_ownership_pct'] is not None else "n/a",
+                      help="Cât din companie e deținut de conducere/insideri. Deținere mare poate însemna aliniere de interese cu acționarii.")
+            o2.metric("Deținere instituțională", f"{data['institutional_ownership_pct']:.2f}%" if data['institutional_ownership_pct'] is not None else "n/a",
+                      help="Cât din companie e deținut de fonduri/instituții. Deținere mare = validare din partea investitorilor mari, dar și risc de mișcări bruște la ieșiri masive.")
+            o3.metric("Tranzacții insideri (recent)", data.get("insider_tx_summary") or "n/a",
+                      help=data.get("insider_tx_summary_full") or "Rezumatul ultimelor tranzacții raportate de conducere — cumpărările insiderilor sunt urmărite ca semnal de încredere.")
 
-    yccy = data.get("currency", "")
-    s1, s2, s3, s4 = st.columns(4)
-    sma20, sma50, sma200 = data["sma20"], data["sma50"], data["sma200"]
-    checklist_sma200 = sma200
-    s1.metric("SMA 20 zile", f"{sma20:.2f} {yccy}" if sma20 is not None else "n/a", help="Media mobilă pe termen foarte scurt.")
-    if sma50 is not None:
-        s2.metric("SMA 50 zile", f"{sma50:.2f} {yccy}", "peste ↑" if price > sma50 else "sub ↓",
-                  help="Media mobilă pe termen mediu. Preț peste SMA50 e semn orientativ de trend ascendent.")
-    else:
-        s2.metric("SMA 50 zile", "n/a")
-    if sma200 is not None:
-        s3.metric("SMA 200 zile", f"{sma200:.2f} {yccy}", "peste ↑" if price > sma200 else "sub ↓",
-                  help="Media mobilă pe termen lung. SMA50 peste SMA200 ('golden cross') e considerat bullish.")
-    else:
-        s3.metric("SMA 200 zile", "n/a")
-    s4.metric("Beta", f"{data['beta']:.2f}" if data['beta'] is not None else "n/a",
-              help="Cât de mult se mișcă titlul relativ la piață. Beta 1 = mișcare similară pieței; peste 1 = mai volatil; sub 1 = mai stabil.")
+            st.markdown("---")
 
-    s5, s6 = st.columns(2)
-    s5.metric("Volatilitate anualizată", f"{data['volatility_annual_pct']:.1f}%" if data['volatility_annual_pct'] is not None else "n/a",
-              help="Fluctuația prețului în ultimul an, anualizată. Sub ~15% scăzută, 15-30% medie, peste 30-40% ridicată.")
-    s6.metric("ATR (14 zile)", f"{data['atr14']:.2f} {yccy}" if data['atr14'] is not None else "n/a",
-              help="Average True Range — mișcarea medie zilnică a prețului în valoare absolută. Util pentru a seta "
-                   "stop-loss realiste, proporționale cu cât 'respiră' normal titlul.")
+        # --- tehnic / momentum ---
+        st.subheader("📉 Tehnic & Momentum")
+        if data.get("price_clean_notes"):
+            st.caption(f"ℹ️ Istoricul de preț de la Yahoo a fost corectat pentru calculele de mai jos: {data['price_clean_notes']}.")
+        price = data["current_price"]
+        checklist_price = price
+        t1, t2, t3, t4 = st.columns(4)
+        t1.metric("Preț curent (Yahoo)", f"{price:.2f} {data.get('currency', '')}")
 
-    st.subheader("📅 Performanță istorică")
-    checklist_ret_3m = data.get("perf_quarter_pct")
-    perf_cols = st.columns(4)
-    for col, label, key in [
-        (perf_cols[0], "1 săptămână", "perf_week_pct"), (perf_cols[1], "1 lună", "perf_month_pct"),
-        (perf_cols[2], "1 trimestru", "perf_quarter_pct"), (perf_cols[3], "6 luni", "perf_half_year_pct"),
-    ]:
-        val = data.get(key)
-        col.metric(label, f"{val:+.1f}%" if val is not None else "n/a")
-    p1, p2, p3, p4, p5 = st.columns(5)
-    for col, label, key in [
-        (p1, "YTD", "perf_ytd_pct"), (p2, "1 an", "perf_year_pct"), (p3, "3 ani", "perf_3y_pct"),
-        (p4, "5 ani", "perf_5y_pct"), (p5, "10 ani", "perf_10y_pct"),
-    ]:
-        val = data.get(key)
-        col.metric(label, f"{val:+.1f}%" if val is not None else "n/a")
-
-    if sma50 and sma200:
-        if price > sma50 > sma200:
-            st.success("Trend tehnic: bullish — preț peste SMA50, care e peste SMA200.")
-        elif price < sma50 < sma200:
-            st.error("Trend tehnic: bearish — preț sub SMA50, care e sub SMA200.")
+        if data["week52_high"] is not None and data["week52_low"] is not None:
+            pct_from_high = (price / data["week52_high"] - 1) * 100
+            checklist_drawdown_52w = pct_from_high
+            pct_from_low = (price / data["week52_low"] - 1) * 100
+            t2.metric("Față de max. 52 săpt.", f"{pct_from_high:+.1f}%", f"max: {data['week52_high']:.2f}",
+                      help="Cât e prețul curent față de maximul din ultimele 52 săptămâni.")
+            t3.metric("Față de min. 52 săpt.", f"{pct_from_low:+.1f}%", f"min: {data['week52_low']:.2f}",
+                      help="Cât e prețul curent față de minimul din ultimele 52 săptămâni.")
         else:
-            st.info("Trend tehnic: mixt — semnalele SMA50/SMA200 nu sunt aliniate.")
+            t2.metric("Față de max. 52 săpt.", "n/a")
+            t3.metric("Față de min. 52 săpt.", "n/a")
 
-    st.markdown("---")
+        rsi = data["rsi14"]
+        if rsi is not None and not np.isnan(rsi):
+            rsi_label = "supracumpărat" if rsi > 70 else ("supravândut" if rsi < 30 else "neutru")
+            t4.metric("RSI (14)", f"{rsi:.1f}", rsi_label,
+                      help="Reper clasic: peste 70 = supracumpărat, sub 30 = supravândut, 30-70 = neutru.")
+        else:
+            t4.metric("RSI (14)", "n/a")
+
+        yccy = data.get("currency", "")
+        s1, s2, s3, s4 = st.columns(4)
+        sma20, sma50, sma200 = data["sma20"], data["sma50"], data["sma200"]
+        checklist_sma200 = sma200
+        s1.metric("SMA 20 zile", f"{sma20:.2f} {yccy}" if sma20 is not None else "n/a", help="Media mobilă pe termen foarte scurt.")
+        if sma50 is not None:
+            s2.metric("SMA 50 zile", f"{sma50:.2f} {yccy}", "peste ↑" if price > sma50 else "sub ↓",
+                      help="Media mobilă pe termen mediu. Preț peste SMA50 e semn orientativ de trend ascendent.")
+        else:
+            s2.metric("SMA 50 zile", "n/a")
+        if sma200 is not None:
+            s3.metric("SMA 200 zile", f"{sma200:.2f} {yccy}", "peste ↑" if price > sma200 else "sub ↓",
+                      help="Media mobilă pe termen lung. SMA50 peste SMA200 ('golden cross') e considerat bullish.")
+        else:
+            s3.metric("SMA 200 zile", "n/a")
+        s4.metric("Beta", f"{data['beta']:.2f}" if data['beta'] is not None else "n/a",
+                  help="Cât de mult se mișcă titlul relativ la piață. Beta 1 = mișcare similară pieței; peste 1 = mai volatil; sub 1 = mai stabil.")
+
+        s5, s6 = st.columns(2)
+        s5.metric("Volatilitate anualizată", f"{data['volatility_annual_pct']:.1f}%" if data['volatility_annual_pct'] is not None else "n/a",
+                  help="Fluctuația prețului în ultimul an, anualizată. Sub ~15% scăzută, 15-30% medie, peste 30-40% ridicată.")
+        s6.metric("ATR (14 zile)", f"{data['atr14']:.2f} {yccy}" if data['atr14'] is not None else "n/a",
+                  help="Average True Range — mișcarea medie zilnică a prețului în valoare absolută. Util pentru a seta "
+                       "stop-loss realiste, proporționale cu cât 'respiră' normal titlul.")
+
+        st.subheader("📅 Performanță istorică")
+        checklist_ret_3m = data.get("perf_quarter_pct")
+        perf_cols = st.columns(4)
+        for col, label, key in [
+            (perf_cols[0], "1 săptămână", "perf_week_pct"), (perf_cols[1], "1 lună", "perf_month_pct"),
+            (perf_cols[2], "1 trimestru", "perf_quarter_pct"), (perf_cols[3], "6 luni", "perf_half_year_pct"),
+        ]:
+            val = data.get(key)
+            col.metric(label, f"{val:+.1f}%" if val is not None else "n/a")
+        p1, p2, p3, p4, p5 = st.columns(5)
+        for col, label, key in [
+            (p1, "YTD", "perf_ytd_pct"), (p2, "1 an", "perf_year_pct"), (p3, "3 ani", "perf_3y_pct"),
+            (p4, "5 ani", "perf_5y_pct"), (p5, "10 ani", "perf_10y_pct"),
+        ]:
+            val = data.get(key)
+            col.metric(label, f"{val:+.1f}%" if val is not None else "n/a")
+
+        if sma50 and sma200:
+            if price > sma50 > sma200:
+                st.success("Trend tehnic: bullish — preț peste SMA50, care e peste SMA200.")
+            elif price < sma50 < sma200:
+                st.error("Trend tehnic: bearish — preț sub SMA50, care e sub SMA200.")
+            else:
+                st.info("Trend tehnic: mixt — semnalele SMA50/SMA200 nu sunt aliniate.")
+
+        st.markdown("---")
 
     # --- target analiști ---
     if data.get("target_mean_price") or data.get("number_of_analysts"):
@@ -1006,8 +1012,9 @@ def render_detail_view(position_row, total_portfolio_value, api_key_id, api_secr
         st.markdown("---")
 
     # --- lentile de strategie (la ETF-uri doar Trend) ---
-    render_strategy_section(ticker, yahoo_symbol, position_row)
-    st.markdown("---")
+    with desktop_only("dv_strategies"):
+        render_strategy_section(ticker, yahoo_symbol, position_row)
+        st.markdown("---")
 
     # --- semnale (informativ) ---
     st.subheader("🧭 Semnale (informativ — nu e sfat de investiții)")

@@ -1,3 +1,8 @@
+## 0.2.31 — 2026-10-22
+
+- Phone version: on a phone (detected from the browser) the same app shows less. Main page: the positions table keeps only name, current value, P/L and return; the Strategies, Exposure and Compare tabs, the filters, the table notes and the history chart's captions and Enlarge button are hidden; the header and the summary metrics are laid out for a narrow screen. Position page: chart, holdings, scores, dividend score, analysts, signals and notes stay; orders, benchmark comparison, valuation, extra indicators, growth, ownership, technical, historical performance, strategy lenses and the buy checklist are hidden. Settings are not available on the phone.
+- The user menu switches between the phone and full versions (`?view=compact` / `?view=full`, kept for the session).
+
 ## 0.2.30 — 2026-10-21
 
 - New strategy lens "Trend & momentum" (the data-driven layer, from prices only): 12-1 momentum, 6-month return versus the S&P 500, distance from the 200-day average in standard deviations and RSI (14 days; 45–65 scores best, both extremes score low). A price more than 2.5 standard deviations above the 200-day average is flagged as stretched. It also applies to ETFs, which now show this lens on the position page and in the matrix.

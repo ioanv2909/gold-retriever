@@ -272,12 +272,18 @@ def user_menu(me):
     with pop:
         st.markdown(
             "<span class='um-marker'></span><style>"
-            "div[data-testid='stPopoverBody']:has(.um-marker){width:11rem !important;min-width:0 !important;}"
+            "div[data-testid='stPopoverBody']:has(.um-marker){width:13rem !important;min-width:0 !important;}"
             "</style>",
             unsafe_allow_html=True,
         )
         st.caption(users.role(me))
-        if _btn("⚙️ " + _tr("settings"), "menu_settings"):
+        import mobile
+        from i18n import t
+        _compact = mobile.compact()
+        if _btn(t("mob.full") if _compact else t("mob.compact"), "menu_view"):
+            mobile.set_mode("full" if _compact else "compact")
+            st.rerun()
+        if not _compact and _btn("⚙️ " + _tr("settings"), "menu_settings"):
             # URL-ul dedicat pastreaza pagina la refresh; pagina pozitiei se inchide
             for k in ("selected_ticker", "selected_row", "_url_ticker"):
                 st.session_state.pop(k, None)

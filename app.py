@@ -135,6 +135,7 @@ def _watch_background_jobs():
 
 from portfolio_model import portfolio_options, default_currency, build_rows
 from url_tabs import url_tabs
+import mobile
 from history_multi import multi_history_records
 from xtb import instruments as _xtb_instruments
 
@@ -640,7 +641,9 @@ def render_main_view():
             icon="🧪",
         )
     from auth import user_menu as _user_menu
-    _c_logo, _c_title, _c_lang, _c_user = st.columns([1, 13, 3, 3], vertical_alignment="center")
+    _compact = mobile.compact()
+    _hdr = st.container(key="app_header")
+    _c_logo, _c_title, _c_lang, _c_user = _hdr.columns([1, 13, 3, 3], vertical_alignment="center")
     with _c_logo:
         if os.path.exists("assets/icon-192.png"):
             import base64 as _b64
@@ -811,7 +814,7 @@ def render_main_view():
     vdf = build_rows(df, display_ccy, sel_portfolios, account_currency)
 
     if not detail_loading:
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3, col4 = st.container(key="summary_metrics").columns(4)
         if _native:
             col1.metric("💰 Total Investit", f"{invested:,.2f}")
             col2.metric("📊 Valoare de Piață (Nerealizat)", f"{market_value:,.2f}", f"{ppl:,.2f}")
@@ -893,9 +896,10 @@ def render_main_view():
                     t("hist.variation", rng=range_choice), f"{_pl_d:+,.2f} {display_ccy}",
                     f"{_pl_d / _inv_avg * 100:+.2f}%" if _inv_avg else None,
                 )
-                st.caption(t("hist.variation_help"))
-                st.caption(t("hist.points", n=len(history_df), a=f"{history_df['x'].iloc[0]:%d.%m %H:%M}", b=f"{history_df['x'].iloc[-1]:%d.%m %H:%M}"))
-                if _ps is not None and _first_local > _ps + pd.Timedelta(minutes=30):
+                if not _compact:
+                    st.caption(t("hist.variation_help"))
+                    st.caption(t("hist.points", n=len(history_df), a=f"{history_df['x'].iloc[0]:%d.%m %H:%M}", b=f"{history_df['x'].iloc[-1]:%d.%m %H:%M}"))
+                if not _compact and _ps is not None and _first_local > _ps + pd.Timedelta(minutes=30):
                     st.caption(t("hist.incomplete", d=f"{_first_local:%d.%m.%Y %H:%M}"))
                 _render_cash(sel_portfolios, display_ccy, cash, compact=True)
                 _cash_done = True
@@ -952,7 +956,7 @@ def render_main_view():
                 history_fig.update_traces(mode="lines+markers", marker=dict(size=5))
             with _hc_left:
                 st.plotly_chart(history_fig, width="stretch", key="portfolio_history_chart")
-                _enlarge = st.button(t("hist.enlarge"), key="history_enlarge")
+                _enlarge = not _compact and st.button(t("hist.enlarge"), key="history_enlarge")
             if _enlarge:
                 _history_dialog(history_fig)
 
@@ -972,8 +976,11 @@ def render_main_view():
     account_currency_note = t("main.fx_error", e="; ".join(fx_errors)) if fx_errors else ""
     if not detail_loading:
         st.subheader(t("main.open_positions"))
-    st.caption(t("main.table_note", ccy=display_ccy) + account_currency_note)
-    st.caption(t("main.alpha_note"))
+    if not _compact:
+        st.caption(t("main.table_note", ccy=display_ccy) + account_currency_note)
+        st.caption(t("main.alpha_note"))
+    elif account_currency_note:
+        st.caption(account_currency_note)
 
     mc = load_market_context_cache()
     df["sp500_return_%"] = df["ticker"].map(lambda t: mc.get(t, {}).get("sp500_return_%"))
@@ -1021,8 +1028,11 @@ def render_main_view():
 
     filter_options = ["Toate"] + list(RECOMMENDATION_LABELS.values())
     col_sort_info = st.container()
-    with st.expander(t("side.filters"), expanded=False):
-        filter_choice = st.selectbox(t("filter.rating"), filter_options, index=0, key="rec_filter", format_func=_tx)
+    if _compact:
+        filter_choice = "Toate"
+    else:
+        with st.expander(t("side.filters"), expanded=False):
+            filter_choice = st.selectbox(t("filter.rating"), filter_options, index=0, key="rec_filter", format_func=_tx)
     if filter_choice != "Toate":
         st.caption(t("filter.active", f=_tx(filter_choice)))
     if "positions_sort_label" not in st.session_state:
@@ -1072,6 +1082,8 @@ def render_main_view():
         "Scor div.": pd.to_numeric(df_display["Scor div."], errors="coerce"),
         "Conturi": df_display["accounts"],
     })
+    if _compact:
+        table_df = table_df[["Nume", f"Val. curentă ({_c})", f"P/L ({_c})", "Randament %"]]
 
     def colorize(value):
         if value is None or pd.isna(value):
@@ -1082,14 +1094,16 @@ def render_main_view():
             return "color: #ff6b6b;"
         return "color: #9aa0a6;"
 
-    _tabs = url_tabs([("positions", t("tab.positions")), ("strategies", t("tab.strategies")),
-                      ("exposure", t("tab.exposure")), ("compare", t("tab.compare")),
-                      ("calendar", t("tab.events")), ("watchlist", t("tab.watchlist"))], "main_tab")
+    # pe telefon lipsesc taburile grele (strategii, expunere, comparare)
+    _tabs = url_tabs([e for e in [("positions", t("tab.positions")), ("strategies", t("tab.strategies")),
+                                  ("exposure", t("tab.exposure")), ("compare", t("tab.compare")),
+                                  ("calendar", t("tab.events")), ("watchlist", t("tab.watchlist"))]
+                      if not (_compact and e[0] in ("strategies", "exposure", "compare"))], "main_tab")
     tab_pos, tab_st, tab_ex, tab_cmp, tab_ev, tab_wl = (
-        _tabs[k] for k in ("positions", "strategies", "exposure", "compare", "calendar", "watchlist"))
+        _tabs.get(k) for k in ("positions", "strategies", "exposure", "compare", "calendar", "watchlist"))
     with tab_pos:
         styled_table = table_df.style.format(
-            {
+            {k: v for k, v in {
                 "Cant.": "{:.4f}",
                 "Preț mediu": "{:.2f}",
                 "Preț curent": "{:.2f}",
@@ -1107,12 +1121,12 @@ def render_main_view():
                 "Scor risc": "{:.1f}",
                 "Scor div.": "{:.1f}",
                 "Țintă %": "{:+.1f}%",
-            },
+            }.items() if k in table_df.columns},
             na_rep="n/a",
         )
         styled_table = styled_table.map(
             colorize,
-            subset=[f"P/L ({_c})", "Randament %", "Rand. total %", "vs S&P500 pp", "Țintă %"],
+            subset=[c for c in (f"P/L ({_c})", "Randament %", "Rand. total %", "vs S&P500 pp", "Țintă %") if c in table_df.columns],
         )
 
         _t212_rows = {r["ticker"]: r for r in df.to_dict("records")}
@@ -1145,17 +1159,17 @@ def render_main_view():
             st.rerun()
 
     # taburile secundare se randeaza doar cand sunt deschise (comparatia descarca preturi)
-    if tab_st.open is not False:
+    if tab_st is not None and tab_st.open is not False:
         with tab_st:
             from strategies_ui import render_strategies_tab
             render_strategies_tab(vdf)
 
-    if tab_ex.open is not False:
+    if tab_ex is not None and tab_ex.open is not False:
         with tab_ex:
             from exposure_ui import render_exposure_tab
             render_exposure_tab(vdf, display_ccy)
 
-    if tab_cmp.open is not False:
+    if tab_cmp is not None and tab_cmp.open is not False:
         with tab_cmp:
             from compare_ui import render_compare_tab
             render_compare_tab(vdf)
@@ -1333,9 +1347,20 @@ elif _synced is not None:
     if _url_detail is not None:
         st.query_params.pop("detail", None)
 
+mobile.inject_css()
 if "selected_ticker" in st.session_state and "selected_row" in st.session_state:
     render_detail_view(st.session_state["selected_row"], st.session_state.get("total_portfolio_value", 0), api_key_id, api_secret)
 else:
+    if st.session_state.get("_page") == "settings" and mobile.compact():
+        st.info(t("mob.settings_desktop"))
+        if st.button(t("mob.full"), key="settings_full_view"):
+            mobile.set_mode("full")
+            st.rerun()
+        if st.button(t("dv.back"), key="settings_mobile_back"):
+            st.session_state.pop("_page", None)
+            st.query_params.pop("page", None)
+            st.rerun()
+        st.stop()
     if st.session_state.get("_page") == "settings":
         from settings_page import render_settings
         from events_ui import render_settings_section as _events_settings
