@@ -263,7 +263,7 @@ def fetch_and_cache_quality(tickers_t212):
             if cached_entry and cached_entry.get("updated"):
                 try:
                     updated_dt = datetime.fromisoformat(cached_entry["updated"])
-                    if (now - updated_dt).total_seconds() < QUALITY_REFRESH_INTERVAL and "risk_total" in cached_entry and "div_pays" in cached_entry and cached_entry.get("rating") != "ISIN lipsă":
+                    if (now - updated_dt).total_seconds() < QUALITY_REFRESH_INTERVAL and "risk_total" in cached_entry and "div_pays" in cached_entry and "name" in cached_entry and cached_entry.get("rating") != "ISIN lipsă":
                         save_quality_status({"in_progress": True, "started_at": None, "total": len(tickers_t212), "done": idx + 1})
                         continue
                 except Exception:
@@ -317,8 +317,13 @@ def fetch_and_cache_quality(tickers_t212):
                         div_res = compute_dividend_score(div_m)
                 except Exception as e:
                     print(f"[dividend] {ticker}: {e}", flush=True)
+            try:
+                yahoo_name = tk.info.get("longName") or tk.info.get("shortName")
+            except Exception:
+                yahoo_name = None
             cache[ticker] = {
                 "kind": kind,
+                "name": yahoo_name,
                 "total": score_res.get("total"),
                 "rating": score_res.get("rating"),
                 "coverage": score_res.get("coverage"),

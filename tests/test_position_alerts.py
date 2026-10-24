@@ -85,6 +85,15 @@ def test_merge_holdings_across_accounts():
     assert sum(w.values()) == pytest.approx(100.0)
 
 
+def test_fill_names_uses_yahoo_name_when_only_symbol():
+    h = {"VWCE.DE": {"name": "VWCE.DE"}, "KO": {"name": "Coca-Cola"}, "X": {"name": None}}
+    q = {"VWCE.DE": {"name": "Vanguard FTSE All-World"}, "KO": {"name": "The Coca-Cola Company"}}
+    pa.fill_names(h, q)
+    assert [h[k]["name"] for k in ("VWCE.DE", "KO", "X")] == ["Vanguard FTSE All-World", "Coca-Cola", "X"]
+    assert pa.describe({"kind": "concentration", "ticker": "X", "name": None, "pct": 30.0, "limit": 25}, "EN") \
+        == "X: now 30.0% of the portfolio (limit 25%)"
+
+
 def test_scores_of_respects_coverage():
     q = {"X": {"total": 70, "coverage": 80, "risk_total": 40, "risk_coverage": 30, "div_total": 60, "div_coverage": 100}}
     assert pa.scores_of(q, ["X", "Y"]) == {
@@ -128,7 +137,7 @@ def test_evaluate_logs_emails_and_disarms(env):
     assert {f["kind"] for f in fired} == {"price", "concentration"}
     (event, subject, body), kw = env[0]
     assert event == "positions" and kw["to"] == ["bob@example.com"] and "2" in subject
-    assert "Coca-Cola (KO): price fell to 60.00 USD" in body and "Apple (AAPL): now 70.0%" in body
+    assert "Coca-Cola: price fell to 60.00 USD" in body and "Apple: now 70.0%" in body and "(KO)" not in body
     assert pa.load_rules()["price"][0]["active"] is False
     assert len(pa.load_log()) == 2 and not any(e["seen"] for e in pa.load_log())
 
@@ -171,4 +180,4 @@ def test_evaluate_event_alert_message(env):
     fired = pa.evaluate("bob", now=2.0, holdings=HOLD, quality={}, timelines={"KO": [_ev(1), _ev(2)]})
     assert len(fired) == 1
     (_, _, body), _ = env[0]
-    assert "Coca-Cola (KO): Management (2026-10-02) — 8-K 5.02" in body
+    assert "Coca-Cola: Management (2026-10-02) — 8-K 5.02" in body

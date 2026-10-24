@@ -1,3 +1,7 @@
+## 0.2.44 — 2026-10-24
+
+- Position alerts (banner and email) show the instrument name instead of the symbol. When the broker gives only the symbol (often the case for XTB), the name comes from Yahoo Finance; the score refresh now keeps it, so every instrument is refreshed once.
+
 ## 0.2.43 — 2026-10-24
 
 - GitHub Pages: Google Search Console verification tag in `docs/index.html`.

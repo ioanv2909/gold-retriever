@@ -223,6 +223,14 @@ def merge_holdings(t212_positions, instruments, t212_ccy, xtb, base_ccy, fx):
     return out
 
 
+def fill_names(holdings, quality):
+    """Pozitiile fara nume (nume = simbol, frecvent la XTB) primesc numele Yahoo din cache-ul de scoruri."""
+    for ticker, h in holdings.items():
+        if not h.get("name") or h["name"] == ticker:
+            h["name"] = (quality.get(ticker) or {}).get("name") or h.get("name") or ticker
+    return holdings
+
+
 def weights_of(holdings):
     total = sum(h["value"] for h in holdings.values() if h.get("value"))
     if total <= 0:
@@ -256,7 +264,8 @@ def current_holdings():
         t212_ccy, _ = fetch_account_currency(cfg.get("api_key_id"), cfg.get("api_secret"))
     base = t212_ccy or next((r.get("account_currency") for r in xtb if r.get("account_currency")), None) or "EUR"
     holdings = merge_holdings(snap.get("positions") if t212_ccy else [], snap.get("instruments"), t212_ccy, xtb, base, fx)
-    return holdings, load_json_file(QUALITY_CACHE_FILE, {})
+    quality = load_json_file(QUALITY_CACHE_FILE, {})
+    return fill_names(holdings, quality), quality
 
 
 # ---------------------------------------------------------------------------
@@ -286,7 +295,7 @@ def _user_lang():
 
 def describe(e, lang="RO"):
     from i18n import t
-    name = "%s (%s)" % (e.get("name") or e["ticker"], e["ticker"]) if e.get("name") and e.get("name") != e["ticker"] else e["ticker"]
+    name = e.get("name") or e["ticker"]
     if e["kind"] == "price":
         return t("pa.msg.price_" + e["op"], _lang=lang, name=name, price="%.2f %s" % (e["price"], e.get("ccy", "")),
                  target="%.2f" % e["target"]).strip()
