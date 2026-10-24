@@ -1,3 +1,7 @@
+## 0.2.43 — 2026-10-24
+
+- GitHub Pages: Google Search Console verification tag in `docs/index.html`.
+
 ## 0.2.42 — 2026-10-24
 
 - Static project page for GitHub Pages in `docs/` (`index.html` with no external libraries, title, description, Open Graph and structured data, light and dark theme), plus `robots.txt` and `sitemap.xml` for https://ioanv2909.github.io/gold-retriever/.
