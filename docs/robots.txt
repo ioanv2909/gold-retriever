@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ioanv2909.github.io/gold-retriever/sitemap.xml

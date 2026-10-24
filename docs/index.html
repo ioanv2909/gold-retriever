@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GoldRetriever — self-hosted portfolio tracker for Trading 212 and XTB</title>
+<meta name="description" content="GoldRetriever is a free, open-source, self-hosted portfolio tracker for Trading 212 and XTB (Interactive Brokers planned), built with Streamlit and Docker: multi-user, any display currency, Romanian/English interface.">
+<meta name="keywords" content="self-hosted portfolio tracker, Trading 212, XTB, Interactive Brokers, Streamlit, Docker, dividends, ETF, open source">
+<meta name="color-scheme" content="light dark">
+<link rel="canonical" href="https://ioanv2909.github.io/gold-retriever/">
+<link rel="icon" type="image/png" href="data:image/png;base64,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">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="GoldRetriever">
+<meta property="og:title" content="GoldRetriever — self-hosted portfolio tracker for Trading 212 and XTB">
+<meta property="og:description" content="Free, open-source, self-hosted portfolio tracker for Trading 212 and XTB, built with Streamlit and Docker. Multi-user, any currency, Romanian/English.">
+<meta property="og:url" content="https://ioanv2909.github.io/gold-retriever/">
+<meta property="og:image" content="https://ioanv2909.github.io/gold-retriever/screenshots/main-light.png">
+<meta property="og:image:alt" content="GoldRetriever portfolio summary">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "GoldRetriever",
+  "description": "Self-hosted portfolio tracker for Trading 212 and XTB, built with Streamlit and Docker.",
+  "applicationCategory": "FinanceApplication",
+  "operatingSystem": "Linux, macOS, Windows (Docker)",
+  "license": "https://opensource.org/licenses/MIT",
+  "url": "https://ioanv2909.github.io/gold-retriever/",
+  "codeRepository": "https://github.com/ioanv2909/gold-retriever",
+  "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}
+}
+</script>
+<style>
+:root {
+  --bg: #fbfaf7; --surface: #ffffff; --text: #1d1b16; --muted: #5d584c;
+  --border: #e4dfd2; --accent: #a8740b; --accent-ink: #ffffff; --code-bg: #f3f0e8;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14130f; --surface: #1d1c17; --text: #ece8de; --muted: #a9a394;
+    --border: #34312a; --accent: #e2aa3a; --accent-ink: #1d1b16; --code-bg: #24221c;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14130f; --surface: #1d1c17; --text: #ece8de; --muted: #a9a394;
+  --border: #34312a; --accent: #e2aa3a; --accent-ink: #1d1b16; --code-bg: #24221c;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+main { max-width: 920px; margin: 0 auto; padding: 32px 16px 64px; }
+header { display: flex; gap: 16px; align-items: center; margin-bottom: 8px; }
+header img { width: 64px; height: 64px; flex: none; }
+h1 { font-size: clamp(1.6rem, 4vw, 2.3rem); line-height: 1.2; margin: 0; }
+h2 { font-size: 1.4rem; margin: 48px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+p.lead { font-size: 1.15rem; }
+.muted { color: var(--muted); }
+a { color: var(--accent); }
+.buttons { display: flex; flex-wrap: wrap; gap: 12px; margin: 20px 0; }
+.btn {
+  display: inline-block; padding: 10px 18px; border-radius: 8px; text-decoration: none;
+  font-weight: 600; border: 1px solid var(--accent);
+}
+.btn.primary { background: var(--accent); color: var(--accent-ink); }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; background: var(--surface); }
+th, td { text-align: left; vertical-align: top; padding: 10px 12px; border: 1px solid var(--border); }
+th { background: var(--code-bg); }
+td:first-child { font-weight: 600; white-space: nowrap; }
+pre {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px; overflow-x: auto; font-size: 0.9rem;
+}
+code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+figure { margin: 0; }
+figure img { width: 100%; height: auto; border: 1px solid var(--border); border-radius: 8px; display: block; }
+figcaption { font-size: 0.9rem; color: var(--muted); margin-top: 6px; }
+footer { margin-top: 56px; font-size: 0.9rem; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAABmJLR0QA/wD/AP+gvaeTAAAVFElEQVR4nO2beXBcx3Wvv773zo5lsA2IhSCJhZBIigRXyaJFSirLihhLfJJMbY7iVOy4KopSLylXyi9+5ZdK4ooTV5yKHFt5fklsxZJsybQiK3mmFCZaSHORRIAbSAoksRHEPsBgAMxyZ+693fljBgOAAEiAIl2pSg6qC0Df26fP+fU5p7tP94X/4iRudgeFhbcVJb2eHRrqNhS3IEQjSpUgCKIIZKWIoxhDqVGEuICgTSFOp1L2QaInozdTvpsCgKesqUEI/WkEuzTN3ZRXulL3FVTgySvBk1eC7gqgGR403YVCoawUVtrETsdIxUZJJUZJjQ+SiF52pLRPoNQ+pdSLqfDx9hst6w0E4G7DG5p4ArRnXN68TwSrN1BUsQZfsAohNJRSKKWA7G9Fpi7zR7Yu8//U39KRmON9TITPMznUhpOOHQGeN4frXoG9zo2Q+gYAcLfhLZ/4TZT4Sn5ZbW2o/i7yQw0IxCxlZio/VefWLEBh2kbundmAkOOhpCQ+2kn0cjPJ8d4OBH9uDtX+4OMC8bEA8Jdu2iwFf1tQ3rC14tb7CBQvn6WwAlzC4tbiHtaXdFGRN4oCpBQYwsF0Mi7g1S1sR0PTMiD1TwQ5MbScs+FKUs4McLIgJsf7Ges+ijl++RRozySHjx355QKw8m6vLxH7S8Ob90zVul2ieHkTM0fXJSy2LWvjzmXncJSgNbycQxf89AwlMCdHsdMx0DSQDkqB0HSUdNDdATz+IMtDfnY0xlhb2oemSX5xaTWHL6/CcrRZFhKPdBHpeE86Vuy7yfzxP6C9PXXTAfAua1qJ1F8tqt6wbcXGR9AMd25k/EaSh1YdYWXBAAd6GnmrBSJDnSglcecvw5tfjitQjO7yzcvbsRKk4xFSE0OkJgYByC+p5oGNkntqO2kfLWPvuSbiaVfO0hw7xWjnu8RHO06g1GNLDZRLAsBbunWnbmhvVDU9WFi2clt2xEEXDg+tOkRDsI+XT23g6PF27FQCf1kD/uJVCE1bSjc5UsohPtJFfPg8mu5l2/pKfn1TG2fD5fzk7AYch5xFTA6eIdpzNKqktdsMnzi42D4WDYC7fMtul+7+ce0dv+bLD9XnzLChsJcnVr/Dz86v5+cHLyNlmoKqTbh8hdel9EJkJaNEe1pQSnD/7WV8dn0bf9+yjfPh0pzrpSYGGG3fn1J26ulkuGXvYvguCgBfaNPDuid/7+rtX9C9wWU55R9adZjqvGG+sa+GcN9HBFduw+0v+XiaXoPS8VEinUcpKF7O/36wj65IEa+23paTKZ0YZfTiWw528rOJ4ZafXYuffq0XvKVbd+puz+urP/lFt6+wAlBoOPzuhn+iMxLkr16bwFIaxbXbF/TtG0m6y0deqIF4dJD9zSnqqv08tu4sR3pqkAp0w4c7v0pLjHU+bPjKDtqJwUtX5Xe1h56ypgbDcL1Tt/038gJFNSil8OhpvrxxL//ctoa9b7ZSULkBX8mqG6vlIshbsAyXJ8CHzR+Rcq3g2TtbONJdgyVBM7y4/aWGGb30sB5Y9lMnPjC2EJ+FAaiv9xhp35vLm3avClauRSkwhM2XN+7lhRMbePtAMyW1d2H4gjdFwcWQ7g7gK6zio9Mt9Kfr+f2dx3m3cwVKKjRXHugurz3Zd7dd1vgC0W57Xh4LMfcZtc8VVa/fXbX2/tyU8+yG13mjbQ1vHzhGSf29aL8Ek78WaYYbf3ENHeeamRSr+M2tZznYtRylwOUvxklNlIv4cIEdH3hrvvbzAuBbtmWb4S38v/V3/oYQmo5Sit2rDtMRLeK1fa0Ur5zyd/WfogjNwFtYybkzJyktK2NTVZgzQyWZRVlgGWa0a6vhL91vxwd65wA4V/09upTqe9XrHtCmFjkNhb1U54f50Zu95FdvRPMEUPP8uPU0jSU9rC3rJuBKzPvOzfrRPQGKVmzlJ++NU18SobFsFJRE03QC5Rs0qcR3Yc+cATeurPCWd3whv7S+KVi1DqUUOg5PNr7Nl19bi+aOZqY5pWa3MdL80V0vs6vuGG4942oSwcut9/IX7+/Bkde3EFoqefLKcOeV8sf/7PDtJ0/y5Td2YCuFp2A57rGOTaKs6/NmmO/PbHMFInt0IxD98crNe4pdvkKUUjxcf4ijPStoPtFKYc22eTv+k50v8XDjUXRN5uoEsKG8i4aiPi5NhBiO39iF0ULkyQ8R7T1NXFTxydpBWgcyrqC7AqQmutfZ8cbnoTsn6Kyh8YY6nswvra33F2V2dQEjSX1hH/9ysIeCqk1Zl1OzSn2wj92r3wfgf37HzenOzNpKOjqxSIj7ak/wwoN/hd8w57S9OQWCNVt4pyXKxsoR/K4UKInhLcbwl9b5yicfm6nzFbapPVNWtz23vt5de4Qfn1qHY5kY3mBuyel3JXhq3b/zvV3f5rXPfgNdZAA9cEqjN5xhGe5ZjeE2Ach3J/l07fFc+5tdXL4iNE3w90dqeHLjRVAShcQbrEMpfnteADxlTQ2Gx39HXmlddkubZkXBEIdbOgmUrwElc+X2yjO0DpUyGAvgMawcs5N/Z7LrdgfHdmHGgrj9caTUkVLngdrjs3jcqLKt4jzPbvkXtlWen1VfULme422j3Boaw9CcTALGV4rQ3ds9oc11cwAQQn+6qLpJIAQoxe3L2jhwaTWWOYnuyZsVcaOpQqryx3h87bF5/TA2FqKgZBAn7cFOe7DTXm4PdVPqm7xhUV8g+dZ9P+DFh/+aZ7a+RTgxW0bdmw/K5t/Ol3NX7QBKSRTgyasUAj431wUEuwrLb2EqsXFHZRtvtjh4Cmvm+NnJgRrWhfp55exWzoUrsJzZsTQWKcNwJ0klA6STAdKJAJbp41Oll26Yrz+4+hifWd0MwFvtG+mMlM95J1Cyin3HdT7V2J+zDMMfAtg1G4BgU1DT3E2+YGUuo+NIQWSwE09h5Rwfsx2d7x+/HzCImnmYtnsWAI7tJmUGSMYKSMYKiU8UM3ypkeFE4Ib5+aMNzUxtZn9xqXHedzzBapKxCCiFS3OyllGAEPoWgk1ByK4DPB5jR6C4RodM9nZNyWXODFchVTcCMWfeBwjH8/na20/MqnvjiW+yJtSHkoKxweUASNuDLy9KRd1Z/qihFf3gI2hiLj+PbmFoDhMpHxMpP+MpP5fHS4ilvXPerS0YYV1wCCvlweUx+Wikel4ZBRoIONUb5LbKCC09RaAEuqdQ9zD6yRT8fwNAKLXBW1DBVFZ2fVk3r50sy0Z+OYfxQnSsv441oT4qGs4wEa7E5Y0TCI5iuDKpOj/wnV3fvzqTGaSU4KNwJa+c+QQ/PXc7acfA0CS/v/4gjuXB1h1S0uBCOLSgnO68Ut45Z/HolhGaLwVBSXR3PnZqdD1TAACNnkBJbvqrCIxyud+PyxucF9mF6BeXGvl800Hc3jilyy8uut1CJIRiTaiPP7n3p3xp83u8cORX2Fg4SlMwjJ32IDRJc38FlqORWaTMA4CvhL5wHzVFiWwcUGiGF5RohKkYoNRqd6AIsr4DkIiNoHsKluSX7/fUkrJdH1vx+ai6cIQ//NSrrCvMKG9bmRnmhVPbryqT4S3AthMIkQmCSkk0lx9gBgBChHT3jAAFOOk4muFmKbuypO3ig97amwIAgO6yKCgZyk6tHl44s43DfSuvKpNmeFBOmoxxZ+uFARCC6c1Qvqa7UUpmznNyM8nizX+Kjl6uY8fK8x9b2YUoUBzm0Eeb+NnACt4dXM5Cpn8lKciuCBVCaAD5MA1AntANlFK4tTSm7QLMJfn/FH1wue7aL30McrtNvtNdz8VIOYtVXghBMq3hMRxMCxACsgDkFkIzDyenGKuszyylnB6smHfqupG0tvzyEuWaMmk5K87NBCCm7DRKKVK2jke3plBZcnEcwbHeFTcVgBXByJJkUkriczskLZGZLqUNMDkTgEnbMjMBUIKG/FirtP0X1txUAGoKR5YkD1PBL2sBUlpXAKDUsJ2K5cxDkcm/K8dkKbPAVHnjo/UMx/OvW8FYpJzu0zsY7Fw/7/NQ3uSiZZG2idCMnAsoJDgWwPA0AEJcSMUjs6ZBj78Yy5y8LguIp118/Z0Hlqz4qcEqvveve+g8eQ8TI5VE+uuQck7Wjny3uWhZbHMcobuQcjrOSSsBcH4aADhvZQFAKfrHC1m+zI+djF73bu2Ns7fxcvOdi1LclhrPHb6HR374JT7srZmuT3sY7W2Y835JIL5oOazEKNUlGpdGvUAmKDqOCUJNA6CEOGXGhnKoHR+sZsfqBE56YhERduHy/SM76W3bip32LKh823CIR374Rb518G4sB9onZ+8sh7rWMTYx+/ClqiDKuvK+RcmQTkS4Z02KD7ryswMsUVYcBadzAKRS9kEz2usoaaNQtA5XcFuoD4RAKee6rcAQkkh/HW1HH6Kl5W7++tDdvHh8K1JNn8m+fnY9J/src226Eh66E9OASUfnu/+2m+HY7Jjy1Ibma0d/aaOkpGn5JCd7/EzlBKSdsFOW62AOAKIno1I5J8yJQZRSpO3MdZXC4hrSk9OWsdSiIXNKDAys4FsHdvLVN3fRPlKaU8TQnDnt3hspmKXsgd5ynn7lc8RS08A8tPYMLs26av/pyUF8Hh8oRdomM02nYyglm4l8MDENAIBS+2Ij7bmZ4EB3LQ9sUljxoeu2gJl5IluRq++fKJjRLXPatY5PH7klHI2LMQ/nBkP8zuuP5qwn32Oys7bjqv2b4708sNniX88W5VzCscYB9k3xn7kSfDEeblNSZtYAh7pXcm9dF7orgG3Fritv58xYqk7Yeq4+5UxHdluKOe10pvf2Zyd82AoUirfb63j+yPbcs/UV/Qv2bacnUQruXxvlQFt+BhQpsVNRhdBengNAKny83bESR5Njmbxd2tG4GCnljg1VpKLdXE/GVslpACYtMaN+2jJipntOuzUFidzzljH/rGeHuqZXmT5XesG+k6MX2Fjr5nSvn7SdCX62PQHSOWQOHeucA0CWnp/on87fv9q6nqe3tKMZ3iyiS4sBhpjWdMLSc/WOnA6CE6ZnVhuf7rC7Yjz3/MOId7Zf29Mi+4z0vP1a5jjSkXzpnggvHSnJubWTHEUI8fxMhWcBYA7XvWJO9F80JwZAKWIpgzPDZTxwRzlmpHPJMaDYNX0kP2lruXo542bOeNIzq81DyyYocmfuPvYlDQaSxqznee7pm3CWo83bbzJ8gU83aRzrChAzNZSSSCuOtBMdyaFVs+4OXWEBex0E3xzvPTZtBafX8ej6ixSUrsQc71n06Pt1h19bMX0xYyQ1fV22PDCZqx+czJvV7kTUw76BfF7vK+Dr50Jz+G6pnj7hHje9c54nxzrxeL08dnuUl44WM7X+t80wKPX1K2+Wzjm2NYdqf2BO9p1IRDpQSmE78P8+3MT/2T2MkhbSHF/U6IfcFiGvTdTS+dGlQt7qzwSiFUVjbK3pzY1g92jhrHZt426+faGY77UX0RVzzeF7/y0XAIil3fz87OpZzxxzHDs5xp/uifLc/hCOk61PjyOdRIsZrnvxSn3nvSXmX7Z1K7r3/dCaRzWhZYR4YsMZxhIGP3qrB29RXSaxeA3y6IqUM7uLz244y9888nMsR+er+z7FS80brslnJpUGEjSUjdI+Ukw4FsjVSztJfPgsT+5w4zVUbvSVtElNdkuBvT05dPz9RQEA4Cvf9Dee4KpngyvuyQQRFF+79xBvnK7mwAcX8JWsRmhLT4C6dMktoRF6x/MZS9yYKzZKWsSGWvnk2gCfaZrga/+USfGjFFaiD5WOP5cMt/zefG0XvCNkVwTeUePmLt3wVhi+EkBxuLua37vrFL2pOnq7L6C5CxDaNW/azSJHCoYmAyStubu86yFpm8TDZ1m7Mo8v7Izw1Z9W4cjMtOeYYzjWRLNZMP4Ukci8t8oXlj4ScQx/xTtWbPDXjUCpV3flIaXiF51V/ME9rUxqK2nv6ETTPGi6e0E2N5Oc9ATJ0QtsXxfgCzsjfOXValL29JbXTofHQHzavnxmZCEeVx0+JzEQcQVCB9PjvU+58pa5NMOLLeHd9mq+eHsbZaVlnG4fw7Hi6O7rT4BcD6Une7Diwzy+w8XOxjhf3VtJKhv0pGNiJ/pNpPOr5nDLqavxuab92vHBXpe//GxqsnePOxDShOFFSjjQUcGm5aM8/okkRzoKiY91ouk+tOuIC0shx4phRs7j1jX+7Mk40ZjOc/vLMmaPQtpJrMSALVGPpYZb9l+L36Ic2IoPtGn+8pOp8e7/YXiLXLrLj1KKMwNBhie9fO0zHaT1ai5eimAnRxCGN5OGuoEk7QSpaAd2apz7Nnr4yoMR/u7dEv79XHadj8SxEziJgZSQ6nOp4ebXF8N3adflyzbuEJrrDX/ZuqC3qDYXaXXh8PimDjZVRfiHQ5U0t0WQtonhLUH3FWVOaa+DFBInGcFKhAGNzQ0efuvuCB92Bnj5SDF2NtihFHY6ipOOjAlHPpQMtxxabB9L/2CiYuMKHO0Vd37VHf7QejRhZA9VJQGXxVNburh12Tj7PyplX4tGYjICSqK5A2hGAM3lQ2jzB00l00gribRiOOlM4tPj9fOrmxx+Zd04rb0+/vFwCQlTZJKbSoF0sMwhHCt+HKUev6kfTOSovt7jmyz8JprnWX/prZo7rzK34QCJS3PYUT/MfbdkkikneoK8d85Fz0gamTaRMo2A7PtZKZRCaC40w83yYsE9a9M0rYijlGR/ayHvteVnkxrZgw4U0prENsNSOvLbqcLo//qlfDIzk/ylmzdJjb81vMXbvEX1uZtkmf1uBhCX5tBUFWXbqjFWFGe2uY4Dhi5JWpljbZ8hsRzQtQwg3SNujrbncbLHj2WTA3YKZGnHsVMRpJ08oQn1zHwrvF8KABnao3vLuj6PUH9oeIvq3QU1uDzFKEHOP6dcZPrvzP8ewwEUZprcqGaUnAYwB6ZUOPYEMhVF2skLKPUNM3z8hxlkrp9u4IeTe3RfeefjSvGM0Nx3uv0hYfhKEO5A7prNlSMJM87tyCqe/T/j4w7SMnGscZx0TKHsw0KI55NDq37yn+jDybnkCW2uy15F2yWEtkVz5+uaK4CmezObKKGjCR2VvZKHtJHSRkkLZSeRMo20kygraStkM7APob9kDn3YdaNlvekfT1O0udDjVjsEZD6eRjQCpUAQyMu+FQOiwAjQhlDnFbSmLNeBqeztf9NNov8AbJhjZzRQTWsAAAAASUVORK5CYII=" alt="GoldRetriever logo" width="64" height="64">
+    <h1>GoldRetriever — self-hosted portfolio tracker for Trading 212 and XTB</h1>
+  </header>
+
+  <p class="lead"><strong>GoldRetriever is a self-hosted portfolio tracker for Trading 212 and XTB (Interactive Brokers planned), built with Streamlit and Docker: multi-user, any display currency, Romanian/English interface.</strong> Your data stays on your own machine.</p>
+  <p>It brings your broker accounts into one view with returns, dividends, scores, analyst data, strategy lenses, exposure analysis and email alerts. Free and open source under the MIT license.</p>
+
+  <div class="buttons">
+    <a class="btn primary" href="https://github.com/ioanv2909/gold-retriever">View on GitHub</a>
+    <a class="btn" href="#quick-start">Quick start</a>
+    <a class="btn" href="https://ko-fi.com/goldretriever">Support on Ko-fi</a>
+  </div>
+
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="screenshots/main-dark.png">
+    <img src="screenshots/main-light.png" alt="GoldRetriever portfolio summary" width="1500" height="2040" style="width:100%;height:auto;border:1px solid var(--border);border-radius:8px">
+  </picture>
+
+  <h2 id="features">Features</h2>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Area</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td>Brokers</td><td>Trading 212 (API) and XTB (xlsx report import) in one view, with any number of accounts. Interactive Brokers is planned.</td></tr>
+      <tr><td>Currency</td><td>Display in any currency, chosen per user; exchange rates from Yahoo Finance</td></tr>
+      <tr><td>Performance</td><td>Market value over time (value vs. invested), return summary and XIRR</td></tr>
+      <tr><td>Positions</td><td>Per-position profit/loss, dividends and comparison with the S&amp;P 500 over the same holding period; detail page for every instrument</td></tr>
+      <tr><td>Scores</td><td>Quality, risk and dividend scores; ETF data from justETF</td></tr>
+      <tr><td>Analysts</td><td>Price targets, recommendations, EPS and revenue estimates and revisions</td></tr>
+      <tr><td>Strategy lenses</td><td>Value, growth, dividend discount model, dividend growth, sentiment, event-driven, trend &amp; momentum, with verdicts, the signals behind them and how many of your profile's lenses agree</td></tr>
+      <tr><td>Event timeline</td><td>SEC 8-K filings, ratings, insider trades, earnings and classified news</td></tr>
+      <tr><td>Exposure</td><td>Sector and country (both with ETF look-through) and currency; sector rotation (RRG of sector ETFs vs. the S&amp;P 500) and factor exposure (beta, size, value, momentum, quality, low volatility, dividend)</td></tr>
+      <tr><td>Comparison</td><td>Side by side for up to five instruments: return chart, scores, valuation</td></tr>
+      <tr><td>Events calendar</td><td>Upcoming earnings, ex-dividend and payment dates for held positions, with an optional email digest</td></tr>
+      <tr><td>Alerts</td><td>Watchlist, loss-to-profit alerts, position alerts on price, score and concentration (in-app banner and email)</td></tr>
+      <tr><td>Admin notifications</td><td>Email (SMTP) for failed backups, failed refreshes, XTB import problems and security events</td></tr>
+      <tr><td>Multi-user</td><td>Separate data per user, admin page for accounts, signed login cookie</td></tr>
+      <tr><td>Interface</td><td>Romanian and English, light and dark theme, phone layout, hidden amounts mode</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2 id="quick-start">Quick start with Docker Compose</h2>
+<pre><code>git clone https://github.com/ioanv2909/gold-retriever.git
+cd gold-retriever
+docker compose up -d --build</code></pre>
+  <p>Open <code>http://localhost:8501</code>. On the first visit you create the admin account. To use another port: <code>PORT=8080 docker compose up -d</code>.</p>
+  <p>The included <code>docker-compose.yml</code>:</p>
+<pre><code>services:
+  gold-retriever:
+    build: .
+    container_name: gold-retriever
+    user: "1000:1000"
+    environment:
+      - HOME=/tmp
+    ports:
+      - "${PORT:-8501}:8501"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped</code></pre>
+
+  <h2 id="connect">Connect your accounts</h2>
+  <ul>
+    <li><strong>Trading 212:</strong> sidebar, <em>Trading 212 authentication</em>. Enter an API key ID and secret (create the key with read-only permissions).</li>
+    <li><strong>XTB:</strong> sidebar, <em>XTB — import</em>. Upload the xlsx account report (sheets <em>Open Positions</em>, <em>Cash Operations</em>, <em>Closed Positions</em>). You can import several accounts (EUR, USD, RON, ...).</li>
+  </ul>
+
+  <h2 id="screenshots">Screenshots</h2>
+  <div class="shots">
+    <figure>
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="screenshots/main-dark.png">
+        <img src="screenshots/main-light.png" alt="Portfolio summary" loading="lazy" width="1500" height="2040">
+      </picture>
+      <figcaption>Portfolio summary</figcaption>
+    </figure>
+    <figure>
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="screenshots/login-dark.png">
+        <img src="screenshots/login-light.png" alt="Sign in page" loading="lazy">
+      </picture>
+      <figcaption>Sign in</figcaption>
+    </figure>
+    <!-- More screenshots (add the files, then uncomment):
+    <figure><img src="img/positions.png" alt="Positions table" loading="lazy"><figcaption>Positions</figcaption></figure>
+    <figure><img src="img/detail.png" alt="Position detail page" loading="lazy"><figcaption>Position detail</figcaption></figure>
+    <figure><img src="img/strategies.png" alt="Strategy lenses" loading="lazy"><figcaption>Strategy lenses</figcaption></figure>
+    <figure><img src="img/exposure.png" alt="Exposure by sector and country" loading="lazy"><figcaption>Exposure</figcaption></figure>
+    <figure><img src="img/events.png" alt="Events calendar" loading="lazy"><figcaption>Events calendar</figcaption></figure>
+    <figure><img src="img/compare.png" alt="Ticker comparison" loading="lazy"><figcaption>Comparison</figcaption></figure>
+    <figure><img src="img/mobile.png" alt="Phone layout" loading="lazy"><figcaption>Phone layout</figcaption></figure>
+    -->
+  </div>
+
+  <h2 id="demo">Try the demo</h2>
+  <p>Creates a <code>demo</code> user with a fictional portfolio: real tickers and real prices, invented purchases. It needs internet access for the prices.</p>
+<pre><code>docker compose exec gold-retriever python tools/make_demo.py
+docker compose exec gold-retriever python tools/make_demo_t212.py
+docker compose exec gold-retriever python tools/make_demo_history.py</code></pre>
+  <p>Log in as <code>demo</code> / <code>demo</code>.</p>
+
+  <h2 id="security">Security notes</h2>
+  <ul>
+    <li>API keys are stored in plain text in the mounted data volume. Protect that folder and its backups.</li>
+    <li>There is no built-in HTTPS. Put the app behind a reverse proxy or a VPN before exposing it to the internet.</li>
+    <li>The first visitor creates the admin account, so do it right after starting the app.</li>
+    <li>The container runs as uid 1000; the data folder must be writable by that user.</li>
+  </ul>
+
+  <h2 id="support">Support</h2>
+  <p>GoldRetriever is free and open source. If it is useful to you, you can support its development on <a href="https://ko-fi.com/goldretriever">Ko-fi</a>.</p>
+
+  <h2 id="license">License</h2>
+  <p>MIT, see <a href="https://github.com/ioanv2909/gold-retriever/blob/main/LICENSE">LICENSE</a>. The dog in the logo is derived from Noto Emoji (Google, Apache License 2.0).</p>
+  <p class="muted">This is not financial advice. The project is not affiliated with Trading 212, XTB, Interactive Brokers, Yahoo or justETF; check their terms before using their data.</p>
+
+  <footer>
+    <a href="https://github.com/ioanv2909/gold-retriever">github.com/ioanv2909/gold-retriever</a>
+  </footer>
+</main>
+</body>
+</html>
