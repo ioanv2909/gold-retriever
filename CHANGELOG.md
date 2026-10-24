@@ -1,3 +1,7 @@
+## 0.2.41 — 2026-10-24
+
+- README: the first sentence now says what the app is (self-hosted portfolio tracker for Trading 212 and XTB, Interactive Brokers planned), features as a table, Docker Compose quick start with the compose file, placeholders for more screenshots, separate Support (Ko-fi) and License sections. The security note now says the container runs as uid 1000.
+
 ## 0.2.40 — 2026-10-22
 
 - The Streamlit top bar (activity indicator and the three-dot menu) is gone on every page, including the login page; the page starts right at the top.
