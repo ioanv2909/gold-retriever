@@ -2,7 +2,9 @@
 """Diagnostic si curatare pentru punctele din istoric salvate cu un curs valutar inventat (1.0).
 
 Pana la v0.3.5, cand Yahoo nu raspundea, cursul cadea pe 1.0 si ramanea in cache; punctele din
-portfolio_history_multi.json scrise atunci au valori de cateva ori prea mari sau prea mici.
+portfolio_history_multi.json scrise atunci au valori de cateva ori prea mari sau prea mici. Moneda pivot
+are cursul 1.0 (EUR, sau RON in punctele vechi); un curs inventat e o a doua moneda cu 1.0.
+Pentru punctele cu salt se arata, pe fiecare portofoliu, moneda si factorul fata de punctul anterior (fara sume).
 
 Utilizare (din folderul proiectului, pe host):
   python3 tools/fix_history_rates.py                  # doar arata (fara sume): puncte suspecte, cursuri, raport fata de mediana
@@ -25,7 +27,8 @@ WINDOW = 20  # puncte anterioare pentru mediana
 
 
 def made_up_rate(p):
-    return any(c != "EUR" and v == 1.0 for c, v in (p.get("rates") or {}).items())
+    """Un curs inventat apare ca a doua moneda cu 1.0 langa moneda pivot (EUR sau, in punctele vechi, RON)."""
+    return sum(1 for v in (p.get("rates") or {}).values() if v == 1.0) > 1
 
 
 def total_eur(p):
@@ -58,6 +61,25 @@ def analyse(history, max_ratio):
         elif t:
             good_totals.append(t)
     return bad, ratios
+
+
+def entries_text(p, prev):
+    """Pe portofoliu: moneda si factorul valorii fata de punctul anterior (fara sume)."""
+    out = []
+    pe = (prev or {}).get("entries") or {}
+    for label, e in sorted((p.get("entries") or {}).items()):
+        b = pe.get(label)
+        if not b:
+            change = "nou"
+        else:
+            v0, v1 = float(b.get("value") or 0), float(e.get("value") or 0)
+            change = ("x%.2f" % (v1 / v0)) if v0 else "-"
+            if b.get("ccy") != e.get("ccy"):
+                change += " moneda %s->%s" % (b.get("ccy"), e.get("ccy"))
+        out.append("%s [%s] %s" % (label, e.get("ccy"), change))
+    for label in sorted(set(pe) - set(p.get("entries") or {})):
+        out.append("%s lipseste" % label)
+    return "; ".join(out)
 
 
 def rates_text(p):
@@ -95,6 +117,8 @@ def main(argv):
             r = ratios.get(i)
             print("   %s %s  %-28s %s" % ("X" if i in bad_idx else " ", p.get("ts"),
                                          "raport %.2f" % r if r else "raport -", rates_text(p)))
+            if r and (r > 1.5 or r < 1 / 1.5):
+                print("        " + entries_text(p, history[i - 1] if i else None))
         if args.apply and bad:
             backup = "%s.bak-%s" % (f, time.strftime("%Y%m%d-%H%M%S"))
             shutil.copy2(f, backup)

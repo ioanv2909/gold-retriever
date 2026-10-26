@@ -1,3 +1,7 @@
+## 0.3.6 — 2026-10-26
+
+- `tools/fix_history_rates.py`: older history points use RON as the base currency (RON=1.0), and the script marked them as made-up rates. A made-up rate is now a second currency at 1.0 next to the base one. For points with a jump (more than 1.5 times off the median) it also shows, per portfolio, the currency and the change from the previous point, without amounts.
+
 ## 0.3.5 — 2026-10-26
 
 - Fix: when Yahoo did not answer, an exchange rate fell back to 1.0 and stayed cached (up to an hour, `fetch_fx_rate` had two `st.cache_data` layers). History points written meanwhile counted, for example, RON amounts as euro, so the portfolio chart jumped to several times its real value and the older history looked flat. This happened more often after container restarts, which empty the cache.

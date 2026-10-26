@@ -28,3 +28,19 @@ def test_ratio_filter_is_optional():
 def test_normal_history_is_untouched():
     h = [_p("2026-10-%02dT10:00:00" % d, 5000.0 + d * 10, 0.2) for d in range(1, 20)]
     assert fhr.analyse(h, 2)[0] == []
+
+
+def test_old_ron_pivot_points_are_not_marked():
+    old = {"ts": "2026-10-18T21:53:14", "entries": {"XTB": {"ccy": "RON", "value": 25000.0}},
+           "rates": {"EUR": 5.3183, "RON": 1.0, "USD": 4.7313}}
+    assert not fhr.made_up_rate(old)
+    assert fhr.analyse([old] * 5, 0)[0] == []
+
+
+def test_entries_text_shows_currency_and_change_without_amounts():
+    a = _p("2026-10-26T12:08:51", 5000.0, 0.2)
+    b = _p("2026-10-26T12:23:58", 5000.0, 0.2, eur_value=5360.0)
+    b["entries"]["Trading 212"]["ccy"] = "RON"
+    txt = fhr.entries_text(b, a)
+    assert "Trading 212 [RON] x5.36 moneda EUR->RON" in txt and "XTB [RON] x1.00" in txt
+    assert "5000" not in txt and "5360" not in txt
