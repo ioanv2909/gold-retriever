@@ -15,7 +15,7 @@ port 8501, uid 1000). Public repo: ioanv2909/gold-retriever, branch main.
 - New UI strings go in `i18n.py` with both RO and EN entries.
 - CHANGELOG: never leave an "Unreleased" section (Settings > About shows the file as is). Put the entry under
   `## X.Y.Z — date` for the version the commit will get: last `v*` tag patch + commits since the tag + 1.
-- Run tests before committing: `.venv/bin/python -m pytest -q` (246 tests, also run in CI).
+- Run tests before committing: `.venv/bin/python -m pytest -q` (257 tests, also run in CI).
 - Commit, `git push` and `./tools/deploy.sh` are pre-approved once the tests pass: do them without asking,
   then report the result (version, health check, log errors). Still ask before anything that deletes or
   changes data (`rm`, `data/`, git history rewrites) and before other `docker` commands.
@@ -28,7 +28,7 @@ port 8501, uid 1000). Public repo: ioanv2909/gold-retriever, branch main.
 - `app.py` main view; `detail_view.py` per-position page; `settings_page.py` settings;
   `core.py` shared logic and `CHART_PERIODS`; `xtb.py`, `xtb_prices.py` XTB import;
   `notify.py`, `notify_ui.py`, `alerts.py` email notifications; `logwatch.py` log watchdog; `health.py`, `health_ui.py` status page; `uptime.py` + `tools/uptime_check.py` host watchdog (cron of user ioanv, every 5 min); `events.py`, `events_ui.py` events calendar; `position_alerts.py`, `position_alerts_ui.py` price/score/concentration alerts; `background.py` refresh loop;
-  `auth.py`, `users.py`, `userctx.py` multi-user; `checklist.py` quality/risk scoring; `dividend_score.py` dividend score; `analysts.py`, `analysts_ui.py` analyst data; `strategies.py`, `strategies_ui.py` strategy lenses (Strategies tab + section on the position page); `signals.py` sentiment/event data (ratings, insiders, news keywords, earnings, SEC EDGAR 8-K, market context); `exposure.py`, `exposure_ui.py` sector/country/currency exposure; `rotation.py`, `factors.py`, `portfolio_lenses_ui.py` sector rotation (RRG) and factor exposure, views of the Exposure tab; `compare.py`, `compare_ui.py` ticker comparison; `mobile.py` phone version (compact mode); `privacy.py` hidden amounts; `appearance.py` hidden Streamlit top bar, theme (Settings), print (user menu); `i18n.py` strings; `url_tabs.py` tabs bound to `?tab=` (main page and settings).
+  `auth.py`, `users.py`, `userctx.py` multi-user; `presence.py`, `presence_ui.py` online users (admin) and forced sign-out; `checklist.py` quality/risk scoring; `dividend_score.py` dividend score; `analysts.py`, `analysts_ui.py` analyst data; `strategies.py`, `strategies_ui.py` strategy lenses (Strategies tab + section on the position page); `signals.py` sentiment/event data (ratings, insiders, news keywords, earnings, SEC EDGAR 8-K, market context); `exposure.py`, `exposure_ui.py` sector/country/currency exposure; `rotation.py`, `factors.py`, `portfolio_lenses_ui.py` sector rotation (RRG) and factor exposure, views of the Exposure tab; `compare.py`, `compare_ui.py` ticker comparison; `mobile.py` phone version (compact mode); `privacy.py` hidden amounts; `appearance.py` hidden Streamlit top bar, theme (Settings), print (user menu); `i18n.py` strings; `url_tabs.py` tabs bound to `?tab=` (main page and settings).
 - Per-user data: `data/users/<name>/`; shared files in `data/`.
 - Docs: `docs/` (architecture, data-flow, data-files, backup-and-notifications). `CHANGELOG.md`.
 - Backup: `tools/backup-goldretriever.sh` (cron, Synology share), status in `data/backup_status.json`.

@@ -15,6 +15,7 @@ Everything is JSON except `auth_secret`. Do not commit this folder:
 | `quality_cache.json`, `quality_status.json` | Quality, risk and dividend scores and job progress |
 | `market_context_cache.json`, `market_context_status.json` | Benchmark (S&P 500) data and job progress |
 | `uptime_status.json` | Host watchdog: last health check, consecutive failures, whether the admins were alerted |
+| `presence.json` | Online users view (admin): per signed-in browser session a random id, user, first/last seen, User-Agent and IP; entries older than 24 h are removed. No passwords, tokens or cookies |
 | `service_status.json` | Status page: the last requests to Yahoo, justETF, Trading 212 and SMTP (time, success, duration) and the last error of each |
 | `log_problems.json` | Log watchdog: error patterns from the last 24 hours with count, last time and an example |
 | `strategy_cache.json`, `strategy_status.json` | Raw metrics for the strategy lenses per ticker (financial statements, estimates, dividend history, 10-year bond yield, sentiment, event timeline) and the market context (`_market`), daily, and job progress |

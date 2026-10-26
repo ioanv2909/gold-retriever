@@ -1,4 +1,5 @@
 import os
+import secrets
 import time
 
 import alerts
@@ -7,6 +8,7 @@ import streamlit as st
 from url_tabs import reset as reset_tabs
 import streamlit.components.v1 as components
 
+import presence
 import users
 
 _COOKIE = "pt_auth"
@@ -76,6 +78,7 @@ def _read_cookie():
 
 def _set_session(key):
     st.session_state["_user"] = key
+    st.session_state["_sess_ver"] = users.session_version(key)
     st.session_state.pop("_auth_loggedout", None)
 
 
@@ -147,6 +150,10 @@ def render_change_password(me):
 
 
 def _logout():
+    try:
+        presence.forget_session(st.session_state.pop("_presence_id", None))
+    except Exception:
+        pass
     st.session_state.pop("_user", None)
     st.session_state.pop("_page", None)
     st.query_params.pop("page", None)
@@ -173,16 +180,46 @@ def _forced_change(me):
 def require_login():
     """Returneaza cheia utilizatorului autentificat; opreste scriptul daca nu e logat."""
     key = _authenticate()
+    _heartbeat()
     if users.must_change(key):
         _forced_change(key)
     return key
 
 
+def _session_valid(me):
+    """Sesiunea deschisa e valida cat timp contul exista si nu a fost deconectat fortat de un admin."""
+    return bool(me) and users.exists(me) and users.session_version(me) == st.session_state.get("_sess_ver", 0)
+
+
+def _track(me):
+    sid = st.session_state.get("_presence_id")
+    if not sid:
+        sid = st.session_state["_presence_id"] = secrets.token_hex(8)
+    try:
+        h = st.context.headers
+        # in spatele unui reverse proxy ip_address e adresa proxy-ului; antetul e doar informativ
+        fwd = (h.get("X-Forwarded-For") or "").split(",")[0].strip()
+        presence.touch(sid, me, h.get("User-Agent"), fwd or st.context.ip_address)
+    except Exception:
+        pass
+
+
+@st.fragment(run_every=60)
+def _heartbeat():
+    """Cat timp tabul e deschis: tine prezenta la zi si scoate in cel mult un minut o sesiune deconectata fortat."""
+    me = st.session_state.get("_user")
+    if not _session_valid(me):
+        st.rerun()
+    _track(me)
+
+
 def _authenticate():
     me = st.session_state.get("_user")
-    if me and users.exists(me):
+    if _session_valid(me):
         _chrome(me)
         return me
+    if me and users.exists(me):
+        st.session_state["_auth_clear_cookie"] = True  # deconectare fortata: cookie-ul vechi nu mai e valid
     st.session_state.pop("_user", None)
 
     if not st.session_state.get("_auth_loggedout"):
@@ -298,7 +335,12 @@ def render_users_page(me, embedded=False):
         (st.success if fl[0] == "ok" else st.error)(fl[1])
 
     names = users.names()
-    t_list, t_add, t_manage = st.tabs([_tr("tab_list"), _tr("tab_add"), _tr("tab_manage")])
+    from i18n import t
+    t_list, t_add, t_manage, t_online = st.tabs([_tr("tab_list"), _tr("tab_add"), _tr("tab_manage"), t("pres.tab")])
+
+    with t_online:
+        from presence_ui import render_online
+        render_online(me)
 
     with t_list:
         rows = [

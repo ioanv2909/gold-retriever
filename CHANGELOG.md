@@ -1,3 +1,8 @@
+## 0.2.46 — 2026-10-26
+
+- Settings > 👥 Users > 🟢 Online now (admins only): the users seen in the last 5 minutes, sorted by last activity, with role, first seen, device/browser, IP and the number of open sessions, plus a Refresh button. Each signed-in browser session gets a random id and a heartbeat every minute while the tab is open; the record is written to `data/presence.json` at most every 45 seconds per session, and entries older than 24 hours are removed. No passwords, tokens or cookies are stored.
+- "Sign the user out" button in the same view: all sessions of that user end within a minute and their saved sign-in stops working. Cookies issued before this version stay valid until an admin uses the button. A security email is sent.
+
 ## 0.2.45 — 2026-10-26
 
 - Settings > 🔐 Password: every user, not only admins, can change their own password (current password, new password, confirmation). The account always comes from the signed-in session. The rules are the same as for accounts created by an admin (minimum 8 characters), and wrong attempts count toward the same lockout as sign-in (5 attempts, 5 minutes). A successful change sends a security email (without the password) and signs out the other open sessions.

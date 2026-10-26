@@ -75,6 +75,14 @@ first account is an admin who can create users from Settings. Any user can chang
 password in Settings > Password (same lockout as sign-in); a password set by an
 admin carries a `must_change` flag and has to be changed at the next sign-in.
 
+Sign-in is stateless (a signed cookie), so `presence.py` keeps a small registry
+of open sessions in `data/presence.json` for the admin view Settings > Users >
+Online now: each signed-in browser session gets a random id and a heartbeat
+fragment (`st.fragment(run_every=60)`) updates it, at most one write per 45 s.
+Forced sign-out bumps a per-user `sess_ver` in `users.json`; once it is above 0
+it is part of the cookie signature, and the heartbeat compares it with the
+version the session started with, so open sessions end within a minute.
+
 ## Background work
 
 Slow jobs (dividends, ratings, quality scores, XTB prices, history rebuilds)

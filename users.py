@@ -15,7 +15,7 @@ SECRET_FILE = os.path.join(DATA_ROOT, "auth_secret")
 # fisiere care raman in data/ (comune sau globale); restul se muta la primul admin
 SHARED_FILES = {
     "instruments_cache.json", "justetf_cache.json", "quality_cache.json", "quality_status.json",
-    "market_context_cache.json", "market_context_status.json", "manual_metrics.json", "ui_prefs.json", "users.json", "auth_secret",
+    "market_context_cache.json", "market_context_status.json", "manual_metrics.json", "ui_prefs.json", "users.json", "auth_secret", "presence.json",
 }
 
 
@@ -167,7 +167,11 @@ def _secret():
 
 
 def _sig(key, exp, rec):
-    msg = f"{key}.{exp}.{rec['hash'][:16]}".encode()
+    msg = f"{key}.{exp}.{rec['hash'][:16]}"
+    # versiunea intra in semnatura doar dupa prima deconectare fortata, ca token-urile vechi sa ramana valide
+    if rec.get("sess_ver"):
+        msg += f".{int(rec['sess_ver'])}"
+    msg = msg.encode()
     return hmac.new(_secret().encode(), msg, hashlib.sha256).hexdigest()
 
 
@@ -187,6 +191,21 @@ def check_token(token):
         return key if hmac.compare_digest(sig, _sig(key, exp, rec)) else None
     except Exception:
         return None
+
+
+def session_version(name):
+    return int((_load()["users"].get(str(name).lower()) or {}).get("sess_ver") or 0)
+
+
+def bump_session(name):
+    """Deconectare fortata: token-urile emise pana acum devin invalide, sesiunile deschise ies."""
+    d = _load()
+    rec = d["users"].get(str(name).lower())
+    if not rec:
+        return "name"
+    rec["sess_ver"] = int(rec.get("sess_ver") or 0) + 1
+    _save(d)
+    return None
 
 
 def records():

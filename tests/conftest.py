@@ -51,3 +51,11 @@ def _isolated_users(tmp_path, monkeypatch):
     monkeypatch.setattr(users, "SECRET_FILE", str(tmp_path / "auth_secret"))
     monkeypatch.setattr(auth, "_fails", {})
     monkeypatch.setattr(auth, "_FAIL_DELAY", 0)
+
+
+@pytest.fixture(autouse=True)
+def _isolated_presence(tmp_path, monkeypatch):
+    """Registrul de prezenta se scrie in data/; in teste merge intr-un director temporar, fara limitari ramase."""
+    import presence
+    monkeypatch.setattr(presence, "PRESENCE_FILE", str(tmp_path / "presence.json"))
+    monkeypatch.setattr(presence, "_written", {})
