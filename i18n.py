@@ -312,6 +312,7 @@ _T = {
     "lw.col.sample": {"RO": "Exemplu", "EN": "Example"},
     "lw.clear": {"RO": "🧹 Golește lista", "EN": "🧹 Clear the list"},
     "lg.tab": {"RO": "📜 Log", "EN": "📜 Log"},
+    "lg.admin_only": {"RO": "Logul este disponibil doar pentru administratori.", "EN": "The log is available to administrators only."},
     "lg.caption": {
         "RO": "Ultimele {n} de linii scrise de aplicație în log (stdout/stderr). Sunt ținute în memorie, deci lista începe de la zero la fiecare repornire a containerului.",
         "EN": "The last {n} lines the app wrote to the log (stdout/stderr). They are kept in memory, so the list starts empty after each container restart.",

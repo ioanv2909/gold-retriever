@@ -165,8 +165,10 @@ def test_tail_newest_first(env, tail):
     assert [r.split("  ", 1)[1] for r in lw.tail(3)] == ["line 7", "line 8", "line 9"]
 
 
-def test_log_tab_shows_newest_first_by_default(env, tail):
+def test_log_tab_shows_newest_first_by_default(env, tail, monkeypatch):
     from streamlit.testing.v1 import AppTest
+    import users
+    monkeypatch.setattr(users, "role", lambda me: "admin")
 
     def page():
         import log_ui
@@ -177,3 +179,18 @@ def test_log_tab_shows_newest_first_by_default(env, tail):
     assert at.code[0].value.splitlines()[0].endswith("new line")
     at.selectbox(key="lg_order").select("asc").run()
     assert at.code[0].value.splitlines()[0].endswith("old line")
+
+
+@pytest.mark.parametrize("role", ["user", None])
+def test_log_view_refuses_non_admins(env, tail, monkeypatch, role):
+    from streamlit.testing.v1 import AppTest
+    import users
+    monkeypatch.setattr(users, "role", lambda me: role)
+
+    def page():
+        import log_ui
+        log_ui.render_log("bob")
+    lw._Tee(io.StringIO()).write("[auth] login ok user=ana ip=1.2.3.4\n")
+    at = AppTest.from_function(page).run()
+    assert not at.code and not at.get("download_button")
+    assert at.error and "administr" in at.error[0].value

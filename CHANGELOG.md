@@ -1,3 +1,7 @@
+## 0.3.13 — 2026-10-26
+
+- Settings > Log checks the admin role itself before showing anything, in addition to the tab being built only for admins.
+
 ## 0.3.12 — 2026-10-26
 
 - Fix: Settings > About showed "CHANGELOG.md not found". The file was left out of the Docker image (`.dockerignore` excludes `*.md`); it is now copied, so the full release notes are shown again.

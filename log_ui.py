@@ -4,12 +4,16 @@ import time
 import streamlit as st
 
 import logwatch
+import users
 from i18n import t
 
 SIZES = (100, 300, 1000)
 
 
 def render_log(me):
+    if users.role(me) != "admin":  # tabul e construit doar pentru admini; a doua verificare, aici
+        st.error(t("lg.admin_only"))
+        return
     st.caption(t("lg.caption", n=logwatch.TAIL))
     c1, c2, c3, c4, c5 = st.columns([2, 3, 4, 3, 2], vertical_alignment="bottom")
     n = c1.selectbox(t("lg.lines"), SIZES, index=1, key="lg_n")
