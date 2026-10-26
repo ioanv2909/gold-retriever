@@ -96,6 +96,9 @@ Log in as `demo` / `demo`.
 - API keys are stored in plain text in the mounted data volume. Protect that folder and its backups.
 - There is no built-in HTTPS. Put the app behind a reverse proxy or a VPN before exposing it to the internet.
 - The first visitor creates the admin account, so do it right after starting the app.
+- Two-step sign-in (TOTP) can be turned on per account in Settings > Security; an admin can require it in Settings > Users > Sessions. The server clock must be synchronized (NTP), or the codes are rejected. An admin who lost the phone and has no other admin can remove 2FA from the host:
+  `docker exec -it gold-retriever python -c "import users; print(users.disable_2fa('NAME') or 'OK')"`
+- The TOTP secrets are in `data/users.json`, so they are also in the backups: protect them like the API keys.
 - The container runs as uid 1000 (see `docker-compose.yml`); the data folder must be writable by that user.
 
 ## Development

@@ -13,6 +13,7 @@ from url_tabs import reset as reset_tabs
 import known_devices
 import presence
 import session_policy
+import twofa
 import users
 
 _COOKIE = "pt_auth"
@@ -263,7 +264,24 @@ def require_login():
     _heartbeat()
     if users.must_change(key):
         _forced_change(key)
+    if twofa.required(key, users.role(key)) and not users.has_2fa(key):
+        _forced_2fa(key)
     return key
+
+
+def _forced_2fa(me):
+    """Politica adminului cere 2FA: contul il activeaza inainte de a folosi aplicatia."""
+    from i18n import t
+    from twofa_ui import render_enroll
+    _, mid, _ = st.columns([1, 1, 1])
+    with mid:
+        st.markdown("### " + t("tfa.title"))
+        st.warning(t("tfa.forced"))
+        if render_enroll(me):
+            st.button(t("pwd.continue"), key="tfa_forced_continue")
+        elif st.button(_tr("logout"), key="tfa_forced_logout"):
+            _logout()
+    st.stop()
 
 
 def _session_expired(now=None):
@@ -342,6 +360,13 @@ def _authenticate():
     if st.session_state.pop("_auth_clear_cookie", False):
         _cookie_js("", 0)
 
+    pending = st.session_state.get("_pending_2fa")
+    if pending:
+        ph = st.empty()
+        key = _second_step(pending[0], pending[1], ph)
+        if key:
+            return _finish_login(key, ph)
+
     setup = not users.has_users()
     ph = st.empty()
     with ph.container():
@@ -362,6 +387,9 @@ def _authenticate():
             if st.session_state.get("_auth_expired"):
                 import i18n
                 st.warning(i18n.t("sess.expired"))
+            if st.session_state.pop("_2fa_expired", False):
+                import i18n
+                st.warning(i18n.t("tfa.step_expired"))
             if setup:
                 st.info(_tr("setup_info"))
             with st.form("login_form"):
@@ -400,14 +428,69 @@ def _authenticate():
             with mid:
                 st.error(_tr("bad"))
             st.stop()
+        if users.has_2fa(key):
+            # contorul de esecuri nu se goleste inca: parola si codul gresite se aduna la aceeasi blocare
+            st.session_state["_pending_2fa"] = (key, time.time())
+            _log("2fa required", key)
+            st.rerun()
         _clear_fails(key)
         _log("login ok", key, via="password")
+    return _finish_login(key, ph)
 
+
+def _finish_login(key, ph):
     _set_session(key)
     st.session_state.pop("_auth_expired", None)
     ph.empty()
     _issue_cookie(key)
     _chrome(key)
+    return key
+
+
+def _second_step(key, started, ph):
+    """Codul din aplicatia de autentificare (sau un cod de rezerva) dupa o parola corecta.
+    Intoarce cheia contului la succes; None daca pasul a expirat; altfel opreste scriptul."""
+    from i18n import t
+    if time.time() - started > twofa.PENDING_SECONDS or not users.has_2fa(key):
+        st.session_state.pop("_pending_2fa", None)
+        st.session_state["_2fa_expired"] = True
+        _log("2fa expired", key)
+        return None
+    with ph.container():
+        _, mid, _ = st.columns([1, 1, 1])
+        with mid:
+            st.markdown("### " + t("tfa.login_title"))
+            st.caption(t("tfa.login_help"))
+            with st.form("tfa_login_form", clear_on_submit=True):
+                code = st.text_input(t("tfa.code_or_recovery"), autocomplete="one-time-code", max_chars=20)
+                go = st.form_submit_button(t("tfa.verify"))
+            if st.button(t("tfa.back"), key="tfa_login_back"):
+                st.session_state.pop("_pending_2fa", None)
+                st.rerun()
+    if not go:
+        st.stop()
+    left = _lock_remaining(key)
+    if left:
+        _log("login refused", key, reason="locked", seconds_left=int(left))
+        with mid:
+            st.error(_tr("locked", m=int(left // 60) + 1))
+        st.stop()
+    via = users.verify_2fa(key, code)
+    if not via:
+        _log("2fa failed", key)
+        _register_fail(key)
+        with mid:
+            st.error(t("tfa.bad_code"))
+        st.stop()
+    _clear_fails(key)
+    st.session_state.pop("_pending_2fa", None)
+    _log("login ok", key, via="password+" + via)
+    if via == "recovery":
+        try:
+            alerts.record_user_event("cod de rezerva 2FA folosit", key, key,
+                                     "coduri ramase: %d" % users.recovery_left(key))
+        except Exception:
+            pass
     return key
 
 
@@ -462,7 +545,10 @@ def render_users_page(me, embedded=False):
 
     with t_sess:
         from session_policy_ui import render_session_policy
+        from twofa_ui import render_policy
         render_session_policy(me)
+        st.divider()
+        render_policy(me)
 
     with t_list:
         rows = [
@@ -470,6 +556,7 @@ def render_users_page(me, embedded=False):
                 _tr("col_user"): r["name"],
                 _tr("col_role"): r["role"],
                 _tr("col_created"): time.strftime("%Y-%m-%d", time.localtime(r["created"])) if r.get("created") else "",
+                "2FA": "✅" if r.get("twofa") else "—",
             }
             for r in users.records()
         ]
@@ -487,7 +574,7 @@ def render_users_page(me, embedded=False):
                 _flash("err", _tr("err_" + err)) if err else _flash("ok", _tr("ok_created"))
 
     with t_manage:
-        c1, c2, c3 = st.columns(3)
+        c1, c2, c3, c4 = st.columns(4)
         with c1:
             st.markdown("**" + _tr("reset") + "**")
             r_user = st.selectbox(_tr("user"), names, key="adm_rst_user")
@@ -516,6 +603,9 @@ def render_users_page(me, embedded=False):
                 if not err:
                     alerts.record_user_event("utilizator sters", me, d_user, "date sterse" if d_purge else "date pastrate")
                 _flash("err", _tr("err_" + err)) if err else _flash("ok", _tr("ok_deleted"))
+        with c4:
+            from twofa_ui import render_admin_reset
+            render_admin_reset(me, names)
 
 
 _S.update({

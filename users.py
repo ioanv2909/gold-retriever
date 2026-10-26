@@ -8,6 +8,7 @@ import shutil
 import time
 
 import session_policy
+import twofa
 from userctx import DATA_ROOT, USERS_FILE, contained_path, safe_name
 
 _NAME_RE = re.compile(r"^[A-Za-z0-9_-]{2,32}$")
@@ -220,7 +221,8 @@ def bump_session(name):
 def records():
     d = _load()["users"]
     return [
-        {"key": k, "name": v.get("name", k), "role": v.get("role"), "created": v.get("created"), "email": v.get("email")}
+        {"key": k, "name": v.get("name", k), "role": v.get("role"), "created": v.get("created"), "email": v.get("email"),
+         "twofa": bool(v.get("totp_secret"))}
         for k, v in sorted(d.items())
     ]
 
@@ -258,3 +260,84 @@ def set_email(name, email):
 
 def email(name):
     return (_load()["users"].get(str(name).lower()) or {}).get("email")
+
+
+# --- autentificare in doi pasi (TOTP + coduri de rezerva; vezi twofa.py) ---
+_TFA_KEYS = ("totp_secret", "totp_last_step", "recovery", "recovery_salt")
+
+
+def has_2fa(name):
+    return bool((_load()["users"].get(str(name).lower()) or {}).get("totp_secret"))
+
+
+def recovery_left(name):
+    return len((_load()["users"].get(str(name).lower()) or {}).get("recovery") or [])
+
+
+def _set_recovery(rec):
+    codes = twofa.new_recovery_codes()
+    rec["recovery_salt"] = secrets.token_hex(16)
+    rec["recovery"] = [twofa.hash_recovery(c, rec["recovery_salt"]) for c in codes]
+    return codes
+
+
+def enable_2fa(name, secret, code, now=None):
+    """Activeaza 2FA doar daca `code` e corect pentru `secret`. Returneaza (coduri de rezerva, None) sau
+    (None, cod_eroare). Token-urile emise pana acum devin invalide (sess_ver)."""
+    d = _load()
+    rec = d["users"].get(str(name).lower())
+    if not rec:
+        return None, "name"
+    step = twofa.match_step(secret, code, now)
+    if step is None:
+        return None, "bad_code"
+    rec["totp_secret"], rec["totp_last_step"] = secret, step
+    codes = _set_recovery(rec)
+    rec["sess_ver"] = int(rec.get("sess_ver") or 0) + 1
+    _save(d)
+    return codes, None
+
+
+def verify_2fa(name, code, now=None):
+    """"totp", "recovery" (codul de rezerva se consuma) sau None. Un cod TOTP nu merge de doua ori."""
+    d = _load()
+    rec = d["users"].get(str(name).lower())
+    if not rec or not rec.get("totp_secret"):
+        return None
+    step = twofa.match_step(rec["totp_secret"], code, now, rec.get("totp_last_step"))
+    if step is not None:
+        rec["totp_last_step"] = step
+        _save(d)
+        return "totp"
+    h = twofa.hash_recovery(code, rec.get("recovery_salt") or "")
+    left = rec.get("recovery") or []
+    hit = next((x for x in left if hmac.compare_digest(x, h)), None)
+    if hit is None:
+        return None
+    left.remove(hit)
+    _save(d)
+    return "recovery"
+
+
+def new_recovery_codes(name):
+    """Coduri de rezerva noi (cele vechi nu mai merg). Apelantul verifica inainte parola si un cod."""
+    d = _load()
+    rec = d["users"].get(str(name).lower())
+    if not rec or not rec.get("totp_secret"):
+        return None
+    codes = _set_recovery(rec)
+    _save(d)
+    return codes
+
+
+def disable_2fa(name):
+    """Scoate 2FA (si din terminal, pentru un admin fara alt admin). Sesiunile deschise ies."""
+    d = _load()
+    rec = d["users"].get(str(name).lower())
+    if not rec:
+        return "name"
+    for k in _TFA_KEYS:
+        rec.pop(k, None)
+    rec["sess_ver"] = int(rec.get("sess_ver") or 0) + 1
+    _save(d)
+    return None

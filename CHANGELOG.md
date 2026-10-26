@@ -1,3 +1,11 @@
+## 0.3.14 — 2026-10-26
+
+- Two-step sign-in (2FA) with codes from an authenticator app (TOTP, RFC 6238: 6 digits, 30 seconds, one step of clock drift allowed). Each user turns it on in Settings > 🔐 Security (the former Password tab): QR code generated on the server (segno) or the key by hand, confirmed with a code before it is saved, then 10 single-use recovery codes shown once, with a download. The code is asked only at sign-in with the password; a device that is already signed in keeps its cookie under the existing session rules.
+- At sign-in, after a correct password, the app asks for the app code or a recovery code; the step expires after 5 minutes. Wrong codes count towards the same lockout as wrong passwords (5 failures, 5 minutes). A code cannot be used twice. Using a recovery code sends a security email with the number of codes left.
+- Turning 2FA off and new recovery codes need the current password and a code. Turning 2FA on or off signs out the other open sessions of the account.
+- Admins: a 2FA column in the users list, "Reset 2FA" for an account that lost its phone, and a policy in Users > Sessions: optional (default), required for administrators, or required for everyone (the demo account is exempt). An account that must have 2FA turns it on right after the password.
+- Every 2FA event is written to the log as an `[auth]` line and sends a security email. Secrets and codes are never logged or emailed. New dependency: `segno` 1.6.6 (pure Python, BSD).
+
 ## 0.3.13 — 2026-10-26
 
 - Settings > Log checks the admin role itself before showing anything, in addition to the tab being built only for admins.

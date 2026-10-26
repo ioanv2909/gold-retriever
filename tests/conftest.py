@@ -87,3 +87,10 @@ def _isolated_fx(tmp_path, monkeypatch):
     monkeypatch.setattr(t212_api, "_fx_last_good", {})
     monkeypatch.setattr(t212_api, "_fx_saved", {})
     monkeypatch.setattr(t212_api, "_fx_state", {"loaded": False, "failures": 0})
+
+
+@pytest.fixture(autouse=True)
+def _isolated_twofa(tmp_path, monkeypatch):
+    """Politica 2FA se scrie in data/; in teste merge intr-un director temporar."""
+    import twofa
+    monkeypatch.setattr(twofa, "POLICY_FILE", str(tmp_path / "twofa_policy.json"))

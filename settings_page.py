@@ -63,8 +63,11 @@ def _tab_about():
 
 def _tab_password(me):
     from auth import render_change_password
+    from twofa_ui import render_security
     st.markdown("#### " + t("pwd.title"))
     render_change_password(me)
+    st.divider()
+    render_security(me)
 
 
 def _tab_users(me):
