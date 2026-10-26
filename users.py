@@ -7,6 +7,7 @@ import secrets
 import shutil
 import time
 
+import session_policy
 from userctx import DATA_ROOT, USERS_FILE, contained_path, safe_name
 
 _NAME_RE = re.compile(r"^[A-Za-z0-9_-]{2,32}$")
@@ -175,18 +176,26 @@ def _sig(key, exp, rec):
     return hmac.new(_secret().encode(), msg, hashlib.sha256).hexdigest()
 
 
-def make_token(name, days=30):
+def make_token(name, now=None):
+    """Cookie de autentificare valabil limita absoluta curenta (session_policy)."""
     key = str(name).lower()
     rec = _load()["users"][key]
-    exp = int(time.time() + days * 86400)
+    exp = int((now if now is not None else time.time()) + session_policy.max_seconds())
     return f"{key}.{exp}.{_sig(key, exp, rec)}"
 
 
-def check_token(token):
+def token_exp(token):
+    try:
+        return int(str(token).split(".", 2)[1])
+    except Exception:
+        return None
+
+
+def check_token(token, now=None):
     try:
         key, exp, sig = str(token).split(".", 2)
         rec = _load()["users"].get(key)
-        if not rec or int(exp) < time.time():
+        if not rec or session_policy.token_expired(int(exp), now):
             return None
         return key if hmac.compare_digest(sig, _sig(key, exp, rec)) else None
     except Exception:

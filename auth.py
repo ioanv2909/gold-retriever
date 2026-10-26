@@ -9,10 +9,10 @@ from url_tabs import reset as reset_tabs
 import streamlit.components.v1 as components
 
 import presence
+import session_policy
 import users
 
 _COOKIE = "pt_auth"
-_DAYS = 30
 _MAX_FAILS = 5
 _LOCK_SECONDS = 300
 _FAIL_DELAY = 1
@@ -82,6 +82,38 @@ def _set_session(key):
     st.session_state.pop("_auth_loggedout", None)
 
 
+def _start_cookie_session(tok, fresh):
+    """Leaga sesiunea de cookie: limita absoluta din token, activitatea de acum."""
+    now = time.time()
+    tid = session_policy.token_id(tok)
+    st.session_state["_tok_id"] = tid
+    st.session_state["_auth_exp"] = users.token_exp(tok)
+    st.session_state["_last_active"] = now
+    session_policy.touch(tid, now, force=fresh or session_policy.last_activity(tid) is None)
+
+
+def _issue_cookie(key):
+    tok = users.make_token(key)
+    _cookie_js(tok, session_policy.max_seconds())
+    _start_cookie_session(tok, True)
+
+
+def _mark_activity():
+    """O rulare ceruta de utilizator (nu heartbeat-ul sau o reincarcare automata)."""
+    if st.session_state.pop("_auto_rerun", False):
+        return
+    now = time.time()
+    st.session_state["_last_active"] = now
+    session_policy.touch(st.session_state.get("_tok_id"), now)
+
+
+def auto_rerun():
+    """st.rerun() pornit de cod (fragmente periodice): nu conteaza ca activitate."""
+    st.session_state["_auto_rerun"] = True
+    st.rerun()
+
+
+
 # contor de esecuri pe cont, comun pentru login si schimbarea parolei
 def _lock_remaining(key):
     """Secunde ramase din blocare (0 daca nu e blocat)."""
@@ -143,7 +175,7 @@ def render_change_password(me):
         st.error(t("pwd.err_" + err))
     else:
         # semnatura token-ului include hash-ul parolei: celelalte sesiuni ies, aceasta primeste cookie nou
-        _cookie_js(users.make_token(me, _DAYS), _DAYS * 86400)
+        _issue_cookie(me)
         st.success(t("pwd.ok"))
         return True
     return False
@@ -154,6 +186,12 @@ def _logout():
         presence.forget_session(st.session_state.pop("_presence_id", None))
     except Exception:
         pass
+    try:
+        session_policy.revoke(st.session_state.get("_tok_id"))
+    except Exception:
+        pass
+    for k in ("_tok_id", "_auth_exp", "_last_active"):
+        st.session_state.pop(k, None)
     st.session_state.pop("_user", None)
     st.session_state.pop("_page", None)
     st.query_params.pop("page", None)
@@ -186,9 +224,17 @@ def require_login():
     return key
 
 
+def _session_expired(now=None):
+    """Limita absoluta a cookie-ului depasita sau inactivitate peste limita (session_policy)."""
+    exp = st.session_state.get("_auth_exp")
+    return (exp is not None and session_policy.token_expired(exp, now)) or \
+        session_policy.is_idle(st.session_state.get("_last_active"), now)
+
+
 def _session_valid(me):
-    """Sesiunea deschisa e valida cat timp contul exista si nu a fost deconectat fortat de un admin."""
-    return bool(me) and users.exists(me) and users.session_version(me) == st.session_state.get("_sess_ver", 0)
+    """Sesiunea deschisa e valida cat timp contul exista, nu a fost deconectat fortat de un admin si nu a expirat."""
+    return bool(me) and users.exists(me) and users.session_version(me) == st.session_state.get("_sess_ver", 0) \
+        and not _session_expired()
 
 
 def _track(me):
@@ -209,24 +255,37 @@ def _heartbeat():
     """Cat timp tabul e deschis: tine prezenta la zi si scoate in cel mult un minut o sesiune deconectata fortat."""
     me = st.session_state.get("_user")
     if not _session_valid(me):
-        st.rerun()
+        auto_rerun()
     _track(me)
 
 
 def _authenticate():
     me = st.session_state.get("_user")
     if _session_valid(me):
+        _mark_activity()
         _chrome(me)
         return me
+    st.session_state.pop("_auto_rerun", None)
     if me and users.exists(me):
-        st.session_state["_auth_clear_cookie"] = True  # deconectare fortata: cookie-ul vechi nu mai e valid
-    st.session_state.pop("_user", None)
+        st.session_state["_auth_clear_cookie"] = True  # deconectare fortata sau expirare: cookie-ul vechi nu mai e valid
+        if _session_expired():
+            st.session_state["_auth_expired"] = True
+    for k in ("_user", "_tok_id", "_auth_exp", "_last_active"):
+        st.session_state.pop(k, None)
 
-    if not st.session_state.get("_auth_loggedout"):
+    if not st.session_state.get("_auth_loggedout") and not st.session_state.get("_auth_clear_cookie"):
         tok = _read_cookie()
         who = users.check_token(tok) if tok else None
+        if who and session_policy.is_idle(session_policy.last_activity(session_policy.token_id(tok))):
+            who = None
+            st.session_state["_auth_expired"] = True
+            st.session_state["_auth_clear_cookie"] = True
+        elif tok and not who and users.token_exp(tok) is not None and users.token_exp(tok) < time.time():
+            st.session_state["_auth_expired"] = True
+            st.session_state["_auth_clear_cookie"] = True
         if who:
             _set_session(who)
+            _start_cookie_session(tok, False)
             _chrome(who)
             return who
 
@@ -250,6 +309,9 @@ def _authenticate():
                 unsafe_allow_html=True,
             )
             st.markdown("### " + _tr("title_setup" if setup else "title_login"))
+            if st.session_state.get("_auth_expired"):
+                import i18n
+                st.warning(i18n.t("sess.expired"))
             if setup:
                 st.info(_tr("setup_info"))
             with st.form("login_form"):
@@ -288,8 +350,9 @@ def _authenticate():
         _clear_fails(key)
 
     _set_session(key)
+    st.session_state.pop("_auth_expired", None)
     ph.empty()
-    _cookie_js(users.make_token(key, _DAYS), _DAYS * 86400)
+    _issue_cookie(key)
     _chrome(key)
     return key
 
@@ -336,11 +399,16 @@ def render_users_page(me, embedded=False):
 
     names = users.names()
     from i18n import t
-    t_list, t_add, t_manage, t_online = st.tabs([_tr("tab_list"), _tr("tab_add"), _tr("tab_manage"), t("pres.tab")])
+    t_list, t_add, t_manage, t_online, t_sess = st.tabs(
+        [_tr("tab_list"), _tr("tab_add"), _tr("tab_manage"), t("pres.tab"), t("sess.tab")])
 
     with t_online:
         from presence_ui import render_online
         render_online(me)
+
+    with t_sess:
+        from session_policy_ui import render_session_policy
+        render_session_policy(me)
 
     with t_list:
         rows = [

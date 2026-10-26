@@ -103,7 +103,7 @@ import appearance
 appearance.hide_streamlit_header()
 
 import users as _users
-from auth import require_login
+from auth import auto_rerun, require_login
 for _u in _users.names():
     start_background_scheduler(_u)
 _me = require_login()
@@ -134,7 +134,7 @@ interval_minutes = int(config_data.get("interval_minutes", 15))
 def _watch_background_jobs():
     busy = load_dividends_status().get("in_progress") or load_ratings_status().get("in_progress")
     if not busy:
-        st.rerun()
+        auto_rerun()
 
 
 from portfolio_model import portfolio_options, default_currency, build_rows

@@ -1,3 +1,10 @@
+## 0.2.49 — 2026-10-26
+
+- Session expiry: a session ends after 8 hours without activity or 30 days after sign-in (the sign-in cookie lifetime). Both limits are defaults that an admin can change in Settings > 👥 Users > ⏱️ Sessions (1–720 hours, 1–365 days, with a "Restore defaults" button); a change sends a security email. A lower limit applies at once to every open session and every existing cookie; a higher maximum duration applies only to new sign-ins.
+- Activity means a page run asked for by the user; the one-minute heartbeat and automatic reloads after background jobs do not count, so a tab left open expires too, within a minute of the limit. Activity is kept on the server in `data/session_activity.json`, keyed by a short hash of the cookie signature (no token, user name or IP), written at most every 5 minutes per cookie, and pruned after the maximum duration.
+- On expiry the session is removed, the cookie is cleared and the sign-in page shows "Your session has expired" (RO/EN). Signing out also marks the cookie as revoked on the server, so a copy left in the browser cannot reopen the session.
+- No one is signed out by the update: cookies issued before this version have no activity record and count as active from the first visit; their 30-day limit stays as issued.
+
 ## 0.2.48 — 2026-10-26
 
 - XTB import: an uploaded report is checked in memory before it is parsed, and nothing is written before the check. Rejected with a clear RO/EN message: files over 10 MB (also refused by the uploader itself), files that are not zip archives, zip files without the xlsx structure (`[Content_Types].xml`, `xl/workbook.xml`), more than 2,000 internal parts, more than 100 MB once unpacked or a part compressed more than 200 times (zip bomb), and internal names that are absolute or contain `..`. The check reads only the zip directory and unpacks nothing. Limits are constants in `upload_guard.py`.

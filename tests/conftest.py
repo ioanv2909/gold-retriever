@@ -59,3 +59,13 @@ def _isolated_presence(tmp_path, monkeypatch):
     import presence
     monkeypatch.setattr(presence, "PRESENCE_FILE", str(tmp_path / "presence.json"))
     monkeypatch.setattr(presence, "_written", {})
+
+
+@pytest.fixture(autouse=True)
+def _isolated_session_policy(tmp_path, monkeypatch):
+    """Limitele si activitatea sesiunilor se scriu in data/; in teste merg intr-un director temporar."""
+    import session_policy
+    monkeypatch.setattr(session_policy, "POLICY_FILE", str(tmp_path / "session_policy.json"))
+    monkeypatch.setattr(session_policy, "ACTIVITY_FILE", str(tmp_path / "session_activity.json"))
+    monkeypatch.setattr(session_policy, "_written", {})
+    monkeypatch.setattr(session_policy, "_cache", {"key": None, "val": None})
