@@ -1,3 +1,12 @@
+## 0.2.47 — 2026-10-26
+
+- Dependency scanning: `.github/dependabot.yml` checks pip (`requirements.txt`), the Docker base image and GitHub Actions every Monday; minor and patch updates come grouped in one PR per ecosystem, major ones separately. Python version bumps of the `python` base image are ignored (changed deliberately). `justetf-scraping` is installed from a GitHub zip URL and is not tracked by Dependabot; its commit hash is updated by hand.
+- CI: new `pip-audit` step on the installed dependencies (from `pip freeze`, so indirect dependencies are included). `justetf-scraping` is not on PyPI and is left out of the audit; its own dependencies are still audited. Known vulnerabilities are listed as errors in the log; a report that cannot be produced (network error) only gives a warning.
+
+### Known issues
+
+- Pillow 12.3.0 (installed by Streamlit) has known vulnerabilities, fixed in 13.0.0. Streamlit 1.65.0 requires `pillow<13`; the upgrade to `streamlit==1.66.1` and `pillow>=13` is postponed until it is tested. Until then the `pip-audit` CI step is informational (`continue-on-error`) and does not block the workflow.
+
 ## 0.2.46 — 2026-10-26
 
 - Settings > 👥 Users > 🟢 Online now (admins only): the users seen in the last 5 minutes, sorted by last activity, with role, first seen, device/browser, IP and the number of open sessions, plus a Refresh button. Each signed-in browser session gets a random id and a heartbeat every minute while the tab is open; the record is written to `data/presence.json` at most every 45 seconds per session, and entries older than 24 hours are removed. No passwords, tokens or cookies are stored.

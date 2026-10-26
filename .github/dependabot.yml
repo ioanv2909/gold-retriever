@@ -1,0 +1,36 @@
+# Weekly dependency updates. Minor and patch bumps are grouped into one PR per ecosystem;
+# major bumps come as separate PRs.
+# justetf-scraping is installed from a GitHub zip URL in requirements.txt: Dependabot
+# does not track it, update the commit hash by hand.
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      pip-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    ignore:
+      # The Python version of the base image is changed deliberately, not by Dependabot.
+      - dependency-name: python
+        update-types: [version-update:semver-major, version-update:semver-minor]
+    groups:
+      docker-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      actions-minor-patch:
+        update-types: [minor, patch]
