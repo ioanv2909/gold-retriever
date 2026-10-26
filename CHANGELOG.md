@@ -1,3 +1,9 @@
+## 0.3.0 — 2026-10-26
+
+Security release: together with 0.2.47–0.2.50 (dependency scanning, upload limits and path checks, session expiry, new device alerts) it starts the 0.3 series.
+
+- Container hardening in `docker-compose.yml` (the Dockerfile is unchanged): the image filesystem is read-only, the only writable places are `data/` (the existing volume) and a 64 MB tmpfs on `/tmp` (HOME and the yfinance cache); all Linux capabilities are dropped, `no-new-privileges` is set, at most 256 processes/threads and 1 GB of memory. `PYTHONDONTWRITEBYTECODE=1` stops Python from trying to write `__pycache__` into the image. Every file the app writes was checked: all go to `data/`; `build_info.json` is written on the host before the build; Streamlit caches and uploads stay in memory.
+
 ## 0.2.50 — 2026-10-26
 
 - New device alert: at sign-in (password, or a session reopened from the cookie; once per browser session, not on every page run) the device is compared with the ones seen for that account. The device is the browser and system from the User-Agent ("Chrome / Windows"), without versions, so a browser update does not count as new; the IP is not part of it. A new device sends a security email to the admin with the device, time and a shortened IP (`192.168.x.x`, or the first three IPv6 groups), never passwords, tokens or cookies.

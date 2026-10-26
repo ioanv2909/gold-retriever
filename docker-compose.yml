@@ -5,6 +5,16 @@ services:
     user: "1000:1000"
     environment:
       - HOME=/tmp
+      - PYTHONDONTWRITEBYTECODE=1
+    # Hardening: read-only image filesystem; the only writable places are data/ (volume) and /tmp
+    # (tmpfs: HOME, yfinance cache). No Linux capabilities are needed (uid 1000, port 8501).
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 256
+    mem_limit: 1g
     ports:
       - "${PORT:-8501}:8501"
     volumes:

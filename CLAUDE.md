@@ -22,7 +22,9 @@ port 8501, uid 1000). Public repo: ioanv2909/gold-retriever, branch main.
 
 ## Deploy
 `./tools/deploy.sh` rebuilds and restarts the container and writes `build_info.json`
-(version = last `v*` tag patch + commits since the tag).
+(version = last `v*` tag patch + commits since the tag; the 0.3 series starts at tag `v0.3.0`).
+The container is hardened (read-only filesystem, no capabilities, pids/memory limits): the app may write only
+in `data/` or `/tmp` (tmpfs, 64 MB, also HOME). New code that writes elsewhere fails in production.
 
 ## Layout
 - `app.py` main view; `detail_view.py` per-position page; `settings_page.py` settings;
