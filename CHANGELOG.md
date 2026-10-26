@@ -1,3 +1,7 @@
+## 0.3.2 — 2026-10-26
+
+- Python 3.11 in the Docker image (`python:3.11-slim`) and in CI, needed by Streamlit 1.66 (it requires Python 3.11 or newer). In 0.3.1 the image build failed on Python 3.10 and the server kept running 0.3.0; the tests already ran on Python 3.11 locally.
+
 ## 0.3.1 — 2026-10-26
 
 - Streamlit 1.66.1 (was 1.65.0) and Pillow 13.0.0 (was 12.3.0, installed by Streamlit), pinned in `requirements.txt`. This fixes the known Pillow vulnerabilities listed under 0.2.47; `pip-audit` now finds none, so the CI audit step blocks the workflow again on known vulnerabilities.
