@@ -1,4 +1,6 @@
+import ipaddress
 import os
+import re
 import secrets
 import time
 
@@ -98,6 +100,24 @@ def _client():
     return h.get("User-Agent"), fwd or st.context.ip_address
 
 
+def _log(event, user=None, **kw):
+    """O linie in logul containerului pentru autentificare (Setari -> Log). Fara parole sau token-uri;
+    un nume care nu arata a nume de cont (poate o parola scrisa in campul gresit) apare ca <invalid>."""
+    try:
+        ip = _client()[1]
+    except Exception:
+        ip = None
+    name = str(user).strip().lower() if user else "-"
+    if name != "-" and not re.fullmatch(r"[a-z0-9_-]{1,32}", name):
+        name = "<invalid>"
+    try:
+        ip = str(ipaddress.ip_address(str(ip).strip())) if ip else "-"
+    except ValueError:
+        ip = "<invalid>"  # X-Forwarded-For vine de la client
+    extra = "".join(" %s=%s" % kv for kv in kw.items())
+    print("[auth] %s user=%s ip=%s%s" % (event, name, ip, extra), flush=True)
+
+
 def _check_device(me):
     """O data pe sesiune, la autentificare (parola sau cookie): alerta daca dispozitivul e nou pentru cont."""
     if not me or st.session_state.get("_device_checked") == me:
@@ -142,6 +162,7 @@ def _register_fail(key):
     cnt, until = _fails.get(key, (0, 0.0))
     cnt += 1
     if cnt >= _MAX_FAILS:
+        _log("account locked", key, failures=_MAX_FAILS, seconds=_LOCK_SECONDS)
         try:
             alerts.record_lockout(key, users.exists(key), _MAX_FAILS, _LOCK_SECONDS)
         except Exception:
@@ -165,10 +186,12 @@ def change_own_password(me, current, new, confirm):
         return "mismatch"
     err = users.change_password(key, current, new)
     if err == "bad_current":
+        _log("password change failed", key, reason="bad current password")
         _register_fail(key)
     if err:
         return err
     _clear_fails(key)
+    _log("password changed", key)
     try:
         alerts.record_user_event("parola schimbata de utilizator", key, key)
     except Exception:
@@ -200,6 +223,7 @@ def render_change_password(me):
 
 
 def _logout():
+    _log("logout", st.session_state.get("_user"))
     try:
         presence.forget_session(st.session_state.pop("_presence_id", None))
     except Exception:
@@ -286,6 +310,11 @@ def _authenticate():
         st.session_state["_auth_clear_cookie"] = True  # deconectare fortata sau expirare: cookie-ul vechi nu mai e valid
         if _session_expired():
             st.session_state["_auth_expired"] = True
+            _log("session ended", me, reason="expired")
+        else:
+            _log("session ended", me, reason="signed out by admin")
+    elif me:
+        _log("session ended", me, reason="account deleted")
     for k in ("_user", "_tok_id", "_auth_exp", "_last_active"):
         st.session_state.pop(k, None)
 
@@ -293,13 +322,18 @@ def _authenticate():
         tok = _read_cookie()
         who = users.check_token(tok) if tok else None
         if who and session_policy.is_idle(session_policy.last_activity(session_policy.token_id(tok))):
+            _log("cookie rejected", who, reason="idle")
             who = None
             st.session_state["_auth_expired"] = True
             st.session_state["_auth_clear_cookie"] = True
         elif tok and not who and users.token_exp(tok) is not None and users.token_exp(tok) < time.time():
+            _log("cookie rejected", reason="expired")
             st.session_state["_auth_expired"] = True
             st.session_state["_auth_clear_cookie"] = True
+        elif tok and not who:
+            _log("cookie rejected", reason="invalid")
         if who:
+            _log("session resumed", who, via="cookie")
             _set_session(who)
             _start_cookie_session(tok, False)
             _chrome(who)
@@ -352,18 +386,22 @@ def _authenticate():
             st.stop()
         users.migrate_legacy(new_key)
         key = new_key
+        _log("admin created", key)
     else:
         left = _lock_remaining(key)
         if left:
+            _log("login refused", key, reason="locked", seconds_left=int(left))
             with mid:
                 st.error(_tr("locked", m=int(left // 60) + 1))
             st.stop()
         if not users.verify(key, pw):
+            _log("login failed", key, reason="bad user or password")
             _register_fail(key)
             with mid:
                 st.error(_tr("bad"))
             st.stop()
         _clear_fails(key)
+        _log("login ok", key, via="password")
 
     _set_session(key)
     st.session_state.pop("_auth_expired", None)

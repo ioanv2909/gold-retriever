@@ -1,3 +1,7 @@
+## 0.3.10 — 2026-10-26
+
+- Sign-in events are written to the log (Settings > Log) as `[auth]` lines with the account and the IP: sign-in by password, session resumed from the cookie, failed sign-in, account locked after 5 failures, sign-in refused while locked, cookie rejected (invalid, expired or idle), session ended (expired, signed out by an admin, account deleted), sign-out, password change and the first admin account. Passwords and tokens are never logged; a user name that does not look like an account name is logged as `<invalid>`, so a password typed in the wrong field does not reach the log. These lines are not reported as log problems.
+
 ## 0.3.9 — 2026-10-26
 
 - New admin tab Settings > Log: the last 1000 lines the app wrote to the log (stdout/stderr), with a choice of 100, 300 or 1000 lines, a text search, an option to hide known noise and a download as .txt. The lines are kept in memory, so the list starts empty after each container restart.

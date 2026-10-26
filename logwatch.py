@@ -50,8 +50,11 @@ def signature(line):
     return s[:160]
 
 
+INFO = re.compile(r"^\[auth\] ")  # evenimente de autentificare: apar in Setari -> Log, dar nu sunt erori
+
+
 def is_problem(line):
-    return bool(PROBLEM.search(line)) and not IGNORE.search(line)
+    return bool(PROBLEM.search(line)) and not IGNORE.search(line) and not INFO.search(line)
 
 
 def record(line, now=None):
