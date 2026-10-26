@@ -1,3 +1,8 @@
+## 0.2.50 — 2026-10-26
+
+- New device alert: at sign-in (password, or a session reopened from the cookie; once per browser session, not on every page run) the device is compared with the ones seen for that account. The device is the browser and system from the User-Agent ("Chrome / Windows"), without versions, so a browser update does not count as new; the IP is not part of it. A new device sends a security email to the admin with the device, time and a shortened IP (`192.168.x.x`, or the first three IPv6 groups), never passwords, tokens or cookies.
+- The list is kept in `data/known_devices.json`: up to 10 devices per user (the one used least recently drops out), with only a hash, the short label and times, no full User-Agent and no IP. The first sign-in of an account, and of each existing account after this update, records the device without an alert. At most 3 alerts per user per hour.
+
 ## 0.2.49 — 2026-10-26
 
 - Session expiry: a session ends after 8 hours without activity or 30 days after sign-in (the sign-in cookie lifetime). Both limits are defaults that an admin can change in Settings > 👥 Users > ⏱️ Sessions (1–720 hours, 1–365 days, with a "Restore defaults" button); a change sends a security email. A lower limit applies at once to every open session and every existing cookie; a higher maximum duration applies only to new sign-ins.

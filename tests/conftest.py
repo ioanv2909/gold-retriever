@@ -69,3 +69,11 @@ def _isolated_session_policy(tmp_path, monkeypatch):
     monkeypatch.setattr(session_policy, "ACTIVITY_FILE", str(tmp_path / "session_activity.json"))
     monkeypatch.setattr(session_policy, "_written", {})
     monkeypatch.setattr(session_policy, "_cache", {"key": None, "val": None})
+
+
+@pytest.fixture(autouse=True)
+def _isolated_known_devices(tmp_path, monkeypatch):
+    """Dispozitivele cunoscute se scriu in data/; in teste merg intr-un director temporar, fara e-mailuri."""
+    import known_devices
+    monkeypatch.setattr(known_devices, "DEVICES_FILE", str(tmp_path / "known_devices.json"))
+    monkeypatch.setattr(known_devices, "_alerts", {})

@@ -8,6 +8,7 @@ import streamlit as st
 from url_tabs import reset as reset_tabs
 import streamlit.components.v1 as components
 
+import known_devices
 import presence
 import session_policy
 import users
@@ -90,6 +91,26 @@ def _start_cookie_session(tok, fresh):
     st.session_state["_auth_exp"] = users.token_exp(tok)
     st.session_state["_last_active"] = now
     session_policy.touch(tid, now, force=fresh or session_policy.last_activity(tid) is None)
+    _check_device(st.session_state.get("_user"))
+
+
+def _client():
+    """(User-Agent, IP) ale cererii curente; IP-ul din X-Forwarded-For e doar informativ."""
+    h = st.context.headers
+    fwd = (h.get("X-Forwarded-For") or "").split(",")[0].strip()
+    return h.get("User-Agent"), fwd or st.context.ip_address
+
+
+def _check_device(me):
+    """O data pe sesiune, la autentificare (parola sau cookie): alerta daca dispozitivul e nou pentru cont."""
+    if not me or st.session_state.get("_device_checked") == me:
+        return
+    st.session_state["_device_checked"] = me
+    try:
+        ua, ip = _client()
+        known_devices.check_login(me, ua, ip)
+    except Exception:
+        pass
 
 
 def _issue_cookie(key):
@@ -190,7 +211,7 @@ def _logout():
         session_policy.revoke(st.session_state.get("_tok_id"))
     except Exception:
         pass
-    for k in ("_tok_id", "_auth_exp", "_last_active"):
+    for k in ("_tok_id", "_auth_exp", "_last_active", "_device_checked"):
         st.session_state.pop(k, None)
     st.session_state.pop("_user", None)
     st.session_state.pop("_page", None)
@@ -242,10 +263,8 @@ def _track(me):
     if not sid:
         sid = st.session_state["_presence_id"] = secrets.token_hex(8)
     try:
-        h = st.context.headers
         # in spatele unui reverse proxy ip_address e adresa proxy-ului; antetul e doar informativ
-        fwd = (h.get("X-Forwarded-For") or "").split(",")[0].strip()
-        presence.touch(sid, me, h.get("User-Agent"), fwd or st.context.ip_address)
+        presence.touch(sid, me, *_client())
     except Exception:
         pass
 
