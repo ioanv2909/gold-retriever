@@ -39,3 +39,15 @@ def _isolated_privacy(tmp_path, monkeypatch):
     """Setarea de confidentialitate se scrie in data/; in teste merge intr-un director temporar."""
     import privacy
     monkeypatch.setattr(privacy, "PRIVACY_FILE", str(tmp_path / "privacy.json"))
+
+
+@pytest.fixture(autouse=True)
+def _isolated_users(tmp_path, monkeypatch):
+    """Conturile se scriu in data/users.json; in teste merg intr-un director temporar, fara blocari ramase."""
+    import auth
+    import users
+    monkeypatch.setattr(users, "DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr(users, "USERS_FILE", str(tmp_path / "users.json"))
+    monkeypatch.setattr(users, "SECRET_FILE", str(tmp_path / "auth_secret"))
+    monkeypatch.setattr(auth, "_fails", {})
+    monkeypatch.setattr(auth, "_FAIL_DELAY", 0)

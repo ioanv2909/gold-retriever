@@ -59,7 +59,7 @@ def role(name):
     return (_load()["users"].get(str(name).lower()) or {}).get("role")
 
 
-def create_user(name, pw, role_="user"):
+def create_user(name, pw, role_="user", must_change=False):
     """Returneaza (cheie, None) sau (None, cod_eroare)."""
     name = str(name).strip()
     if not _NAME_RE.match(name):
@@ -74,6 +74,8 @@ def create_user(name, pw, role_="user"):
         role_ = "admin"
     salt = secrets.token_hex(16)
     d["users"][key] = {"name": name, "role": role_, "salt": salt, "hash": _hash(pw, salt), "created": time.time()}
+    if must_change and key != "demo":
+        d["users"][key]["must_change"] = True
     _save(d)
     return key, None
 
@@ -86,17 +88,35 @@ def verify(name, pw):
     return hmac.compare_digest(_hash(pw or "", rec["salt"]), rec["hash"])
 
 
-def set_password(name, pw):
+def set_password(name, pw, must_change=False):
+    """must_change=True cere schimbarea parolei la urmatoarea autentificare (parola data de admin)."""
     if len(pw or "") < 8 and name != "demo":
         return "pwd_short"
     d = _load()
-    rec = d["users"].get(str(name).lower())
+    key = str(name).lower()
+    rec = d["users"].get(key)
     if not rec:
         return "name"
     rec["salt"] = secrets.token_hex(16)
     rec["hash"] = _hash(pw, rec["salt"])
+    if must_change and key != "demo":
+        rec["must_change"] = True
+    else:
+        rec.pop("must_change", None)
     _save(d)
     return None
+
+
+def change_password(name, current, new):
+    """Schimbarea parolei de catre utilizator: verifica parola curenta, apoi aceleasi reguli ca set_password.
+    Returneaza None sau cod_eroare ("bad_current", "pwd_short")."""
+    if not verify(name, current):
+        return "bad_current"
+    return set_password(name, new)
+
+
+def must_change(name):
+    return bool((_load()["users"].get(str(name).lower()) or {}).get("must_change"))
 
 
 def delete_user(name, me, purge=False):

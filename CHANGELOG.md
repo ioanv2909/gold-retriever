@@ -1,3 +1,9 @@
+## 0.2.45 — 2026-10-26
+
+- Settings > 🔐 Password: every user, not only admins, can change their own password (current password, new password, confirmation). The account always comes from the signed-in session. The rules are the same as for accounts created by an admin (minimum 8 characters), and wrong attempts count toward the same lockout as sign-in (5 attempts, 5 minutes). A successful change sends a security email (without the password) and signs out the other open sessions.
+- A password set by an admin (new account or reset) must be changed at the next sign-in before the app opens.
+- Security emails about accounts now say "De catre" (by) instead of "Admin", since the user can make the change themselves.
+
 ## 0.2.44 — 2026-10-24
 
 - Position alerts (banner and email) show the instrument name instead of the symbol. When the broker gives only the symbol (often the case for XTB), the name comes from Yahoo Finance; the score refresh now keeps it, so every instrument is refreshed once.

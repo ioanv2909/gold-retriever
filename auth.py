@@ -13,6 +13,7 @@ _COOKIE = "pt_auth"
 _DAYS = 30
 _MAX_FAILS = 5
 _LOCK_SECONDS = 300
+_FAIL_DELAY = 1
 _fails = {}
 
 _S = {
@@ -78,8 +79,106 @@ def _set_session(key):
     st.session_state.pop("_auth_loggedout", None)
 
 
+# contor de esecuri pe cont, comun pentru login si schimbarea parolei
+def _lock_remaining(key):
+    """Secunde ramase din blocare (0 daca nu e blocat)."""
+    return max(0.0, _fails.get(key, (0, 0.0))[1] - time.time())
+
+
+def _register_fail(key):
+    cnt, until = _fails.get(key, (0, 0.0))
+    cnt += 1
+    if cnt >= _MAX_FAILS:
+        try:
+            alerts.record_lockout(key, users.exists(key), _MAX_FAILS, _LOCK_SECONDS)
+        except Exception:
+            pass
+        cnt, until = 0, time.time() + _LOCK_SECONDS
+    _fails[key] = (cnt, until)
+    time.sleep(_FAIL_DELAY)
+
+
+def _clear_fails(key):
+    _fails.pop(key, None)
+
+
+def change_own_password(me, current, new, confirm):
+    """Schimbarea propriei parole; me vine din sesiunea autentificata, niciodata din formular.
+    Returneaza None sau cod_eroare ("locked", "mismatch", "bad_current", "pwd_short")."""
+    key = str(me).strip().lower()
+    if _lock_remaining(key):
+        return "locked"
+    if new != confirm:
+        return "mismatch"
+    err = users.change_password(key, current, new)
+    if err == "bad_current":
+        _register_fail(key)
+    if err:
+        return err
+    _clear_fails(key)
+    try:
+        alerts.record_user_event("parola schimbata de utilizator", key, key)
+    except Exception:
+        pass
+    return None
+
+
+def render_change_password(me):
+    """Formularul „Schimba parola”. Returneaza True dupa o schimbare reusita."""
+    from i18n import t
+    with st.form("pwd_change_form", clear_on_submit=True):
+        cur = st.text_input(t("pwd.current"), type="password")
+        new = st.text_input(t("pwd.new"), type="password")
+        new2 = st.text_input(t("pwd.confirm"), type="password")
+        go = st.form_submit_button(t("pwd.submit"))
+    if not go:
+        return False
+    err = change_own_password(me, cur, new, new2)
+    if err == "locked":
+        st.error(t("pwd.err_locked", m=int(_lock_remaining(str(me).lower()) // 60) + 1))
+    elif err:
+        st.error(t("pwd.err_" + err))
+    else:
+        # semnatura token-ului include hash-ul parolei: celelalte sesiuni ies, aceasta primeste cookie nou
+        _cookie_js(users.make_token(me, _DAYS), _DAYS * 86400)
+        st.success(t("pwd.ok"))
+        return True
+    return False
+
+
+def _logout():
+    st.session_state.pop("_user", None)
+    st.session_state.pop("_page", None)
+    st.query_params.pop("page", None)
+    reset_tabs("settings_tab")
+    st.session_state["_auth_loggedout"] = True
+    st.session_state["_auth_clear_cookie"] = True
+    st.rerun()
+
+
+def _forced_change(me):
+    """Parola data de admin trebuie schimbata inainte de a folosi aplicatia."""
+    from i18n import t
+    _, mid, _ = st.columns([1, 1, 1])
+    with mid:
+        st.markdown("### " + t("pwd.title"))
+        st.warning(t("pwd.forced"))
+        if render_change_password(me):
+            st.button(t("pwd.continue"), key="pwd_forced_continue")
+        elif st.button(_tr("logout"), key="pwd_forced_logout"):
+            _logout()
+    st.stop()
+
+
 def require_login():
     """Returneaza cheia utilizatorului autentificat; opreste scriptul daca nu e logat."""
+    key = _authenticate()
+    if users.must_change(key):
+        _forced_change(key)
+    return key
+
+
+def _authenticate():
     me = st.session_state.get("_user")
     if me and users.exists(me):
         _chrome(me)
@@ -139,26 +238,17 @@ def require_login():
         users.migrate_legacy(new_key)
         key = new_key
     else:
-        cnt, until = _fails.get(key, (0, 0.0))
-        now = time.time()
-        if now < until:
+        left = _lock_remaining(key)
+        if left:
             with mid:
-                st.error(_tr("locked", m=int((until - now) // 60) + 1))
+                st.error(_tr("locked", m=int(left // 60) + 1))
             st.stop()
         if not users.verify(key, pw):
-            cnt += 1
-            if cnt >= _MAX_FAILS:
-                try:
-                    alerts.record_lockout(key, users.exists(key), _MAX_FAILS, _LOCK_SECONDS)
-                except Exception:
-                    pass
-                cnt, until = 0, now + _LOCK_SECONDS
-            _fails[key] = (cnt, until)
-            time.sleep(1)
+            _register_fail(key)
             with mid:
                 st.error(_tr("bad"))
             st.stop()
-        _fails.pop(key, None)
+        _clear_fails(key)
 
     _set_session(key)
     ph.empty()
@@ -227,7 +317,7 @@ def render_users_page(me, embedded=False):
             n_pwd = st.text_input(_tr("pwd"), type="password")
             n_role = st.selectbox(_tr("role"), ["user", "admin"])
             if st.form_submit_button(_tr("add")):
-                _, err = users.create_user(n_name, n_pwd, n_role)
+                _, err = users.create_user(n_name, n_pwd, n_role, must_change=True)
                 if not err:
                     alerts.record_user_event("utilizator creat", me, n_name, "rol: " + str(n_role))
                 _flash("err", _tr("err_" + err)) if err else _flash("ok", _tr("ok_created"))
@@ -239,7 +329,8 @@ def render_users_page(me, embedded=False):
             r_user = st.selectbox(_tr("user"), names, key="adm_rst_user")
             r_pwd = st.text_input(_tr("new_pwd"), type="password", key="adm_rst_pwd")
             if st.button(_tr("apply"), key="adm_rst"):
-                err = users.set_password(r_user, r_pwd)
+                # parola data de admin se schimba la urmatoarea autentificare (nu si pentru propriul cont)
+                err = users.set_password(r_user, r_pwd, must_change=r_user != me)
                 if not err:
                     alerts.record_user_event("parola resetata", me, r_user)
                 _flash("err", _tr("err_" + err)) if err else _flash("ok", _tr("ok_pwd"))
@@ -308,10 +399,4 @@ def user_menu(me):
             st.session_state["_page"] = "settings"
             st.rerun()
         if _btn(_tr("logout"), "menu_logout"):
-            st.session_state.pop("_user", None)
-            st.session_state.pop("_page", None)
-            st.query_params.pop("page", None)
-            reset_tabs("settings_tab")
-            st.session_state["_auth_loggedout"] = True
-            st.session_state["_auth_clear_cookie"] = True
-            st.rerun()
+            _logout()

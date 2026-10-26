@@ -61,6 +61,12 @@ def _tab_about():
         st.caption(_L("CHANGELOG.md lipsește.", "CHANGELOG.md not found."))
 
 
+def _tab_password(me):
+    from auth import render_change_password
+    st.markdown("#### " + t("pwd.title"))
+    render_change_password(me)
+
+
 def _tab_users(me):
     from auth import render_users_page
     render_users_page(me, embedded=True)
@@ -80,6 +86,7 @@ def render_settings(me, sections=()):
 
     # (id, eticheta, functie); id-ul apare in URL (?tab=...), deci nu depinde de limba
     entries = [("t212", "🔑 Trading 212", _tab_t212)]
+    entries.append(("password", t("pwd.tab"), lambda: _tab_password(me)))
     entries += list(sections)
     if users.role(me) == "admin":
         entries.append(("users", "👥 " + _L("Utilizatori", "Users"), lambda: _tab_users(me)))

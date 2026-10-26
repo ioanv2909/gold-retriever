@@ -71,7 +71,9 @@ Infrastructure
 Accounts are stored in `data/users.json` (salted PBKDF2 hashes, roles). Each
 user has an isolated folder `data/users/<name>/`. Files that do not depend on a
 user (instrument metadata, quality scores, market context) are shared. The
-first account is an admin who can create users from Settings.
+first account is an admin who can create users from Settings. Any user can change their own
+password in Settings > Password (same lockout as sign-in); a password set by an
+admin carries a `must_change` flag and has to be changed at the next sign-in.
 
 ## Background work
 

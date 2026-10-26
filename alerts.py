@@ -83,8 +83,8 @@ def record_lockout(user, exists, max_fails, lock_seconds):
 
 
 def record_user_event(action, actor, target, detail=""):
-    """Modificari ale utilizatorilor facute de un admin. Se trimite mereu, fara limitare in timp."""
-    body = "Admin: %s\nActiune: %s\nAsupra: %s" % (actor, action, target)
+    """Modificari ale conturilor (de catre un admin sau de utilizatorul insusi). Se trimite mereu, fara limitare in timp."""
+    body = "De catre: %s\nActiune: %s\nAsupra: %s" % (actor, action, target)
     if detail:
         body += "\nDetalii: %s" % detail
     return notify.notify("security", "Modificare utilizatori: %s" % action, body,
