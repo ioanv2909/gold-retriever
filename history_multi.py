@@ -34,6 +34,8 @@ def record_multi_point(t212_account_currency=None, force=False):
         except Exception:
             pass
 
+    from t212_api import fx_failures
+    failures_before = fx_failures()
     entries = {}
     snap = load_cached_snapshot() or {}
     cash = snap.get("cash") or {}
@@ -57,6 +59,8 @@ def record_multi_point(t212_account_currency=None, force=False):
     rates = {"EUR": 1.0}
     for _c in sorted(_ccys - {"EUR"}):
         rates[_c] = round(fx(_c, "EUR"), 6)
+    if fx_failures() != failures_before:
+        return False  # un curs a lipsit (1.0 inventat): mai bine un punct lipsa decat unul gresit
     point = {"ts": now.isoformat(timespec="seconds"), "entries": entries, "rates": rates}
     cutoff = (now - timedelta(days=30)).isoformat(timespec="seconds")
 

@@ -1,3 +1,9 @@
+## 0.3.5 — 2026-10-26
+
+- Fix: when Yahoo did not answer, an exchange rate fell back to 1.0 and stayed cached (up to an hour, `fetch_fx_rate` had two `st.cache_data` layers). History points written meanwhile counted, for example, RON amounts as euro, so the portfolio chart jumped to several times its real value and the older history looked flat. This happened more often after container restarts, which empty the cache.
+- A failed rate now falls back to the last good rate (at most 7 days old, kept in `data/fx_last_good.json` so it survives a restart). Without one, the 1.0 fallback is kept for display only, is cached for a minute instead of up to an hour, and no history point is written: a missing point instead of a wrong one.
+- `tools/fix_history_rates.py`: shows, without amounts, the history points saved with a made-up rate (and their ratio to the median of the previous points); with `--apply` it removes them after a `.bak` copy, and with `--max-ratio X` also points more than X times off.
+
 ## 0.3.4 — 2026-10-26
 
 - Tests: the check that `auth.py` no longer uses `components.html` looks for the import and the call, not for the name in a comment (it failed in 0.3.3; the app itself was not affected).

@@ -95,23 +95,73 @@ def fetch_account_currency(key_id, secret):
         return None, f"Eroare rețea: {e}"
 
 
-@st.cache_data(ttl=3600, show_spinner=False)
+FX_LAST_GOOD_FILE = os.path.join("data", "fx_last_good.json")
+FX_LAST_GOOD_MAX_AGE = 7 * 86400   # un curs bun mai vechi nu mai inlocuieste unul care lipseste
+_FX_SAVE_EVERY = 3600               # scrieri pe disc pentru aceeasi pereche
+_fx_last_good = {}                  # "EURRON" -> (ts, curs)
+_fx_saved = {}
+_fx_state = {"loaded": False, "failures": 0}
+
+
+def _fx_good(pair, now):
+    if not _fx_state["loaded"]:
+        _fx_state["loaded"] = True
+        d = load_json_file(FX_LAST_GOOD_FILE, {})
+        for k, v in (d.items() if isinstance(d, dict) else []):
+            if isinstance(v, list) and len(v) == 2 and k not in _fx_last_good:
+                _fx_last_good[k] = (float(v[0]), float(v[1]))
+    ts_rate = _fx_last_good.get(pair)
+    return ts_rate[1] if ts_rate and now - ts_rate[0] <= FX_LAST_GOOD_MAX_AGE else None
+
+
+def _fx_remember(pair, rate, now):
+    _fx_good(pair, now)  # incarca fisierul inainte de prima scriere
+    _fx_last_good[pair] = (now, rate)
+    if now - _fx_saved.get(pair, 0) >= _FX_SAVE_EVERY:
+        _fx_saved[pair] = now
+        save_json_file(FX_LAST_GOOD_FILE, {k: [t, r] for k, (t, r) in _fx_last_good.items()})
+
+
+def fx_failures():
+    """Numarul de cursuri care au cazut pe 1.0 (fara curs cunoscut) de la pornire."""
+    return _fx_state["failures"]
+
+
 @st.cache_data(ttl=600, show_spinner=False)
+def _yahoo_fx(pair):
+    """Cursul de pe Yahoo; arunca exceptie la esec, deci un esec nu ramane in cache."""
+    hist = yf.Ticker(f"{pair}=X").history(period="5d")
+    if hist.empty:
+        raise ValueError(f"Nu am găsit curs {pair} pe Yahoo Finance.")
+    rate = float(hist["Close"].iloc[-1])
+    if not rate > 0:
+        raise ValueError(f"Curs invalid {pair}: {rate}")
+    return rate
+
+
 def fetch_fx_rate(from_ccy, to_ccy):
-    """Curs valutar curent from_ccy -> to_ccy, via Yahoo Finance. 1.0 dacă monedele coincid sau la eșec.
+    """Curs valutar curent from_ccy -> to_ccy, via Yahoo Finance. 1.0 dacă monedele coincid.
+    La eșec se folosește ultimul curs bun (cel mult 7 zile, păstrat și pe disc); fără el, 1.0 cu eroare
+    și fx_failures() crește, ca istoricul să nu salveze puncte calculate cu un curs inventat.
     GBX (penny sterling, folosit de LSE) nu e o monedă valutară reală — se rezolvă via GBP/100."""
     if from_ccy == "GBX":
         rate, err = fetch_fx_rate("GBP", to_ccy)
         return rate / 100, err
     if not from_ccy or not to_ccy or from_ccy == to_ccy or not YFINANCE_AVAILABLE:
         return 1.0, None
+    pair = f"{from_ccy}{to_ccy}"
+    now = time.time()
     try:
-        hist = yf.Ticker(f"{from_ccy}{to_ccy}=X").history(period="5d")
-        if hist.empty:
-            return 1.0, f"Nu am găsit curs {from_ccy}->{to_ccy} pe Yahoo Finance."
-        return float(hist["Close"].iloc[-1]), None
+        rate = _yahoo_fx(pair)
+        _fx_remember(pair, rate, now)
+        return rate, None
     except Exception as e:
-        return 1.0, f"Eroare curs {from_ccy}->{to_ccy}: {e}"
+        err = f"Eroare curs {from_ccy}->{to_ccy}: {e}"
+    good = _fx_good(pair, now)
+    if good is not None:
+        return good, None
+    _fx_state["failures"] += 1
+    return 1.0, err
 
 
 def fetch_order_history_for_ticker(key_id, secret, ticker, limit=50):

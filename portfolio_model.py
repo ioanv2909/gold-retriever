@@ -30,9 +30,10 @@ def fx(from_ccy, to_ccy):
         r1, e1 = fetch_fx_rate(from_ccy, "USD")
         r2, e2 = fetch_fx_rate("USD", to_ccy)
         if not e1 and not e2:
-            rate = r1 * r2
+            rate, err = r1 * r2, None
     value = float(rate)
-    _FX_CACHE[key] = (now, value)
+    # un curs esuat (1.0) se tine doar un minut, ca urmatoarele apeluri sa reincerce
+    _FX_CACHE[key] = (now - (_FX_CACHE_TTL_SECONDS - 60 if err else 0), value)
     return value
 
 

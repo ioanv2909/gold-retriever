@@ -77,3 +77,13 @@ def _isolated_known_devices(tmp_path, monkeypatch):
     import known_devices
     monkeypatch.setattr(known_devices, "DEVICES_FILE", str(tmp_path / "known_devices.json"))
     monkeypatch.setattr(known_devices, "_alerts", {})
+
+
+@pytest.fixture(autouse=True)
+def _isolated_fx(tmp_path, monkeypatch):
+    """Ultimele cursuri bune se scriu in data/; in teste merg intr-un director temporar, cu stare goala."""
+    import t212_api
+    monkeypatch.setattr(t212_api, "FX_LAST_GOOD_FILE", str(tmp_path / "fx_last_good.json"))
+    monkeypatch.setattr(t212_api, "_fx_last_good", {})
+    monkeypatch.setattr(t212_api, "_fx_saved", {})
+    monkeypatch.setattr(t212_api, "_fx_state", {"loaded": False, "failures": 0})
