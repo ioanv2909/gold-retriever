@@ -1,3 +1,8 @@
+## 0.3.1 — 2026-10-26
+
+- Streamlit 1.66.1 (was 1.65.0) and Pillow 13.0.0 (was 12.3.0, installed by Streamlit), pinned in `requirements.txt`. This fixes the known Pillow vulnerabilities listed under 0.2.47; `pip-audit` now finds none, so the CI audit step blocks the workflow again on known vulnerabilities.
+- The docker-compose override used on the server no longer mounts the project folder into the container, so the read-only filesystem from 0.3.0 also covers the app code; code changes reach the app only through `./tools/deploy.sh`.
+
 ## 0.3.0 — 2026-10-26
 
 Security release: together with 0.2.47–0.2.50 (dependency scanning, upload limits and path checks, session expiry, new device alerts) it starts the 0.3 series.

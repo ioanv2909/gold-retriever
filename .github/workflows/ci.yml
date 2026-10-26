@@ -10,8 +10,6 @@ jobs:
           python-version: "3.10"
       - run: pip install -r requirements.txt
       - name: Audit dependencies for known vulnerabilities
-        # Informational until Streamlit/Pillow upgrade (Pillow 13 requires Streamlit 1.66+).
-        continue-on-error: true
         # justetf-scraping is installed from a GitHub zip URL, is not on PyPI and cannot be
         # audited, so it is left out; its own dependencies are still audited. The step fails
         # on known vulnerabilities and only warns when the audit cannot run (network errors).
