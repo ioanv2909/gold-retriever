@@ -38,7 +38,7 @@ def xirr(flows):
 
 def fetch_pages(kid, sec, path, label):
     import requests
-    from t212_api import BASE_URL, _headers
+    from t212_api import BASE_URL, _headers, api_error
 
     host = BASE_URL.split("/api/")[0]
     url, params, items, n, retries = BASE_URL + path, {"limit": 50}, [], 0, 0
@@ -49,7 +49,7 @@ def fetch_pages(kid, sec, path, label):
             time.sleep(25)
             continue
         if r.status_code != 200:
-            print(f"  eroare {r.status_code} la {label}: {r.text[:200]}")
+            print("  " + api_error(r, path, kid, sec))
             return items, False
         retries = 0
         data = r.json()

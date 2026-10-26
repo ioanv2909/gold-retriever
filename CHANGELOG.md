@@ -1,3 +1,8 @@
+## 0.3.8 — 2026-10-26
+
+- Trading 212 API errors (cash, positions, instruments, orders, dividends, history) now show a clear message in Romanian or English based on the HTTP code: 401 (key or secret not accepted, or missing permissions), 403 (missing permissions), 429 (too many requests); other codes point to the container log.
+- The container log gets one line per failed request with the user, the endpoint, the HTTP code and the first 200 characters of the response body. The API key, the secret and the Authorization header are removed from the log and from the messages shown in the app.
+
 ## 0.3.7 — 2026-10-26
 
 - Fix: the portfolio chart jumped to about 3.3 times its value for single points. The Trading 212 account currency is cached; when the cache expired and the request to Trading 212 failed (rate limit of 1 request per 30 seconds, or network), the currency was unknown and the history point labelled the Trading 212 value as EUR instead of the account currency (RON). Now the last known currency is kept when the request fails, and no history point is written while the currency is unknown.

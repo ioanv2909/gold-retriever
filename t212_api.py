@@ -14,6 +14,8 @@ from urllib.parse import quote
 import plotly.graph_objects as go
 import plotly.express as px
 
+from i18n import t
+from userctx import current_user
 from core import ACCOUNT_INFO_CACHE_FILE, BASE_URL, DIVIDENDS_CACHE_FILE, INSTRUMENTS_CACHE_FILE, INSTRUMENTS_CACHE_TTL, PORTFOLIO_CACHE_FILE, RATINGS_CACHE_FILE, load_json_file, save_json_file
 
 
@@ -24,6 +26,34 @@ def _headers(key_id, secret):
     return {"Authorization": f"Basic {encoded}"}
 
 
+def scrub(text, key_id, secret):
+    """Textul fara cheie, secret si valoarea antetului Authorization."""
+    text = str(text)
+    token = _headers(key_id, secret)["Authorization"].split()[-1] if key_id and secret else None
+    for s in (token, secret, key_id):
+        if s:
+            text = text.replace(str(s), "***")
+    return text
+
+
+def api_error(r, endpoint, key_id, secret):
+    """Mesajul pentru utilizator la un raspuns T212 fara succes (in romana; x() il traduce la afisare)
+    si o linie in logul containerului cu utilizatorul, endpoint-ul, codul si inceputul corpului."""
+    code = r.status_code
+    try:
+        body = r.text or ""
+    except Exception:
+        body = ""
+    body = scrub(body, key_id, secret)[:200]
+    print(f"[t212] user={current_user() or '-'} endpoint={endpoint} http={code} body={body!r}", flush=True)
+    key = f"t212.err.{code}" if code in (401, 403, 429) else "t212.err.other"
+    return t(key, _lang="RO", endpoint=endpoint, code=code)
+
+
+def _net_error(e, key_id, secret):
+    return scrub(f"Eroare rețea: {e}", key_id, secret)
+
+
 def fetch_cash(key_id, secret):
     if not key_id or not secret:
         return None, "Lipsește ID-ul sau Cheia Secretă."
@@ -31,9 +61,9 @@ def fetch_cash(key_id, secret):
         r = requests.get(f"{BASE_URL}/equity/account/cash", headers=_headers(key_id, secret), timeout=15)
         if r.status_code == 200:
             return r.json(), None
-        return None, f"Eroare API cash ({r.status_code}): {r.text}"
+        return None, api_error(r, "/equity/account/cash", key_id, secret)
     except Exception as e:
-        return None, f"Eroare rețea: {e}"
+        return None, _net_error(e, key_id, secret)
 
 
 def fetch_portfolio(key_id, secret):
@@ -44,9 +74,9 @@ def fetch_portfolio(key_id, secret):
         if r.status_code == 200:
             data = r.json()
             return (data if data else []), None
-        return None, f"Eroare API portfolio ({r.status_code}): {r.text}"
+        return None, api_error(r, "/equity/portfolio", key_id, secret)
     except Exception as e:
-        return None, f"Eroare rețea: {e}"
+        return None, _net_error(e, key_id, secret)
 
 
 def fetch_instruments(key_id, secret):
@@ -67,9 +97,9 @@ def fetch_instruments(key_id, secret):
             data = r.json()
             save_json_file(INSTRUMENTS_CACHE_FILE, {"fetched_at": time.time(), "data": data})
             return data, None
-        return None, f"Eroare API instruments ({r.status_code}): {r.text}"
+        return None, api_error(r, "/equity/metadata/instruments", key_id, secret)
     except Exception as e:
-        return None, f"Eroare rețea: {e}"
+        return None, _net_error(e, key_id, secret)
 
 
 def fetch_account_currency(key_id, secret):
@@ -93,9 +123,9 @@ def fetch_account_currency(key_id, secret):
             code = r.json().get("currencyCode")
             save_json_file(ACCOUNT_INFO_CACHE_FILE, {"fetched_at": time.time(), "currencyCode": code})
             return code, None
-        err = f"Eroare API account/info ({r.status_code}): {r.text}"
+        err = api_error(r, "/equity/account/info", key_id, secret)
     except Exception as e:
-        err = f"Eroare rețea: {e}"
+        err = _net_error(e, key_id, secret)
     return (stale, None) if stale else (None, err)
 
 
@@ -181,9 +211,9 @@ def fetch_order_history_for_ticker(key_id, secret, ticker, limit=50):
         )
         if r.status_code == 200:
             return r.json().get("items", []), None
-        return None, f"Eroare API orders ({r.status_code}): {r.text}"
+        return None, api_error(r, "/equity/history/orders", key_id, secret)
     except Exception as e:
-        return None, f"Eroare rețea: {e}"
+        return None, _net_error(e, key_id, secret)
 
 
 def fetch_dividends_for_ticker(key_id, secret, ticker):
@@ -200,10 +230,9 @@ def fetch_dividends_for_ticker(key_id, secret, ticker):
             if r.status_code == 429 and attempt == 0:
                 time.sleep(20)  # rate limit T212 — mai așteptăm și reîncercăm o dată
                 continue
-            return None, f"Eroare API dividends ({r.status_code}): {r.text}"
+            return None, api_error(r, "/equity/history/dividends", key_id, secret)
         except Exception as e:
-            return None, f"Eroare rețea: {e}"
-    return None, "Eroare API dividends (429): prea multe cereri, reîncearcă mai târziu."
+            return None, _net_error(e, key_id, secret)
 
 
 def fetch_and_cache_core(key_id, secret):

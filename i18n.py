@@ -906,6 +906,22 @@ _T = {
         "RO": "Celelalte setări nu sunt disponibile în versiunea pentru telefon. Deschide-le de pe desktop sau treci la versiunea completă.",
         "EN": "The other settings are not available in the phone version. Open them on a desktop or switch to the full version.",
     },
+    "t212.err.401": {
+        "RO": "Trading 212 ({endpoint}, HTTP 401): cheia API sau secretul nu sunt acceptate sau cheii îi lipsesc permisiuni. Verifică-le în Setări.",
+        "EN": "Trading 212 ({endpoint}, HTTP 401): the API key or secret is not accepted, or the key lacks permissions. Check them in Settings.",
+    },
+    "t212.err.403": {
+        "RO": "Trading 212 ({endpoint}, HTTP 403): cheii API îi lipsesc permisiuni pentru această cerere. Activează-le în Trading 212 sau creează o cheie nouă.",
+        "EN": "Trading 212 ({endpoint}, HTTP 403): the API key lacks permissions for this request. Enable them in Trading 212 or create a new key.",
+    },
+    "t212.err.429": {
+        "RO": "Trading 212 ({endpoint}, HTTP 429): prea multe cereri. Reîncearcă peste un minut.",
+        "EN": "Trading 212 ({endpoint}, HTTP 429): too many requests. Try again in a minute.",
+    },
+    "t212.err.other": {
+        "RO": "Trading 212 ({endpoint}, HTTP {code}): eroare API. Detaliile sunt în logul containerului.",
+        "EN": "Trading 212 ({endpoint}, HTTP {code}): API error. The details are in the container log.",
+    },
 }
 
 
@@ -1050,6 +1066,21 @@ _PATTERNS = [
     (r"ROE \(([\d.]+)%\) peste 15% — reper generic de eficiență solidă a capitalului propriu\.",
      r"ROE (\1%) above 15% — generic benchmark of solid equity efficiency."),
 ]
+
+
+def _template_pattern(key):
+    """Regex RO -> EN dintr-o intrare cu {campuri}, pentru mesajele salvate in romana din fundal."""
+    entry = _T[key]
+    names = re.findall(r"\{(\w+)\}", entry["RO"])
+    pat = re.escape(entry["RO"])
+    rep = entry["EN"].replace("\\", "\\\\")
+    for i, n in enumerate(names, 1):
+        pat = pat.replace(re.escape("{" + n + "}"), r"(.+?)", 1)
+        rep = rep.replace("{" + n + "}", rf"\g<{i}>")
+    return pat, rep
+
+
+_PATTERNS += [_template_pattern(k) for k in _T if k.startswith("t212.err.")]
 
 
 def x(text):

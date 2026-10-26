@@ -23,7 +23,7 @@ _running = False
 def _sync_fills():
     """Citeste ordinele executate (incremental) in data/t212_fills.json."""
     import requests
-    from t212_api import BASE_URL, _headers
+    from t212_api import BASE_URL, _headers, api_error
 
     cfg = load_config()
     kid, sec = cfg.get("api_key_id"), cfg.get("api_secret")
@@ -43,6 +43,7 @@ def _sync_fills():
             time.sleep(25)
             continue
         if r.status_code != 200:
+            api_error(r, "/equity/history/orders", kid, sec)
             complete = False
             break
         retries = 0

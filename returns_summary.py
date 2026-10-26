@@ -55,7 +55,7 @@ def xirr(flows):
 
 def _fetch_transactions(kid, sec):
     import requests
-    from t212_api import BASE_URL, _headers
+    from t212_api import BASE_URL, _headers, api_error
 
     host = BASE_URL.split("/api/")[0]
     url, params, items, n, retries = BASE_URL + "/equity/history/transactions", {"limit": 50}, [], 0, 0
@@ -66,6 +66,7 @@ def _fetch_transactions(kid, sec):
             time.sleep(25)
             continue
         if r.status_code != 200:
+            api_error(r, "/equity/history/transactions", kid, sec)
             return items, False
         retries = 0
         data = r.json()
