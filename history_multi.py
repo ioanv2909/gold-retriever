@@ -42,7 +42,9 @@ def record_multi_point(t212_account_currency=None, force=False):
     inv = cash.get("invested") or 0.0
     ppl = cash.get("ppl") or 0.0
     if inv > 0 and inv + ppl > 0:
-        entries["Trading 212"] = {"ccy": t212_account_currency or "EUR", "value": round(inv + ppl, 2), "cost": round(inv, 2)}
+        if not t212_account_currency:
+            return False  # moneda contului necunoscuta: fara punct, nu o valoare cu moneda ghicita
+        entries["Trading 212"] = {"ccy": t212_account_currency, "value": round(inv + ppl, 2), "cost": round(inv, 2)}
 
     sums = {}
     for r in xtb_rows():

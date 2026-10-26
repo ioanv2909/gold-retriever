@@ -73,26 +73,30 @@ def fetch_instruments(key_id, secret):
 
 
 def fetch_account_currency(key_id, secret):
-    """Moneda de bază a contului T212 (rate limit: 1 req/30s) — cache lung, se schimbă practic niciodată."""
+    """Moneda de bază a contului T212 (rate limit: 1 req/30s) — cache lung, se schimbă practic niciodată.
+    Dacă cererea eșuează (limită, rețea), se folosește moneda din cache chiar expirat."""
+    stale = None
     if os.path.exists(ACCOUNT_INFO_CACHE_FILE):
         try:
             with open(ACCOUNT_INFO_CACHE_FILE, "r") as f:
                 cached = json.load(f)
-            if time.time() - cached.get("fetched_at", 0) < INSTRUMENTS_CACHE_TTL:
-                return cached["currencyCode"], None
+            stale = cached.get("currencyCode") or None
+            if stale and time.time() - cached.get("fetched_at", 0) < INSTRUMENTS_CACHE_TTL:
+                return stale, None
         except Exception:
             pass
     if not key_id or not secret:
-        return None, "Lipsește ID-ul sau Cheia Secretă."
+        return stale, None if stale else "Lipsește ID-ul sau Cheia Secretă."
     try:
         r = requests.get(f"{BASE_URL}/equity/account/info", headers=_headers(key_id, secret), timeout=15)
-        if r.status_code == 200:
+        if r.status_code == 200 and r.json().get("currencyCode"):
             code = r.json().get("currencyCode")
             save_json_file(ACCOUNT_INFO_CACHE_FILE, {"fetched_at": time.time(), "currencyCode": code})
             return code, None
-        return None, f"Eroare API account/info ({r.status_code}): {r.text}"
+        err = f"Eroare API account/info ({r.status_code}): {r.text}"
     except Exception as e:
-        return None, f"Eroare rețea: {e}"
+        err = f"Eroare rețea: {e}"
+    return (stale, None) if stale else (None, err)
 
 
 FX_LAST_GOOD_FILE = os.path.join("data", "fx_last_good.json")

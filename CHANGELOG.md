@@ -1,3 +1,8 @@
+## 0.3.7 — 2026-10-26
+
+- Fix: the portfolio chart jumped to about 3.3 times its value for single points. The Trading 212 account currency is cached; when the cache expired and the request to Trading 212 failed (rate limit of 1 request per 30 seconds, or network), the currency was unknown and the history point labelled the Trading 212 value as EUR instead of the account currency (RON). Now the last known currency is kept when the request fails, and no history point is written while the currency is unknown.
+- The jumps confirmed with `tools/fix_history_rates.py --max-ratio 2` (three points on 2026-10-26) can be removed with `--apply`.
+
 ## 0.3.6 — 2026-10-26
 
 - `tools/fix_history_rates.py`: older history points use RON as the base currency (RON=1.0), and the script marked them as made-up rates. A made-up rate is now a second currency at 1.0 next to the base one. For points with a jump (more than 1.5 times off the median) it also shows, per portfolio, the currency and the change from the previous point, without amounts.
