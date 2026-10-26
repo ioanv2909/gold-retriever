@@ -28,7 +28,7 @@ def main(argv):
         "base": "%s.%s.%s" % (major, minor, patch),
         "commits": int(n),
         "sha": sha,
-        "dirty": bool(git("status", "--porcelain").stdout.strip()),
+        "dirty": bool(git("status", "--porcelain", "--untracked-files=no").stdout.strip()),
         "built": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
     }
     print(info["version"] + (" (modificari necomise)" if info["dirty"] else ""), info["sha"])

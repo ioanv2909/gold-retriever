@@ -7,3 +7,4 @@ __pycache__
 .github
 *.md
 !README.md
+!CHANGELOG.md

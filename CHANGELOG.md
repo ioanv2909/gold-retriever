@@ -1,3 +1,8 @@
+## 0.3.12 — 2026-10-26
+
+- Fix: Settings > About showed "CHANGELOG.md not found". The file was left out of the Docker image (`.dockerignore` excludes `*.md`); it is now copied, so the full release notes are shown again.
+- The build is no longer labelled "uncommitted" because of untracked files; only changes to tracked files count.
+
 ## 0.3.11 — 2026-10-26
 
 - Settings > Log shows the newest lines first by default, with a choice between newest first and oldest first. The download follows the chosen order.
