@@ -26,6 +26,7 @@ from background import load_dividends_status, load_market_context_cache, load_qu
 from descriptions import COLUMN_HELP
 from detail_view import render_detail_view, scroll_page_to_top
 from watchlist import add_to_watchlist, load_watchlist, load_watchlist_cache, remove_from_watchlist, start_watchlist_refresh_background
+from upload_guard import MAX_UPLOAD_MB, check_xlsx
 from xtb import accounts_summary, import_xtb, instruments as xtb_instruments, parse_xtb_file, remove_account, save_isin
 from xtb_prices import load_xtb_prices, save_symbol_override, start_xtb_prices_refresh_background
 from isin_tools import isin_issues, resolve_isin, suggest_isin
@@ -297,6 +298,7 @@ def _section_xtb_import():
         type=["xlsx"],
         accept_multiple_files=True,
         key=f"xtb_upload_{st.session_state.get('xtb_nonce', 0)}",
+        max_upload_size=MAX_UPLOAD_MB,
     )
 
     if st.button(t("xtb.import"), key="xtb_import_btn"):
@@ -307,6 +309,10 @@ def _section_xtb_import():
             safe_name = re.sub(r"\d{6,}", "#####", uploaded_file.name)
             try:
                 raw = uploaded_file.getvalue()
+                rejected = check_xlsx(raw)
+                if rejected:
+                    errors.append(f"{safe_name}: {t('upload.' + rejected, mb=MAX_UPLOAD_MB)}")
+                    continue
                 file_hash = hashlib.sha256(raw).hexdigest()
                 parsed = parse_xtb_file(io.BytesIO(raw))
                 reports.append(import_xtb(parsed, file_hash))

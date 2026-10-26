@@ -39,15 +39,36 @@ def current_user():
         return None
 
 
+_KEY_RE = re.compile(r"[a-z0-9_-]{1,32}")
+_FILE_RE = re.compile(r"[A-Za-z0-9_-][A-Za-z0-9_.-]{0,99}")
+
+
 def safe_name(u):
-    return re.sub(r"[^a-z0-9_-]", "_", str(u).lower())
+    """Cheia utilizatorului folosita ca nume de folder. Nu inlocuieste caractere (doua nume diferite
+    ar ajunge in acelasi folder), ci refuza tot ce nu e [a-z0-9_-]."""
+    key = str(u).lower()
+    if not _KEY_RE.fullmatch(key):
+        raise ValueError("invalid user name")
+    return key
+
+
+def contained_path(base, *parts):
+    """Calea base/parts..., verificata cu realpath ca ramane sub base (fara ../, separatori, null byte, symlink)."""
+    for part in parts:
+        if not _FILE_RE.fullmatch(str(part)) or ".." in str(part):
+            raise ValueError("invalid path component")
+    root = os.path.realpath(base)
+    path = os.path.realpath(os.path.join(root, *parts))
+    if os.path.commonpath([root, path]) != root or path == root:
+        raise ValueError("path outside of the expected folder")
+    return os.path.join(base, *parts)
 
 
 def user_dir():
     if not os.path.exists(USERS_FILE):
         return DATA_ROOT  # mod vechi, fara utilizatori
     u = current_user()
-    base = os.path.join(DATA_ROOT, "users", safe_name(u)) if u else os.path.join(DATA_ROOT, "_anon")
+    base = contained_path(os.path.join(DATA_ROOT, "users"), safe_name(u)) if u else os.path.join(DATA_ROOT, "_anon")
     if base not in _made:
         os.makedirs(base, exist_ok=True)
         _made.add(base)
@@ -60,7 +81,7 @@ class UPath(os.PathLike):
         self.shared = shared
 
     def _p(self):
-        return os.path.join(DATA_ROOT if self.shared else user_dir(), self.name)
+        return contained_path(DATA_ROOT if self.shared else user_dir(), self.name)
 
     def __fspath__(self):
         return self._p()

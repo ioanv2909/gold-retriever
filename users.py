@@ -7,7 +7,7 @@ import secrets
 import shutil
 import time
 
-from userctx import DATA_ROOT, USERS_FILE, safe_name
+from userctx import DATA_ROOT, USERS_FILE, contained_path, safe_name
 
 _NAME_RE = re.compile(r"^[A-Za-z0-9_-]{2,32}$")
 _ITER = 200_000
@@ -132,13 +132,13 @@ def delete_user(name, me, purge=False):
     del d["users"][key]
     _save(d)
     if purge:
-        shutil.rmtree(os.path.join(DATA_ROOT, "users", safe_name(key)), ignore_errors=True)
+        shutil.rmtree(contained_path(os.path.join(DATA_ROOT, "users"), safe_name(key)), ignore_errors=True)
     return None
 
 
 def migrate_legacy(user_key):
     """Muta fisierele personale din data/ in data/users/<user>/. Returneaza numarul de fisiere."""
-    dest = os.path.join(DATA_ROOT, "users", safe_name(user_key))
+    dest = contained_path(os.path.join(DATA_ROOT, "users"), safe_name(user_key))
     os.makedirs(dest, exist_ok=True)
     n = 0
     for fn in os.listdir(DATA_ROOT):

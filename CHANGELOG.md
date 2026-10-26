@@ -1,3 +1,8 @@
+## 0.2.48 — 2026-10-26
+
+- XTB import: an uploaded report is checked in memory before it is parsed, and nothing is written before the check. Rejected with a clear RO/EN message: files over 10 MB (also refused by the uploader itself), files that are not zip archives, zip files without the xlsx structure (`[Content_Types].xml`, `xl/workbook.xml`), more than 2,000 internal parts, more than 100 MB once unpacked or a part compressed more than 200 times (zip bomb), and internal names that are absolute or contain `..`. The check reads only the zip directory and unpacks nothing. Limits are constants in `upload_guard.py`.
+- File paths: a user name that reaches a path is no longer rewritten (`a.b` and `a_b` used to map to the same folder) but refused unless it is `[a-z0-9_-]`, 1–32 characters. Every per-user and shared data file, and the user folder removed or filled by the user admin, now goes through `userctx.contained_path`, which allows only plain file names and checks with `realpath` that the result stays inside `data/users/<name>/` or `data/`, symlinks included. Existing accounts already use valid names and keep their folders. Tickers, portfolio names and uploaded file names never reach a path.
+
 ## 0.2.47 — 2026-10-26
 
 - Dependency scanning: `.github/dependabot.yml` checks pip (`requirements.txt`), the Docker base image and GitHub Actions every Monday; minor and patch updates come grouped in one PR per ecosystem, major ones separately. Python version bumps of the `python` base image are ignored (changed deliberately). `justetf-scraping` is installed from a GitHub zip URL and is not tracked by Dependabot; its commit hash is updated by hand.
