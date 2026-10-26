@@ -1,3 +1,7 @@
+## 0.3.11 — 2026-10-26
+
+- Settings > Log shows the newest lines first by default, with a choice between newest first and oldest first. The download follows the chosen order.
+
 ## 0.3.10 — 2026-10-26
 
 - Sign-in events are written to the log (Settings > Log) as `[auth]` lines with the account and the IP: sign-in by password, session resumed from the cookie, failed sign-in, account locked after 5 failures, sign-in refused while locked, cookie rejected (invalid, expired or idle), session ended (expired, signed out by an admin, account deleted), sign-out, password change and the first admin account. Passwords and tokens are never logged; a user name that does not look like an account name is logged as `<invalid>`, so a password typed in the wrong field does not reach the log. These lines are not reported as log problems.

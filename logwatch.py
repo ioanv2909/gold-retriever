@@ -162,15 +162,18 @@ def recent():
     return sorted(data.values(), key=lambda p: -p.get("last", 0))
 
 
-def tail(n=TAIL, hide_noise=False, query=""):
-    """Ultimele n linii din log (cele mai vechi primele), cu ora la care au fost scrise."""
+def tail(n=TAIL, hide_noise=False, query="", newest_first=False):
+    """Ultimele n linii din log, cu ora la care au fost scrise; implicit cele mai vechi primele."""
     rows = list(_tail)
     if hide_noise:
         rows = [r for r in rows if not IGNORE.search(r[1])]
     if query:
         q = query.lower()
         rows = [r for r in rows if q in r[1].lower()]
-    return ["%s  %s" % (time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(ts)), line) for ts, line in rows[-n:]]
+    rows = rows[-n:]
+    if newest_first:
+        rows.reverse()
+    return ["%s  %s" % (time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(ts)), line) for ts, line in rows]
 
 
 def clear():

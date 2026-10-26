@@ -155,3 +155,25 @@ def test_log_tab_only_for_admins(monkeypatch):
         monkeypatch.setattr(settings_page.users, "role", lambda me, r=role: r)
         settings_page.render_settings("ana")
         assert ("log" in seen["ids"]) is has_log
+
+
+def test_tail_newest_first(env, tail):
+    tee = lw._Tee(io.StringIO())
+    tee.write("".join("line %d\n" % i for i in range(10)))
+    rows = [r.split("  ", 1)[1] for r in lw.tail(3, newest_first=True)]
+    assert rows == ["line 9", "line 8", "line 7"]
+    assert [r.split("  ", 1)[1] for r in lw.tail(3)] == ["line 7", "line 8", "line 9"]
+
+
+def test_log_tab_shows_newest_first_by_default(env, tail):
+    from streamlit.testing.v1 import AppTest
+
+    def page():
+        import log_ui
+        log_ui.render_log("ana")
+    tee = lw._Tee(io.StringIO())
+    tee.write("old line\nnew line\n")
+    at = AppTest.from_function(page).run()
+    assert at.code[0].value.splitlines()[0].endswith("new line")
+    at.selectbox(key="lg_order").select("asc").run()
+    assert at.code[0].value.splitlines()[0].endswith("old line")
