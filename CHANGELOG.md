@@ -1,3 +1,7 @@
+## 0.3.3 — 2026-10-26
+
+- The sign-in cookie is written by a script run directly in the page (`st.html` with JavaScript, the same helper used for printing) instead of `st.components.v1.html`, which Streamlit deprecated and will remove. Sign-in, sign-out and session expiry behave as before.
+
 ## 0.3.2 — 2026-10-26
 
 - Python 3.11 in the Docker image (`python:3.11-slim`) and in CI, needed by Streamlit 1.66 (it requires Python 3.11 or newer). In 0.3.1 the image build failed on Python 3.10 and the server kept running 0.3.0; the tests already ran on Python 3.11 locally.

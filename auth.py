@@ -5,8 +5,8 @@ import time
 import alerts
 import streamlit as st
 
+from appearance import _run_js
 from url_tabs import reset as reset_tabs
-import streamlit.components.v1 as components
 
 import known_devices
 import presence
@@ -63,11 +63,8 @@ def _tr(key, **kw):
 
 
 def _cookie_js(value, max_age):
-    js = (
-        "<script>var c='%s=%s; max-age=%d; path=/; SameSite=Lax';"
-        "try{window.parent.document.cookie=c;}catch(e){document.cookie=c;}</script>"
-    ) % (_COOKIE, value, max_age)
-    components.html(js, height=0)
+    # st.html cu JavaScript ruleaza direct in pagina (fara iframe); inlocuieste components.html
+    _run_js("document.cookie = '%s=%s; max-age=%d; path=/; SameSite=Lax';" % (_COOKIE, value, max_age))
 
 
 def _read_cookie():
