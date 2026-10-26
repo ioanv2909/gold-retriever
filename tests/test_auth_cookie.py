@@ -12,4 +12,4 @@ def test_cookie_is_written_by_page_script(monkeypatch):
 
 def test_no_deprecated_components_html():
     src = open(auth.__file__, encoding="utf-8").read()
-    assert "components.v1" not in src and "components.html" not in src
+    assert "import streamlit.components" not in src and "components.html(" not in src

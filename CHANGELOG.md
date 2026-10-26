@@ -1,3 +1,7 @@
+## 0.3.4 — 2026-10-26
+
+- Tests: the check that `auth.py` no longer uses `components.html` looks for the import and the call, not for the name in a comment (it failed in 0.3.3; the app itself was not affected).
+
 ## 0.3.3 — 2026-10-26
 
 - The sign-in cookie is written by a script run directly in the page (`st.html` with JavaScript, the same helper used for printing) instead of `st.components.v1.html`, which Streamlit deprecated and will remove. Sign-in, sign-out and session expiry behave as before.
