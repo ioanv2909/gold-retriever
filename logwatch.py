@@ -3,6 +3,7 @@
 Ruleaza in procesul aplicatiei, deci nu vede nimic daca procesul e cazut. Un tipar nou (nevazut in ultimele
 24 de ore) declanseaza un email catre admini, cel mult unul la 30 de minute. Lista e in Setari -> Notificari.
 """
+import collections
 import json
 import logging
 import os
@@ -18,6 +19,7 @@ WINDOW = 24 * 3600        # un tipar e "nou" daca nu a aparut in ultimele 24 de 
 MAIL_EVERY = 30 * 60      # cel mult un email la 30 de minute
 FLUSH_EVERY = 60
 KEEP = 100
+TAIL = 1000               # ultimele linii din log, in memorie (Setari -> Log)
 
 # o linie e problema daca se potriveste cu PROBLEM si nu cu IGNORE
 PROBLEM = re.compile(r"Traceback \(most recent call last\)|HTTP Error \d{3}|^\[[a-z_]+\] |\bERROR\b|Exception\b|Error:")
@@ -38,6 +40,7 @@ _SIG_SUBS = [
 _lock = threading.Lock()
 _problems = {}           # semnatura -> {count, first, last, sample, new}
 _state = {"last_mail": None, "dirty": False, "installed": False}
+_tail = collections.deque(maxlen=TAIL)   # (ts, linie)
 
 
 def signature(line):
@@ -91,6 +94,9 @@ class _Tee:
         return n
 
     def _line(self, line):
+        line = line.rstrip("\r")
+        if line.strip():
+            _tail.append((time.time(), line))
         if line.startswith("Traceback (most recent call last)"):
             self._in_tb = True
             return
@@ -151,6 +157,17 @@ def recent():
     """Lista salvata (pentru Setari), cea mai recenta prima."""
     data = _load().get("problems") or {}
     return sorted(data.values(), key=lambda p: -p.get("last", 0))
+
+
+def tail(n=TAIL, hide_noise=False, query=""):
+    """Ultimele n linii din log (cele mai vechi primele), cu ora la care au fost scrise."""
+    rows = list(_tail)
+    if hide_noise:
+        rows = [r for r in rows if not IGNORE.search(r[1])]
+    if query:
+        q = query.lower()
+        rows = [r for r in rows if q in r[1].lower()]
+    return ["%s  %s" % (time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(ts)), line) for ts, line in rows[-n:]]
 
 
 def clear():

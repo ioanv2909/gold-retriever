@@ -104,3 +104,54 @@ def test_existing_log_handlers_are_redirected():
         assert handler.stream is tee
     finally:
         lg.removeHandler(handler)
+
+
+@pytest.fixture
+def tail(monkeypatch):
+    buf = lw.collections.deque(maxlen=lw.TAIL)
+    monkeypatch.setattr(lw, "_tail", buf)
+    return buf
+
+
+def test_tail_keeps_every_line_in_order(env, tail):
+    tee = lw._Tee(io.StringIO())
+    tee.write("first\r\nTraceback (most recent call last)\n  File x\nKeyError: 'a'\n\nlast")
+    assert [l.split("  ", 1)[1] for l in lw.tail()] == ["first", "Traceback (most recent call last)", "  File x",
+                                                       "KeyError: 'a'"]
+    tee.write("\n")
+    assert lw.tail(1)[0].endswith("  last")
+
+
+def test_tail_is_capped_at_1000_lines(env, tail):
+    tee = lw._Tee(io.StringIO())
+    tee.write("".join("line %d\n" % i for i in range(1500)))
+    rows = lw.tail()
+    assert lw.TAIL == 1000 and len(rows) == 1000
+    assert rows[0].endswith("line 500") and rows[-1].endswith("line 1499")
+    assert len(lw.tail(100)) == 100 and lw.tail(100)[0].endswith("line 1400")
+
+
+def test_tail_filters_noise_and_text(env, tail):
+    tee = lw._Tee(io.StringIO())
+    tee.write("Thread 'MainThread': missing ScriptRunContext! x\n[t212] user=ana http=401\nother\n")
+    assert len(lw.tail()) == 3
+    assert [r.split("  ", 1)[1] for r in lw.tail(hide_noise=True)] == ["[t212] user=ana http=401", "other"]
+    assert [r.split("  ", 1)[1] for r in lw.tail(query="T212")] == ["[t212] user=ana http=401"]
+
+
+def test_log_tab_only_for_admins(monkeypatch):
+    import settings_page
+    seen = {}
+
+    def fake_tabs(items, key):
+        seen["ids"] = [i for i, _ in items]
+        return {i: type("T", (), {"open": False})() for i, _ in items}
+    monkeypatch.setattr(settings_page, "url_tabs", fake_tabs)
+    monkeypatch.setattr(settings_page.st, "columns", lambda *a, **k: [type("C", (), {
+        "button": lambda *a, **k: False, "markdown": lambda *a, **k: None,
+        "__enter__": lambda s: s, "__exit__": lambda s, *a: None})() for _ in range(3)])
+    monkeypatch.setattr(settings_page, "lang_button", lambda key: None)
+    for role, has_log in (("admin", True), ("user", False)):
+        monkeypatch.setattr(settings_page.users, "role", lambda me, r=role: r)
+        settings_page.render_settings("ana")
+        assert ("log" in seen["ids"]) is has_log

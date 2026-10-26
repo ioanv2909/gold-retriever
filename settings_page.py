@@ -98,6 +98,8 @@ def render_settings(me, sections=()):
         entries.insert(len(entries) - 1, ("notifications", "🔔 " + _L("Notificări", "Notifications"),
                                           lambda: render_notifications(me)))
         entries.insert(len(entries) - 1, ("status", t("hs.tab"), lambda: render_status(me)))
+        from log_ui import render_log
+        entries.insert(len(entries) - 1, ("log", t("lg.tab"), lambda: render_log(me)))
     tabs = url_tabs([(i, label) for i, label, _ in entries], "settings_tab")
     for i, _, fn in entries:
         if tabs[i].open is False:

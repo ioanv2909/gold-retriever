@@ -1,3 +1,7 @@
+## 0.3.9 — 2026-10-26
+
+- New admin tab Settings > Log: the last 1000 lines the app wrote to the log (stdout/stderr), with a choice of 100, 300 or 1000 lines, a text search, an option to hide known noise and a download as .txt. The lines are kept in memory, so the list starts empty after each container restart.
+
 ## 0.3.8 — 2026-10-26
 
 - Trading 212 API errors (cash, positions, instruments, orders, dividends, history) now show a clear message in Romanian or English based on the HTTP code: 401 (key or secret not accepted, or missing permissions), 403 (missing permissions), 429 (too many requests); other codes point to the container log.
