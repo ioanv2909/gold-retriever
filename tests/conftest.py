@@ -97,3 +97,58 @@ def _isolated_twofa(tmp_path, monkeypatch):
     """Politica 2FA se scrie in data/; in teste merge intr-un director temporar."""
     import twofa
     monkeypatch.setattr(twofa, "POLICY_FILE", str(tmp_path / "twofa_policy.json"))
+
+
+class _NoRealSMTP:
+    def __init__(self, *a, **k):
+        raise AssertionError("tests must not open a real SMTP connection")
+
+
+@pytest.fixture(autouse=True)
+def _isolated_notify(tmp_path, monkeypatch):
+    """notify citeste data/mail.json (SMTP real) si scrie data/notify_state.json: in teste totul merge intr-un
+    director temporar, fara setari SMTP, iar o conexiune SMTP reala pica testul in loc sa trimita email."""
+    import notify
+    monkeypatch.setattr(notify, "MAIL_FILE", str(tmp_path / "mail.json"))
+    monkeypatch.setattr(notify, "STATE_FILE", str(tmp_path / "notify_state.json"))
+    monkeypatch.setattr(notify, "USERS_FILE", str(tmp_path / "users.json"))
+    monkeypatch.setattr(notify.smtplib, "SMTP", _NoRealSMTP)
+    monkeypatch.setattr(notify.smtplib, "SMTP_SSL", _NoRealSMTP)
+
+
+_DATA_DIR = os.path.realpath(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data"))
+
+
+def _in_data(path):
+    try:
+        p = os.path.realpath(os.fspath(path))
+    except TypeError:
+        return False
+    return p == _DATA_DIR or p.startswith(_DATA_DIR + os.sep)
+
+
+@pytest.fixture(autouse=True)
+def _no_writes_to_data(monkeypatch):
+    """Un test care ar scrie in data/ (datele reale ale utilizatorilor) pica, in loc sa le modifice."""
+    import builtins
+    import tempfile
+    real_open, real_replace, real_mkstemp = builtins.open, os.replace, tempfile.mkstemp
+
+    def guarded_open(file, mode="r", *a, **k):
+        if any(c in mode for c in "wax+") and _in_data(file):
+            raise AssertionError("test wrote to data/: %s" % file)
+        return real_open(file, mode, *a, **k)
+
+    def guarded_replace(src, dst, *a, **k):
+        if _in_data(dst):
+            raise AssertionError("test wrote to data/: %s" % dst)
+        return real_replace(src, dst, *a, **k)
+
+    def guarded_mkstemp(*a, **k):
+        if _in_data(k.get("dir") or (a[2] if len(a) > 2 else "") or ""):
+            raise AssertionError("test wrote to data/: %s" % k.get("dir"))
+        return real_mkstemp(*a, **k)
+
+    monkeypatch.setattr(builtins, "open", guarded_open)
+    monkeypatch.setattr(os, "replace", guarded_replace)
+    monkeypatch.setattr(tempfile, "mkstemp", guarded_mkstemp)

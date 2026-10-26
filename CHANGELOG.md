@@ -1,3 +1,7 @@
+## 0.3.16 — 2026-10-26
+
+- Fix (tests): the test suite read the real SMTP settings and could send real security emails (for example "2FA dezactivat" for the test account `ana`) and write `data/notify_state.json`. Tests now use temporary notification files, a real SMTP connection fails the test instead of sending, and any write into `data/` fails the test.
+
 ## 0.3.15 — 2026-10-26
 
 - Sign-in throttling by IP, not only by account. 5 failures for the same account from the same IP lock that pair for 5 minutes, so the owner signing in from another IP is not locked out. 20 failures from one IP within 15 minutes, on any accounts, block that IP for 15 minutes. 50 failures on one account within an hour, from any IPs (distributed attack), lock the account for 15 minutes. Each block is logged as an `[auth]` line and sends a security email. Old failures are forgotten after 15 minutes and the counters are pruned, so memory stays bounded.
