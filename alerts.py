@@ -82,6 +82,21 @@ def record_lockout(user, exists, max_fails, lock_seconds):
     return notify.notify("security", "Autentificari esuate repetat", body, key="lockout:%s" % who, min_hours=1)
 
 
+def record_ip_block(ip, max_fails, window_s, lock_seconds):
+    """Un IP a gresit autentificarea de prea multe ori, pe orice conturi."""
+    body = "IP blocat %d minute dupa %d autentificari esuate in %d minute (orice conturi): %s." % (
+        lock_seconds // 60, max_fails, window_s // 60, ip)
+    return notify.notify("security", "IP blocat dupa autentificari esuate", body, key="ipblock:%s" % ip, min_hours=1)
+
+
+def record_account_attack(user, exists, max_fails, lock_seconds):
+    """Prea multe esecuri pe un cont, de pe IP-uri diferite: probabil un atac distribuit."""
+    who = user if exists else "(nume inexistent)"
+    body = ("Contul %s a primit %d autentificari esuate intr-o ora, de pe mai multe IP-uri. "
+            "E blocat %d minute pentru toate IP-urile." % (who, max_fails, lock_seconds // 60))
+    return notify.notify("security", "Atac posibil asupra unui cont", body, key="acctattack:%s" % who, min_hours=1)
+
+
 def record_user_event(action, actor, target, detail=""):
     """Modificari ale conturilor (de catre un admin sau de utilizatorul insusi). Se trimite mereu, fara limitare in timp."""
     body = "De catre: %s\nActiune: %s\nAsupra: %s" % (actor, action, target)

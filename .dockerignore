@@ -8,3 +8,4 @@ __pycache__
 *.md
 !README.md
 !CHANGELOG.md
+backup-key.asc

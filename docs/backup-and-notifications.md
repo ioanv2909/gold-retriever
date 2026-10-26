@@ -22,10 +22,26 @@ never affects it.
    Adjust `APP` and `DEST` at the top of the script if your paths differ.
 
 What it does: refuses to run if the share is not mounted (so nothing is written to
-the local disk), writes a `.tar.gz` named `data-YYYY-MM-DD_HHMMSS.tar.gz`, verifies
-that it can be read, keeps the last 14 archives and writes `data/backup_status.json`
-with the time of the last success. Archives contain API keys and password hashes:
-keep the share restricted.
+the local disk), builds `data-YYYY-MM-DD_HHMMSS.tar.gz` in a private temporary folder,
+verifies that it can be read, encrypts it (see below) and copies it to the share, keeps the
+last 14 archives and writes `data/backup_status.json` with the time of the last success
+and whether it was encrypted. Archives contain API keys, the SMTP password, password
+hashes and 2FA secrets.
+
+3. Encrypt the archives (recommended). Create a GPG key pair **on your own computer, not on
+   the server**, and keep the private key (and its passphrase) somewhere safe, for example in
+   a password manager: without it the backups cannot be restored.
+
+       gpg --quick-gen-key "GoldRetriever backup" future-default default never
+       gpg --armor --export "GoldRetriever backup" > backup-key.asc
+       gpg --armor --export-secret-keys "GoldRetriever backup" > goldretriever-backup-PRIVATE.asc   # keep offline
+
+   Copy only `backup-key.asc` (the public key) to the server as
+   `/DATA/AppData/gold-retriever/backup-key.asc` (git-ignored; another path can be given with
+   `BACKUP_KEY=`). From the next run the archives are `data-*.tar.gz.gpg`. The script refuses
+   a private key in that file. Without the file the archive stays unencrypted and Settings >
+   Status shows the backup as "Not encrypted". Older unencrypted archives on the share are
+   removed by the 14-archive rotation.
 
 Test a failure without touching anything: `DEST=/mnt/does-not-exist /usr/local/sbin/backup-goldretriever.sh`
 
@@ -34,6 +50,9 @@ Test a failure without touching anything: `DEST=/mnt/does-not-exist /usr/local/s
     cd /DATA/AppData/gold-retriever
     docker compose down
     mv data data.broken
+    # encrypted archive: on a machine with the private key (or import it temporarily)
+    gpg --decrypt /mnt/goldretriever/data-YYYY-MM-DD_HHMMSS.tar.gz.gpg | tar -xz -C .
+    # unencrypted archive
     tar -xzf /mnt/goldretriever/data-YYYY-MM-DD_HHMMSS.tar.gz -C .
     chown -R 1000:1000 data
     docker compose up -d

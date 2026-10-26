@@ -1,3 +1,10 @@
+## 0.3.15 — 2026-10-26
+
+- Sign-in throttling by IP, not only by account. 5 failures for the same account from the same IP lock that pair for 5 minutes, so the owner signing in from another IP is not locked out. 20 failures from one IP within 15 minutes, on any accounts, block that IP for 15 minutes. 50 failures on one account within an hour, from any IPs (distributed attack), lock the account for 15 minutes. Each block is logged as an `[auth]` line and sends a security email. Old failures are forgotten after 15 minutes and the counters are pruned, so memory stays bounded.
+- The client IP is the address of the connection. `X-Forwarded-For` is sent by the client and can be forged, so it is used only when the connection comes from a trusted proxy listed in `GR_TRUSTED_PROXIES` (IPs or networks, comma-separated).
+- `.streamlit/config.toml`: uncaught errors are no longer shown in the browser (traceback, paths, code); users see a generic message and the details stay in the log. Upload limit 10 MB, as in the XTB upload checks. XSRF protection and CORS stay on, no file watching, no usage statistics.
+- Backup encryption: with a GPG public key in `backup-key.asc`, `tools/backup-goldretriever.sh` encrypts the archive (`data-*.tar.gz.gpg`) before it reaches the share; the private key stays off the server. The plain archive is built in a private temporary folder and removed. Without the key the archive stays unencrypted and Settings > Status shows the backup as "Not encrypted". Rotation keeps the last 14 archives of both kinds. Setup and restore in `docs/backup-and-notifications.md`.
+
 ## 0.3.14 — 2026-10-26
 
 - Two-step sign-in (2FA) with codes from an authenticator app (TOTP, RFC 6238: 6 digits, 30 seconds, one step of clock drift allowed). Each user turns it on in Settings > 🔐 Security (the former Password tab): QR code generated on the server (segno) or the key by hand, confirmed with a code before it is saved, then 10 single-use recovery codes shown once, with a download. The code is asked only at sign-in with the password; a device that is already signed in keeps its cookie under the existing session rules.

@@ -1,0 +1,17 @@
+# Setari Streamlit pentru productie (citite din directorul de lucru, /app in container).
+
+[client]
+# Erorile neprinse nu se mai arata in browser (traceback, cai, cod): utilizatorul vede un mesaj generic,
+# iar detaliile raman in logul containerului (Setari -> Log pentru admini).
+showErrorDetails = "none"
+
+[server]
+# MB; aceeasi limita ca upload_guard.MAX_UPLOAD_MB, deci un fisier mai mare e refuzat inainte sa ajunga in memorie
+maxUploadSize = 10
+enableXsrfProtection = true
+enableCORS = true
+# codul nu se schimba in container (sistem de fisiere doar citire): fara urmarirea fisierelor
+fileWatcherType = "none"
+
+[browser]
+gatherUsageStats = false

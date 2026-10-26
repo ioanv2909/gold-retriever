@@ -281,6 +281,11 @@ _T = {
     "hs.job_state.stuck": {"RO": "Blocat", "EN": "Stuck"},
     "hs.job_state.never": {"RO": "Nu a rulat încă", "EN": "Has not run yet"},
     "hs.backup_limit": {"RO": "mai vechi de {h} h", "EN": "older than {h} h"},
+    "hs.backup_plain_short": {"RO": "Necriptat", "EN": "Not encrypted"},
+    "hs.backup_plain": {
+        "RO": "ultimul backup nu e criptat: pune cheia publică GPG în backup-key.asc (vezi docs/backup-and-notifications.md)",
+        "EN": "the last backup is not encrypted: put the GPG public key in backup-key.asc (see docs/backup-and-notifications.md)",
+    },
     "hs.src.yahoo": {"RO": "Yahoo Finance", "EN": "Yahoo Finance"},
     "hs.src.justetf": {"RO": "justETF", "EN": "justETF"},
     "hs.src.t212": {"RO": "Trading 212 API", "EN": "Trading 212 API"},

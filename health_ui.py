@@ -75,19 +75,26 @@ def _backup_row():
     import alerts
     try:
         with open(alerts.BACKUP_STATUS_FILE, encoding="utf-8") as f:
-            ts = float(json.load(f).get("ts", 0)) or None
+            data = json.load(f)
+        ts = float(data.get("ts", 0)) or None
+        encrypted = data.get("encrypted") is True
     except Exception:
-        ts = None
+        ts, encrypted = None, False
+    note = "—"
     if ts is None:
         level = "gray"
+    elif (time.time() - ts) / 3600 > alerts.BACKUP_MAX_AGE_H:
+        level, note = "red", t("hs.backup_limit", h=alerts.BACKUP_MAX_AGE_H)
+    elif not encrypted:
+        level, note = "yellow", t("hs.backup_plain")
     else:
-        level = "green" if (time.time() - ts) / 3600 <= alerts.BACKUP_MAX_AGE_H else "red"
+        level = "green"
     return {
         t("hs.col.service"): t("hs.src.backup"),
-        t("hs.col.state"): _dot(level, t("hs.level." + level)),
+        t("hs.col.state"): _dot(level, t("hs.backup_plain_short") if level == "yellow" else t("hs.level." + level)),
         t("hs.col.last_ok"): _ago(ts),
         t("hs.col.requests"): "—", t("hs.col.ms"): "—",
-        t("hs.col.last_error"): t("hs.backup_limit", h=alerts.BACKUP_MAX_AGE_H) if level == "red" else "—",
+        t("hs.col.last_error"): note,
     }
 
 

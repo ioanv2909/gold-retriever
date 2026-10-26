@@ -2,6 +2,7 @@ import ipaddress
 import os
 import re
 import secrets
+import threading
 import time
 
 import alerts
@@ -17,10 +18,24 @@ import twofa
 import users
 
 _COOKIE = "pt_auth"
-_MAX_FAILS = 5
+# blocari dupa esecuri (parola, cod 2FA, parola curenta la schimbari); in memorie, se golesc la restart
+_MAX_FAILS = 5              # acelasi cont de pe acelasi IP: blocat 5 minute
 _LOCK_SECONDS = 300
+_IP_MAX_FAILS = 20          # un IP, orice conturi, in 15 minute: IP-ul e blocat 15 minute
+_IP_WINDOW = 900
+_IP_LOCK_SECONDS = 900
+_ACCT_MAX_FAILS = 50        # un cont, de pe orice IP-uri, intr-o ora: contul e blocat 15 minute (atac distribuit)
+_ACCT_WINDOW = 3600
+_ACCT_LOCK_SECONDS = 900
 _FAIL_DELAY = 1
-_fails = {}
+_PRUNE_AT = 5000
+_fails = {}                 # (cont, ip) -> (esecuri, blocat pana la, ultimul esec); se uita dupa _IP_WINDOW
+_ip_fails = {}              # ip -> [ts esecuri]
+_acct_fails = {}            # cont -> [ts esecuri]
+_blocked = {}               # ("ip", ip) / ("acct", cont) -> blocat pana la
+_fails_lock = threading.Lock()
+# proxy-uri de incredere (IP sau retea, separate prin virgula): doar de la ele se crede X-Forwarded-For
+TRUSTED_PROXIES = os.environ.get("GR_TRUSTED_PROXIES", "")
 
 _S = {
     "title_login": ("🔒 Autentificare", "🔒 Sign in"),
@@ -94,11 +109,31 @@ def _start_cookie_session(tok, fresh):
     _check_device(st.session_state.get("_user"))
 
 
+def _trusted(ip, proxies=None):
+    nets = [p.strip() for p in (TRUSTED_PROXIES if proxies is None else proxies).split(",") if p.strip()]
+    try:
+        addr = ipaddress.ip_address(str(ip))
+        return any(addr in ipaddress.ip_network(n, strict=False) for n in nets)
+    except ValueError:
+        return False
+
+
+def client_ip(peer, forwarded, proxies=None):
+    """IP-ul clientului: adresa conexiunii. X-Forwarded-For il trimite clientul, deci se foloseste doar cand
+    conexiunea vine de la un proxy de incredere (GR_TRUSTED_PROXIES); atunci se ia ultimul hop neincrezut."""
+    if not peer or not _trusted(peer, proxies):
+        return peer
+    hops = [h.strip() for h in (forwarded or "").split(",") if h.strip()]
+    for hop in reversed(hops):
+        if not _trusted(hop, proxies):
+            return hop
+    return hops[0] if hops else peer
+
+
 def _client():
-    """(User-Agent, IP) ale cererii curente; IP-ul din X-Forwarded-For e doar informativ."""
+    """(User-Agent, IP) ale cererii curente."""
     h = st.context.headers
-    fwd = (h.get("X-Forwarded-For") or "").split(",")[0].strip()
-    return h.get("User-Agent"), fwd or st.context.ip_address
+    return h.get("User-Agent"), client_ip(st.context.ip_address, h.get("X-Forwarded-For"))
 
 
 def _log(event, user=None, **kw):
@@ -153,28 +188,82 @@ def auto_rerun():
 
 
 
-# contor de esecuri pe cont, comun pentru login si schimbarea parolei
-def _lock_remaining(key):
-    """Secunde ramase din blocare (0 daca nu e blocat)."""
-    return max(0.0, _fails.get(key, (0, 0.0))[1] - time.time())
+# contoare de esecuri, comune pentru login, codul 2FA si schimbarile care cer parola curenta
+def _current_ip():
+    try:
+        return _client()[1] or "-"
+    except Exception:
+        return "-"
 
 
-def _register_fail(key):
-    cnt, until = _fails.get(key, (0, 0.0))
-    cnt += 1
-    if cnt >= _MAX_FAILS:
+def _lock_remaining(key, ip=None, now=None):
+    """Secunde ramase din cea mai lunga blocare care se aplica (cont+IP, IP, cont); 0 daca nu e blocat."""
+    now = time.time() if now is None else now
+    ip = ip or _current_ip()
+    with _fails_lock:
+        until = max(_fails.get((key, ip), (0, 0.0, 0.0))[1], _blocked.get(("ip", ip), 0.0),
+                    _blocked.get(("acct", key), 0.0))
+    return max(0.0, until - now)
+
+
+def _recent(lst, window, now):
+    return [x for x in lst if now - x < window]
+
+
+def _prune(now):
+    for d, keep in ((_fails, lambda v: v[1] > now or now - v[2] < _IP_WINDOW), (_blocked, lambda v: v > now),
+                    (_ip_fails, lambda v: bool(_recent(v, _IP_WINDOW, now))),
+                    (_acct_fails, lambda v: bool(_recent(v, _ACCT_WINDOW, now)))):
+        for k in [k for k, v in d.items() if not keep(v)]:
+            del d[k]
+
+
+def _register_fail(key, ip=None, now=None):
+    now = time.time() if now is None else now
+    ip = ip or _current_ip()
+    events = []
+    with _fails_lock:
+        if len(_fails) + len(_ip_fails) + len(_acct_fails) > _PRUNE_AT:
+            _prune(now)
+        cnt, until, last = _fails.get((key, ip), (0, 0.0, 0.0))
+        cnt = (cnt if now - last < _IP_WINDOW else 0) + 1
+        if cnt >= _MAX_FAILS:
+            events.append("pair")
+            cnt, until = 0, now + _LOCK_SECONDS
+        _fails[(key, ip)] = (cnt, until, now)
+        ip_list = _ip_fails[ip] = _recent(_ip_fails.get(ip, []), _IP_WINDOW, now) + [now]
+        if len(ip_list) >= _IP_MAX_FAILS:
+            events.append("ip")
+            _blocked[("ip", ip)] = now + _IP_LOCK_SECONDS
+            _ip_fails[ip] = []
+        acct = _acct_fails[key] = _recent(_acct_fails.get(key, []), _ACCT_WINDOW, now) + [now]
+        if len(acct) >= _ACCT_MAX_FAILS:
+            events.append("acct")
+            _blocked[("acct", key)] = now + _ACCT_LOCK_SECONDS
+            _acct_fails[key] = []
+    if "pair" in events:
         _log("account locked", key, failures=_MAX_FAILS, seconds=_LOCK_SECONDS)
-        try:
-            alerts.record_lockout(key, users.exists(key), _MAX_FAILS, _LOCK_SECONDS)
-        except Exception:
-            pass
-        cnt, until = 0, time.time() + _LOCK_SECONDS
-    _fails[key] = (cnt, until)
+        _alert(alerts.record_lockout, key, users.exists(key), _MAX_FAILS, _LOCK_SECONDS)
+    if "ip" in events:
+        _log("ip blocked", key, failures=_IP_MAX_FAILS, seconds=_IP_LOCK_SECONDS)
+        _alert(alerts.record_ip_block, ip, _IP_MAX_FAILS, _IP_WINDOW, _IP_LOCK_SECONDS)
+    if "acct" in events:
+        _log("account locked for all ips", key, failures=_ACCT_MAX_FAILS, seconds=_ACCT_LOCK_SECONDS)
+        _alert(alerts.record_account_attack, key, users.exists(key), _ACCT_MAX_FAILS, _ACCT_LOCK_SECONDS)
     time.sleep(_FAIL_DELAY)
 
 
-def _clear_fails(key):
-    _fails.pop(key, None)
+def _alert(fn, *args):
+    try:
+        fn(*args)
+    except Exception:
+        pass
+
+
+def _clear_fails(key, ip=None):
+    """Dupa un succes: doar perechea cont+IP; contoarele pe IP si pe cont expira singure."""
+    with _fails_lock:
+        _fails.pop((key, ip or _current_ip()), None)
 
 
 def change_own_password(me, current, new, confirm):

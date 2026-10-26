@@ -50,6 +50,9 @@ def _isolated_users(tmp_path, monkeypatch):
     monkeypatch.setattr(users, "USERS_FILE", str(tmp_path / "users.json"))
     monkeypatch.setattr(users, "SECRET_FILE", str(tmp_path / "auth_secret"))
     monkeypatch.setattr(auth, "_fails", {})
+    monkeypatch.setattr(auth, "_ip_fails", {})
+    monkeypatch.setattr(auth, "_acct_fails", {})
+    monkeypatch.setattr(auth, "_blocked", {})
     monkeypatch.setattr(auth, "_FAIL_DELAY", 0)
 
 
