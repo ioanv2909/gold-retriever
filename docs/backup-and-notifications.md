@@ -78,7 +78,7 @@ Test a failure without touching anything: `DEST=/mnt/does-not-exist /usr/local/s
 ## Notifications
 
 Admins can receive emails when something fails. Configure in Settings, tab
-Notifications (admin only): SMTP server, port, security (`starttls`, `ssl`, `none`),
+Notifications, sub-tab Email (SMTP) (admin only): SMTP server, port, security (`starttls`, `ssl`, `none`),
 username, an **app password** (not the account password), sender address, which
 events are active, and an email address for each admin. Use **Send test email** to
 verify. The SMTP password is stored in plain text in `data/mail.json` (file mode 600),
@@ -94,7 +94,7 @@ like the Trading 212 keys.
 | Log errors | A new error pattern appears in the application log (not seen in the last 24 hours); at most one email every 30 minutes |
 | Position alerts | A price alert, score alert or concentration alert set by the user fires (sent to the user, not the admins) |
 | Calendar | Earnings, ex-dividend or dividend payment dates for held positions within the next N days (sent to the user, not the admins) |
-| Weekly report | Once a week, on the day and after the hour the user chose in Settings > Weekly report (off by default): portfolio value now and 7 days ago, the week's result without deposits, biggest gains and losses over 7 days, Trading 212 dividends received since the last report, events of the next 7 days. Sent to the user. A notification type added after the admin saved the settings is on by default; the admin can turn it off |
+| Weekly report | Once a week, on the day and after the hour the user chose in Settings > Notifications > Weekly report (off by default): portfolio value now and 7 days ago, the week's result without deposits, biggest gains and losses over 7 days, Trading 212 dividends received since the last report, events of the next 7 days. Sent to the user. A notification type added after the admin saved the settings is on by default; the admin can turn it off |
 
 The same alert is not resent more often than the configured interval (6 hours by
 default; 24 hours for refresh and backup-missing alerts). User changes are always sent.
@@ -108,7 +108,7 @@ admin must also enable the Calendar event in Notifications.
 The log watchdog (`logwatch.py`) runs inside the app: it reads everything the process writes to
 stdout/stderr (including Python logging from Streamlit and yfinance), skips known noise (Yahoo cookie
 warnings, HTTP 404 for ETFs without fundamentals, Streamlit context warnings), groups the rest by pattern
-and keeps the last 24 hours in `log_problems.json`. Admins see the list in Settings, Notifications. It
+and keeps the last 24 hours in `log_problems.json`. Admins see the list in Settings, Notifications > Email (SMTP). It
 cannot report a crashed or stopped container; check `docker ps` / the health endpoint for that.
 
 ### Host watchdog

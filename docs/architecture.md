@@ -53,7 +53,7 @@ Calculations
 - `position_alerts.py`, `position_alerts_ui.py` - price, score and concentration alerts: rules, background evaluation, email, settings tab, banner and the quick price alert on the position page.
 - `uptime.py`, `tools/uptime_check.py` - host watchdog run from cron: health check, state, email on down/up transitions.
 - `health.py`, `health_ui.py` - service status: records every request to Yahoo (yfinance hook), justETF, Trading 212 and SMTP, job freshness from the status files, live probes; the Settings > Status tab (admin).
-- `logwatch.py` - log watchdog: tees stdout/stderr, groups error lines by pattern, emails admins on new patterns; list in Settings, Notifications.
+- `logwatch.py` - log watchdog: tees stdout/stderr, groups error lines by pattern, emails admins on new patterns; list in Settings, Notifications > Email (SMTP).
 - `url_tabs.py` - tabs bound to the `?tab=` URL parameter with stable ids (main page and settings), so refresh and links keep the open tab.
 - `compare.py`, `compare_ui.py` - side-by-side comparison of up to five instruments: normalized return chart and a table of period stats, scores and valuation.
 - `rotation.py`, `factors.py`, `portfolio_lenses_ui.py` - sector rotation (RRG of SPDR sector ETFs versus SPY) and factor exposure (regression on factor ETFs), the Rotation and Factors views of the Exposure tab; prices downloaded on demand (cached 15 minutes).

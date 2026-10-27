@@ -14,6 +14,7 @@ _T = {
     "side.filters": {"RO": "🔎 Filtre", "EN": "🔎 Filters"},
     "side.xtb_import": {"RO": "📥 XTB — import", "EN": "📥 XTB — import"},
     "set.brokers": {"RO": "🏦 Brokeri", "EN": "🏦 Brokers"},
+    "set.notify_mail": {"RO": "✉️ Email (SMTP)", "EN": "✉️ Email (SMTP)"},
     "side.auth": {"RO": "🔑 Autentificare Trading 212", "EN": "🔑 Trading 212 authentication"},
     "btn.refresh_now": {"RO": "🔄 Actualizează acum", "EN": "🔄 Refresh now"},
     "btn.refresh_div": {"RO": "💵 Actualizează dividende (fundal)", "EN": "💵 Refresh dividends (background)"},

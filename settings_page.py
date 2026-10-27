@@ -57,6 +57,29 @@ def _tab_brokers(xtb_section):
                 xtb_section()
 
 
+NOTIFY_TABS = ("weekly", "mail")
+
+
+def _tab_notifications(me, weekly_section):
+    """Raportul saptamanal (fiecare utilizator) si emailul/SMTP (doar admin), fiecare cu sub-tabul lui."""
+    labels = {"weekly": t("wr.tab"), "mail": t("set.notify_mail")}
+    ids = [i for i in NOTIFY_TABS if (i != "weekly" or weekly_section) and (i != "mail" or users.role(me) == "admin")]
+    wanted = st.session_state.pop("_notify_tab", None)
+    if wanted in ids:
+        st.session_state.pop("notify_tabs", None)
+    tabs = st.tabs([labels[i] for i in ids], default=labels[wanted] if wanted in ids else None,
+                   key="notify_tabs", on_change="rerun")
+    for i, tab in zip(ids, tabs):
+        if tab.open is False:
+            continue  # se randeaza doar sub-tabul deschis
+        with tab:
+            if i == "weekly":
+                weekly_section()
+            else:
+                from notify_ui import render_notifications
+                render_notifications(me)
+
+
 def _tab_about():
     st.markdown("### GoldRetriever")
     info = {}
@@ -114,16 +137,22 @@ def render_settings(me, sections=()):
     xtb = next((fn for i, _, fn in sections if i == "xtb"), None)
     entries = [("brokers", t("set.brokers"), lambda: _tab_brokers(xtb))]
     entries.append(("password", t("pwd.tab"), lambda: _tab_password(me)))
-    entries += [s for s in sections if s[0] != "xtb"]
+    weekly = next((fn for i, _, fn in sections if i == "weekly"), None)
+    notify_entry = ("notifications", "📬 " + _L("Notificări", "Notifications"), lambda: _tab_notifications(me, weekly))
+    # Notificarile stau unde era raportul saptamanal; fara raport (si fara admin) tabul lipseste
+    for s in sections:
+        if s[0] == "weekly":
+            entries.append(notify_entry)
+        elif s[0] != "xtb":
+            entries.append(s)
+    if not weekly and users.role(me) == "admin":
+        entries.append(notify_entry)
     if users.role(me) == "admin":
         entries.append(("users", "👥 " + _L("Utilizatori", "Users"), lambda: _tab_users(me)))
     entries.append(("about", "ℹ️ " + _L("Despre", "About"), _tab_about))
 
     if users.role(me) == "admin":
         from health_ui import render_status
-        from notify_ui import render_notifications
-        entries.insert(len(entries) - 1, ("notifications", "🔔 " + _L("Notificări", "Notifications"),
-                                          lambda: render_notifications(me)))
         entries.insert(len(entries) - 1, ("status", t("hs.tab"), lambda: render_status(me)))
         from backup_ui import render_backup
         entries.insert(len(entries) - 1, ("backup", t("bk.tab"), lambda: render_backup(me)))
@@ -133,6 +162,10 @@ def render_settings(me, sections=()):
         # linkurile vechi ?tab=t212 / ?tab=xtb deschid acum Brokeri, cu sub-tabul lor
         st.session_state["_broker_tab"] = st.query_params["tab"]
         st.query_params.pop("tab", None)
+    if st.query_params.get("tab") in NOTIFY_TABS:
+        # linkul vechi ?tab=weekly deschide acum Notificari, cu sub-tabul raportului
+        st.session_state["_notify_tab"] = st.query_params["tab"]
+        st.query_params["tab"] = "notifications"
     tabs = url_tabs([(i, label) for i, label, _ in entries], "settings_tab")
     for i, _, fn in entries:
         if tabs[i].open is False:

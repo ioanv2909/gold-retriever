@@ -1,3 +1,7 @@
+## 0.4.1 — 2026-10-27
+
+- Settings: the weekly report moved into the Notifications tab (now 📬, so it no longer shares the 🔔 icon with Alerts). Every user sees Notifications with the "Weekly report" sub-tab; admins also get the "Email (SMTP)" sub-tab with the existing mail settings. Only the open sub-tab is rendered. The old link `?tab=weekly` opens Notifications on the weekly report.
+
 ## 0.4.0 — 2026-10-27
 
 - Code: `app.py` (1,480 lines, one 700-line function for the main page) is split into modules: `main_view.py` (main page in small functions), `history_ui.py`, `cash_ui.py`, `positions_data.py`, `positions_table_ui.py`, `watchlist_ui.py`, `navigation.py`, `updates_ui.py`, `xtb_import_ui.py` and `lang_prefs.py`. `app.py` keeps only the language, the login and the routing (84 lines). Nothing changes on screen: the main page, the settings and the position page render the same as before in all checked cases. The position calculations (`positions_data.py`) now have their own tests.

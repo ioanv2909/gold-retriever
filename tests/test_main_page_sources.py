@@ -69,9 +69,15 @@ def test_xtb_detail_link_opens_without_t212(tmp_path):
     assert out["selected"] == "VWCE.DE"
 
 
-def test_settings_has_the_weekly_report_tab(tmp_path):
-    out = _run(tmp_path, "xtb_only", detail="page=settings&tab=weekly")
+@pytest.mark.parametrize("query", ["page=settings&tab=notifications", "page=settings&tab=weekly"])  # weekly: link vechi
+def test_weekly_report_sits_under_notifications(tmp_path, query):
+    out = _run(tmp_path, "xtb_only", detail=query)
+    # tabul Notificari e urmat de sub-taburile lui: raportul (primul) si emailul (doar admin)
+    i = out["tabs"].index("📬 Notificări")
+    assert out["tabs"][i + 1:i + 3] == ["📰 Raport săptămânal", "✉️ Email (SMTP)"]
+    assert out["tabs"].count("📰 Raport săptămânal") == 1
     assert "Trimite raportul săptămânal" in out["checkboxes"]
+    assert "nt_host" not in out["keys"]
 
 
 @pytest.mark.parametrize("query,inner", [
