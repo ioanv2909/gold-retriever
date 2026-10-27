@@ -81,4 +81,6 @@ print("RESULT " + json.dumps({
     "pills": [list(p.options) for p in at.get("button_group")],
     "selected": at.session_state["selected_ticker"] if "selected_ticker" in at.session_state else None,
     "checkboxes": [c.label for c in at.checkbox],
+    "tabs": [t.label for t in at.tabs],
+    "keys": sorted(str(w.key) for kind in ("text_input", "button", "checkbox", "selectbox") for w in at.get(kind) if w.key),
 }, ensure_ascii=False))

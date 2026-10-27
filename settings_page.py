@@ -35,6 +35,28 @@ def _tab_t212():
     st.caption(_L("Fișier: ", "File: ") + f"`{os.path.abspath(CONFIG_FILE)}`")
 
 
+BROKER_TABS = ("t212", "xtb")
+
+
+def _tab_brokers(xtb_section):
+    """Trading 212 si XTB intr-un singur tab, fiecare broker cu sub-tabul lui."""
+    labels = {"t212": "🔑 Trading 212", "xtb": t("side.xtb_import")}
+    ids = [i for i in BROKER_TABS if i != "xtb" or xtb_section]
+    wanted = st.session_state.pop("_broker_tab", None)
+    if wanted in ids:
+        st.session_state.pop("broker_tabs", None)
+    tabs = st.tabs([labels[i] for i in ids], default=labels[wanted] if wanted in ids else None,
+                   key="broker_tabs", on_change="rerun")
+    for i, tab in zip(ids, tabs):
+        if tab.open is False:
+            continue  # se randeaza doar sub-tabul deschis
+        with tab:
+            if i == "t212":
+                _tab_t212()
+            else:
+                xtb_section()
+
+
 def _tab_about():
     st.markdown("### GoldRetriever")
     info = {}
@@ -88,9 +110,11 @@ def render_settings(me, sections=()):
         lang_button("lang_switch_settings")
 
     # (id, eticheta, functie); id-ul apare in URL (?tab=...), deci nu depinde de limba
-    entries = [("t212", "🔑 Trading 212", _tab_t212)]
+    sections = list(sections)
+    xtb = next((fn for i, _, fn in sections if i == "xtb"), None)
+    entries = [("brokers", t("set.brokers"), lambda: _tab_brokers(xtb))]
     entries.append(("password", t("pwd.tab"), lambda: _tab_password(me)))
-    entries += list(sections)
+    entries += [s for s in sections if s[0] != "xtb"]
     if users.role(me) == "admin":
         entries.append(("users", "👥 " + _L("Utilizatori", "Users"), lambda: _tab_users(me)))
     entries.append(("about", "ℹ️ " + _L("Despre", "About"), _tab_about))
@@ -105,6 +129,10 @@ def render_settings(me, sections=()):
         entries.insert(len(entries) - 1, ("backup", t("bk.tab"), lambda: render_backup(me)))
         from log_ui import render_log
         entries.insert(len(entries) - 1, ("log", t("lg.tab"), lambda: render_log(me)))
+    if st.query_params.get("tab") in BROKER_TABS:
+        # linkurile vechi ?tab=t212 / ?tab=xtb deschid acum Brokeri, cu sub-tabul lor
+        st.session_state["_broker_tab"] = st.query_params["tab"]
+        st.query_params.pop("tab", None)
     tabs = url_tabs([(i, label) for i, label, _ in entries], "settings_tab")
     for i, _, fn in entries:
         if tabs[i].open is False:

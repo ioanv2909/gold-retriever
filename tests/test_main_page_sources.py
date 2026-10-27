@@ -72,3 +72,18 @@ def test_xtb_detail_link_opens_without_t212(tmp_path):
 def test_settings_has_the_weekly_report_tab(tmp_path):
     out = _run(tmp_path, "xtb_only", detail="page=settings&tab=weekly")
     assert "Trimite raportul săptămânal" in out["checkboxes"]
+
+
+@pytest.mark.parametrize("query,inner", [
+    ("page=settings", "set_kid"),                 # primul tab: Brokeri, sub-tabul Trading 212
+    ("page=settings&tab=brokers", "set_kid"),
+    ("page=settings&tab=t212", "set_kid"),        # link vechi
+    ("page=settings&tab=xtb", "xtb_prices_refresh"),  # link vechi -> Brokeri, sub-tabul XTB
+])
+def test_brokers_tab_holds_trading212_and_xtb(tmp_path, query, inner):
+    out = _run(tmp_path, "xtb_only", detail=query)
+    assert out["tabs"][:1] == ["🏦 Brokeri"] and "🔑 Trading 212" in out["tabs"]
+    assert inner in out["keys"]
+    # se randeaza doar sub-tabul deschis
+    other = "xtb_prices_refresh" if inner == "set_kid" else "set_kid"
+    assert other not in out["keys"]

@@ -1,3 +1,7 @@
+## 0.3.28 — 2026-10-27
+
+- Settings: Trading 212 and XTB import are now one "Brokers" tab (first tab), with a sub-tab per broker, so the settings menu is shorter. Only the open sub-tab is rendered. Old links (`?tab=t212`, `?tab=xtb`) open Brokers on the matching sub-tab.
+
 ## 0.3.27 — 2026-10-27
 
 - Weekly report: the biggest gains/losses and the events list show the full instrument name (for example "Amazon") instead of the broker ticker (`AMZN_US_EQ`); without a name, the clean symbol is shown.
