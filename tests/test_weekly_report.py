@@ -53,10 +53,11 @@ def test_report_text(data):
     assert subject == "Raport săptămânal 31.10.2026"
     assert "1,150.00 EUR" in body and "+40.00 EUR (+3.96%)" in body and "+100.00 EUR" in body
     up, down = body.split("Cele mai mari creșteri")[1].split("Cele mai mari scăderi")
-    assert "AAPL_US_EQ" in up and "+4.20%" in up and "Apple" in up and "TSLA" not in up
-    assert down.index("TSLA_US_EQ") < down.index("VWCE.DE")  # cea mai mare scadere prima
+    assert "+4.20%  Apple" in up and "Tesla" not in up and "_US_EQ" not in up
+    assert down.index("Tesla") < down.index("Vanguard All-World")  # cea mai mare scadere prima
     assert "5.50" in body  # dividende: AAPL +2.5, KO nou +3.0
-    assert "2026-11-03  AAPL_US_EQ" in body and "2026-12-20" not in body
+    assert "2026-11-03  Apple: " in body and "2026-12-20" not in body
+    assert "_US_EQ" not in body  # numele complete, nu tickerele T212
     assert totals == {"AAPL_US_EQ": 12.5, "KO_US_EQ": 3.0}
 
 

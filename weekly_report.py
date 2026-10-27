@@ -72,9 +72,11 @@ def holdings():
     snap = load_cached_snapshot() or {}
     names = {i.get("ticker"): i.get("name") for i in (snap.get("instruments") or []) if isinstance(i, dict)}
     out = {}
+    from yahoo import guess_yahoo_symbol
     for p in snap.get("positions") or []:
         if p.get("ticker"):
-            out[p["ticker"]] = names.get(p["ticker"]) or p["ticker"]
+            # fara nume in instrumente: macar simbolul curat (KO, nu KO_US_EQ)
+            out[p["ticker"]] = names.get(p["ticker"]) or guess_yahoo_symbol(p["ticker"])
     for r in xtb_rows():
         if r.get("ticker"):
             out.setdefault(r["ticker"], r.get("name") or r["ticker"])
@@ -160,7 +162,7 @@ def build(lang="RO", today=None, now=None, changes_fn=None, state=None):
     for title, rows in (("wr.up", up), ("wr.down", down)):
         if rows:
             lines += ["", L(title)]
-            lines += ["  %-10s %+7.2f%%  %s" % (tk, pct, name) for pct, tk, name in rows]
+            lines += ["  %+7.2f%%  %s" % (pct, name) for pct, _tk, name in rows]
 
     received, totals = dividends_since_last(state)
     if received:
@@ -170,7 +172,7 @@ def build(lang="RO", today=None, now=None, changes_fn=None, state=None):
     lines += ["", L("wr.events") if evs else L("wr.no_events")]
     for ev in evs:
         when = ev["date"] + (" - " + ev["date_end"] if ev.get("date_end") else "")
-        lines.append("  %s  %-10s %s" % (when, ev["ticker"], t("ev.type." + ev["type"], _lang=lang)))
+        lines.append("  %s  %s: %s" % (when, held.get(ev["ticker"]) or ev["ticker"], t("ev.type." + ev["type"], _lang=lang)))
 
     subject = L("wr.mail_subject", d=today.strftime("%d.%m.%Y"))
     return subject, "\n".join(lines), totals
