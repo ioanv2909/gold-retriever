@@ -329,7 +329,7 @@ def render_detail_view(position_row, total_portfolio_value, api_key_id, api_secr
 
     data, err = None, None
     if YFINANCE_AVAILABLE:
-        with st.spinner(f"Interogare Yahoo Finance pentru {yahoo_symbol}..."):
+        with st.spinner(_x(f"Interogare Yahoo Finance pentru {yahoo_symbol}...")):
             data, err = fetch_yahoo_analysis(yahoo_symbol)
 
     if data and data.get("business_summary"):

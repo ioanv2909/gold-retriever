@@ -164,3 +164,10 @@ def _no_writes_to_data(monkeypatch):
 def _isolated_backup_request(tmp_path, monkeypatch):
     import backup_ui
     monkeypatch.setattr(backup_ui, "REQUEST_FILE", str(tmp_path / "backup_request.json"))
+
+
+@pytest.fixture(autouse=True)
+def _isolated_symbol_resolver(tmp_path, monkeypatch):
+    import symbol_resolver
+    monkeypatch.setattr(symbol_resolver, "AUTO_MAP_FILE", str(tmp_path / "yahoo_auto_map.json"))
+    monkeypatch.setattr(symbol_resolver, "_cache", {"mtime": None, "data": {}})

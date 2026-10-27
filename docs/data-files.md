@@ -13,6 +13,8 @@ Everything is JSON except `auth_secret`. Do not commit this folder:
 | `ui_prefs.json` | Interface preferences |
 | `instruments_cache.json` | Trading 212 instrument metadata |
 | `justetf_cache.json` | justETF data for ETFs |
+| `yahoo_auto_map.json` | Yahoo symbols found automatically for tickers whose guessed symbol has no prices (symbol or null, guessed symbol, ISIN, last check) |
+| `backup_request.json` | On-demand backup from Settings > Backup: `requested` (by the app), then `running`, `done` or `failed` (by the host script) |
 | `quality_cache.json`, `quality_status.json` | Quality, risk and dividend scores and job progress |
 | `market_context_cache.json`, `market_context_status.json` | Benchmark (S&P 500) data and job progress |
 | `uptime_status.json` | Host watchdog: last health check, consecutive failures, whether the admins were alerted |
@@ -50,7 +52,7 @@ Everything is JSON except `auth_secret`. Do not commit this folder:
 | `xtb_history_reconstructed.json` | Rebuilt daily history, XTB |
 | `portfolio_history.json` | Recorded value points |
 | `portfolio_history_multi.json` | Value points per portfolio |
-| `ticker_map.json` | Mapping to Yahoo symbols |
+| `ticker_map.json` | Manual mapping to Yahoo symbols (wins over `yahoo_auto_map.json`) |
 | `watchlist.json`, `watchlist_cache.json`, `watchlist_status.json` | Watchlist, its data and progress |
 | `notes.json` | Per-position notes |
 | `alerts.json`, `alert_state.json` | Loss-to-profit alerts and dismissed state |

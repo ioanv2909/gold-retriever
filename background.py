@@ -3,6 +3,7 @@ import health
 import events
 import exposure
 import strategies
+import symbol_resolver
 import position_alerts
 from etf import compute_etf_score, extract_etf_metrics, get_instrument
 from risk import extract_risk_metrics, compute_risk
@@ -425,7 +426,7 @@ def xtb_positions_for_context():
 def start_background_scheduler(user=None):
     def run_loop():
         last_core = last_div = last_rat = last_q = last_m = last_w = last_j = last_x = last_h = 0.0
-        last_hc = last_ev = last_evn = last_pa = last_ex = last_st = 0.0
+        last_hc = last_ev = last_evn = last_pa = last_ex = last_st = last_sym = 0.0
         while True:
             cfg = load_config()
             key_id, secret = cfg.get("api_key_id"), cfg.get("api_secret")
@@ -493,6 +494,11 @@ def start_background_scheduler(user=None):
                 # doar tickerele noi sau mai vechi de o saptamana se cer din nou
                 if exposure.start_fetch_background(all_tickers, ticker_isins(all_tickers)):
                     last_ex = time.time()
+
+            if all_tickers and (time.time() - last_sym) >= 3600:
+                # doar tickerele noi sau verificate acum mai mult de o saptamana
+                if symbol_resolver.start_fix_background(all_tickers, ticker_isins(all_tickers)):
+                    last_sym = time.time()
 
             if all_tickers and (time.time() - last_st) >= 3600:
                 # doar tickerele noi sau mai vechi de o zi se recalculeaza

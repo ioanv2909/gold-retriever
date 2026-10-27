@@ -1,3 +1,9 @@
+## 0.3.21 — 2026-10-27
+
+- English UI: texts built directly in the code were shown in Romanian (XTB prices caption, position weight, Yahoo query spinner, price-history corrections, watchlist messages, currency effect, "Multiple holdings", score thresholds and checklist tooltips, disk write error). They are now translated. The trend checklist tooltip was translated only in pieces ("from the highul"); it now has a full translation.
+- Wrong Yahoo symbols are fixed automatically. When the symbol guessed from the broker ticker has no prices on Yahoo (for example `IITU` instead of `IITU.L`, or `DJGTEEX.DE` instead of `EXI2.DE`), the background job searches Yahoo by the base symbol and then by ISIN, keeps the first symbol that has prices and logs the change. Results are shared (`data/yahoo_auto_map.json`); each ticker is rechecked after a week. A manual mapping on the position page still wins.
+- Less log noise: the user lookup no longer triggers Streamlit's "missing ScriptRunContext" warning outside a page run.
+
 ## 0.3.20 — 2026-10-27
 
 - New Settings > Backup tab (admins only): last successful backup (time, encrypted or not, archive name), a "Back up now" button and the restore procedure (testing an encrypted archive, full restore, where the keys must live). The button writes a request into `data/backup_request.json`; a root cron line on the host (`backup-goldretriever.sh --if-requested`, every minute) runs the backup and reports `done` or `failed`, shown live on the page. If the request is not picked up within 3 minutes the page shows the missing cron line.

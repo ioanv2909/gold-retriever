@@ -67,7 +67,8 @@ def resolve_yahoo_symbol(ticker):
     mapping = load_ticker_map()
     if ticker in mapping:
         return mapping[ticker]
-    return guess_yahoo_symbol(ticker)
+    from symbol_resolver import lookup
+    return lookup(ticker) or guess_yahoo_symbol(ticker)
 
 
 # ---------------------------------------------------------------------------

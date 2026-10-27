@@ -1204,6 +1204,57 @@ _PATTERNS2 = [
 ]
 _PATTERNS.extend(_PATTERNS2)
 
+# texte afisate direct din cod (fara cheie t()): pozitii, watchlist, XTB, scoruri; fragmentele la final
+_PATTERNS.extend([
+    (r"^Ultima actualizare: (.+?) · (\d+)/(\d+) tickere ok\. Prețul XTB e luat din export; un raport în jur de 1,00–1,03 e normal "
+     r"\(probabil XTB evaluează la prețul de vânzare\)\. Sub 0,9 sau peste 1,1 indică simbol sau monedă greșite\.$",
+     r"Last update: \1 · \2/\3 tickers ok. The XTB price comes from the export; a ratio around 1.00–1.03 is normal "
+     r"(XTB probably values at the bid price). Below 0.9 or above 1.1 points to a wrong symbol or currency."),
+    (r"^Interogare Yahoo Finance pentru (.+?)\.\.\.$", r"Querying Yahoo Finance for \1..."),
+    (r"^ℹ️ Istoricul de preț de la Yahoo a fost corectat pentru calculele de mai jos: ",
+     r"ℹ️ The Yahoo price history was corrected for the calculations below: "),
+    (r"discontinuitate ~1:(\S+) la (\d{4}-\d{2}-\d{2})", r"discontinuity ~1:\1 on \2"),
+    (r"preț izolat eliminat la (\d{4}-\d{2}-\d{2})", r"isolated price removed on \1"),
+    (r"^Ponderea poziției în portofoliu: ([\d.]+)%$", r"Position weight in the portfolio: \1%"),
+    (r"^ISIN adăugat pentru (.+)$", r"ISIN added for \1"),
+    (r"^(.+) există deja în watchlist$", r"\1 is already in the watchlist"),
+    (r"^(\S+) adăugat$", r"\1 added"),
+    (r"^Simbolul nu are date pe Yahoo Finance$", r"The symbol has no data on Yahoo Finance"),
+    (r"^din care efect de curs: ([+\-\d.,]+) pp$", r"of which currency effect: \1 pp"),
+    (r"^\*\*Dețineri multiple\*\*$", r"**Multiple holdings**"),
+    (r"^Volatilitate anualizată \(%\)$", r"Annualized volatility (%)"),
+    (r"^Eroare la scriere pe disc: ", r"Disk write error: "),
+    (r"^Eticheta scorului de calitate \(sau a scorului ETF\)\.$", r"Label of the quality score (or of the ETF score)."),
+    (r"^Valoarea la care scorul devine 0\.$", r"The value at which the score becomes 0."),
+    (r"\*\*Prag:\*\* zona roșie \(semnal de alarmă\) începe de la (.+?); reper: (.+?) \((.+?)\)\. Pragurile sunt generale, nu pe sector\.",
+     r"**Threshold:** the red zone (warning sign) starts at \1; benchmark: \2 (\3). Thresholds are general, not per sector."),
+    (r"\*\*Praguri:\*\* scor maxim la (.+?) sau mai bine, scor 0 la (.+?) sau mai rău \((.+?)\)\.",
+     r"**Thresholds:** full score at \1 or better, score 0 at \2 or worse (\3)."),
+    (r" Pondere în scorul total: ([\d.,]+)%\.", r" Weight in the total score: \1%."),
+    (r"^Verde: scor de calitate ≥ ([\d.]+); galben: ≥ ([\d.]+); roșu: sub\. Gri: date insuficiente \(sub ([\d.]+)% din ponderi\)\.$",
+     r"Green: quality score ≥ \1; yellow: ≥ \2; red: below. Gray: not enough data (under \3% of the weights)."),
+    (r"^Verde: scor de risc ≥ ([\d.]+) \(mai mare = mai sigur\); galben: ≥ ([\d.]+); roșu: sub\. Gri: date insuficiente\.$",
+     r"Green: risk score ≥ \1 (higher = safer); yellow: ≥ \2; red: below. Gray: not enough data."),
+    (r"^Verde: niciun indicator de valuare în zona roșie; galben: până la (\d+)% dintre cei utilizabili; roșu: peste\. "
+     r"Gri: sub (\d+) indicatori utilizabili sau ETF\.$",
+     r"Green: no valuation indicator in the red zone; yellow: up to \1% of the usable ones; red: more. "
+     r"Gray: fewer than \2 usable indicators, or an ETF."),
+    (r"^Ponderea poziției în portofoliul țintă ales, după cumpărarea ipotetică, față de valoarea pozițiilor lui \(fără cash\): "
+     r"verde ≤ ([\d.]+)%, galben ≤ ([\d.]+)%, roșu peste\.$",
+     r"Weight of the position in the chosen target portfolio after the hypothetical purchase, relative to the value of its positions "
+     r"(without cash): green ≤ \1%, yellow ≤ \2%, red above."),
+    (r"n/a \(bănci: nu se folosește uzual\)", r"n/a (banks: not commonly used)"),
+    (r"\bmai mare = mai bine\b", r"higher = better"),
+    (r"\bmai mic = mai bine\b", r"lower = better"),
+    (r"\bneactualizat încă\b", r"not updated yet"),
+])
+# inaintea tiparelor generice, care altfel traduc doar bucati din el ("from the highul")
+_PATTERNS.insert(0, (
+    r"^Roșu: scădere de cel puțin ([\d.]+)% față de maximul de 52 de săptămâni ȘI preț sub SMA200; galben: doar una dintre ele "
+    r"sau creștere de peste ([\d.]+)% în 3 luni; verde: fără semnale\.$",
+    r"Red: a drop of at least \1% from the 52-week high AND price below SMA200; yellow: only one of them "
+    r"or a rise of more than \2% in 3 months; green: no signals."))
+
 
 _PATTERNS3 = [
     (r"Preț / vânzări pe acțiune\. Util mai ales pentru companii încă neprofitabile, unde P/E nu are sens ",
