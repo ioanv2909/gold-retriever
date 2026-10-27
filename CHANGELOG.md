@@ -1,3 +1,7 @@
+## 0.3.32 — 2026-10-27
+
+- Main page, profit change chart: hovering shows a vertical line with one label (date, hour and profit change), like the market value chart.
+
 ## 0.3.31 — 2026-10-27
 
 - Main page, profit change chart: the time axis labels adapt to the spacing (hours, days, months or years), so "Max" no longer shows "01.01" twice; the hover shows the year; the "Profit" axis title sits further from the chart.

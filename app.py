@@ -284,14 +284,20 @@ def _profit_sparkline(x, y, ccy):
         seg = [v if v * sign >= 0 else None for v in py_]
         fig.add_trace(go.Scatter(
             x=px_, y=seg, mode="lines", line=dict(color=color, width=2), fill="tozeroy", fillcolor=fill,
-            connectgaps=False, hovertemplate="%{x|%d.%m.%Y %H:%M}<br>%{y:+,.2f} " + ccy + "<extra></extra>",
+            connectgaps=False, hoverinfo="skip",
         ))
+    # hover doar din seria reala (invizibila), cu linie verticala si eticheta comuna, ca pe graficul mare
+    fig.add_trace(go.Scatter(
+        x=xs, y=ys, mode="lines", line=dict(width=0), name=t("hist.spark_y", ccy=ccy),
+        hovertemplate="%{y:+,.2f} " + ccy + "<extra></extra>",
+    ))
     fig.update_layout(
         height=170, margin=dict(l=6, r=0, t=4, b=0), showlegend=False, font=dict(size=10),
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", hovermode="x unified",
     )
     # formatul etichetelor de timp dupa pasul dintre ele: ore, zile, luni sau ani (fara 01.01 repetat la "Max")
     fig.update_xaxes(title_text=t("hist.spark_x"), title_standoff=4, fixedrange=True, nticks=4, showgrid=False,
+                     hoverformat="%d.%m.%Y %H:%M",
                      tickformatstops=[
                          dict(dtickrange=[None, 86400000], value="%H:%M"),
                          dict(dtickrange=[86400000, "M1"], value="%d.%m"),
