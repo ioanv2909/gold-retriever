@@ -151,6 +151,10 @@ from portfolio_model import fx as _fx
 from xtb import load_xtb as _load_xtb
 
 
+# coloanele pe care le foloseste pagina principala din pozitiile Trading 212 (tabel gol cand lipsesc)
+_T212_POSITION_COLUMNS = {"ticker": "object", "quantity": "float64", "averagePrice": "float64",
+                          "currentPrice": "float64", "ppl": "float64", "initialFillDate": "object"}
+
 _COL_HELP_I18N = {"Scor div.": lambda: t("help.div_score"), "Țintă %": lambda: t("help.target_upside")}
 
 
@@ -709,33 +713,37 @@ def render_main_view():
         ts = datetime.fromtimestamp(snapshot["fetched_at"]).strftime("%d.%m.%Y %H:%M:%S")
         st.caption(t("main.updated_at", ts=ts))
 
-    if not snapshot:
+    errs = (snapshot or {}).get("errors") or {}
+    t212_err = errs.get("cash") or errs.get("portfolio")
+    has_t212 = bool(snapshot) and not t212_err
+    # cu conturi XTB, lipsa datelor Trading 212 nu mai ascunde restul paginii: T212 continua cu zero pozitii
+    has_xtb = bool(accounts_summary())
+    if not snapshot and (api_key_id or not has_xtb):
         st.info(t("main.no_cache"))
+    elif t212_err:
+        st.error(t212_err)
+    if not has_t212 and not has_xtb:
         return
 
-    errs = snapshot.get("errors", {})
-    if errs.get("cash"):
-        st.error(errs["cash"])
-        return
-    elif errs.get("portfolio"):
-        st.error(errs["portfolio"])
-        return
-
-    cash = snapshot["cash"]
+    cash = snapshot["cash"] if has_t212 else {}
     invested = cash.get("invested", 0.0)
     ppl = cash.get("ppl", 0.0)
     market_value = invested + ppl
-    record_portfolio_point(market_value, invested, ppl)
+    if has_t212:
+        record_portfolio_point(market_value, invested, ppl)
     yield_pct = (ppl / invested * 100.0) if invested else 0.0
 
-    positions = snapshot.get("positions") or []
-    if not positions:
+    positions = (snapshot.get("positions") or []) if has_t212 else []
+    if not positions and not has_xtb:
         st.info(t("main.no_positions"))
         return
 
-    df = pd.DataFrame(positions)
+    if positions:
+        df = pd.DataFrame(positions)
+    else:
+        df = pd.DataFrame({c: pd.Series(dtype=dt) for c, dt in _T212_POSITION_COLUMNS.items()})
 
-    instruments = snapshot.get("instruments")
+    instruments = snapshot.get("instruments") if has_t212 else None
     if errs.get("instruments") or not instruments:
         df["name"] = df["ticker"]
         df["currencyCode"] = ""
@@ -772,13 +780,13 @@ def render_main_view():
         fx_rates[ccy] = rate
         if fx_err:
             fx_errors.append(fx_err)
-    df["fx_rate"] = df["currencyCode"].map(fx_rates).fillna(1.0)
+    df["fx_rate"] = pd.to_numeric(df["currencyCode"].map(fx_rates).fillna(1.0))
     total_portfolio_value = (df["valoare_curenta"] * df["fx_rate"]).sum()
     df["cost_achizitie_cont"] = df["cost_achizitie"] * df["fx_rate"]
 
     div_snapshot = load_cached_dividends()
     dividends = (div_snapshot or {}).get("dividends", {})
-    df["dividende_incasate"] = df["ticker"].map(lambda t: dividends.get(t, {}).get("total", 0.0))
+    df["dividende_incasate"] = pd.to_numeric(df["ticker"].map(lambda t: dividends.get(t, {}).get("total", 0.0)))
     df["div_pe_investit_%"] = (df["dividende_incasate"] / df["cost_achizitie_cont"] * 100).round(2)
     df["randament_total_%"] = (df["randament_%"] + df["div_pe_investit_%"]).round(2)
     total_dividende = df["dividende_incasate"].sum()
@@ -796,7 +804,7 @@ def render_main_view():
     df["Scor div."] = df["ticker"].map(lambda t: _div_score(quality_data.get(t)))
 
     _ui = st.session_state.setdefault("_ui_prefs", {})
-    _opts = portfolio_options()
+    _opts = [o for o in portfolio_options() if has_t212 or o != "Trading 212"]
     _ccy_opts = ["EUR", "USD", "GBP", "CHF", "RON", "PLN", "CZK", "HUF", "SEK", "NOK", "DKK",
                  "ISK", "BGN", "TRY", "UAH", "RSD", "CAD", "AUD", "NZD", "JPY", "CNY", "HKD", "SGD",
                  "KRW", "INR", "ILS", "ZAR", "BRL", "MXN"]

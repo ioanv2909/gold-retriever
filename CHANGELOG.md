@@ -1,3 +1,8 @@
+## 0.3.22 — 2026-10-27
+
+- The main page no longer hides XTB when Trading 212 has no usable data. Before, three cases showed only a message and nothing from XTB (no sums, no table, no XTB position links): a user with only XTB imports ("no data in cache"), a Trading 212 account with no open positions ("No open positions"), and a first Trading 212 fetch that failed (only the error). Now the Trading 212 message stays on top and the page continues with the XTB positions; "Trading 212" is offered in the portfolio picker only when its data is usable (an account with cash and no positions keeps it). Without XTB accounts the behaviour is unchanged. The Trading 212 value history is not recorded while its data is missing, so the chart does not drop to zero.
+- New end-to-end tests run the whole main page (AppTest) for each case in a separate process, with its own `data/` folder and no network.
+
 ## 0.3.21 — 2026-10-27
 
 - English UI: texts built directly in the code were shown in Romanian (XTB prices caption, position weight, Yahoo query spinner, price-history corrections, watchlist messages, currency effect, "Multiple holdings", score thresholds and checklist tooltips, disk write error). They are now translated. The trend checklist tooltip was translated only in pieces ("from the highul"); it now has a full translation.

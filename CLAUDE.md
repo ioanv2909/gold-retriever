@@ -15,7 +15,7 @@ port 8501, uid 1000). Public repo: ioanv2909/gold-retriever, branch main.
 - New UI strings go in `i18n.py` with both RO and EN entries.
 - CHANGELOG: never leave an "Unreleased" section (Settings > About shows the file as is). Put the entry under
   `## X.Y.Z — date` for the version the commit will get: last `v*` tag patch + commits since the tag + 1.
-- Run tests before committing: `.venv/bin/python -m pytest -q` (480 tests, also run in CI).
+- Run tests before committing: `.venv/bin/python -m pytest -q` (487 tests, also run in CI).
 - Commit, `git push` and `./tools/deploy.sh` are pre-approved once the tests pass: do them without asking,
   then report the result (version, health check, log errors). Still ask before anything that deletes or
   changes data (`rm`, `data/`, git history rewrites) and before other `docker` commands.
@@ -50,6 +50,7 @@ tabs, log watchdog, admin status page, Yahoo 401 retry, host uptime watchdog (cr
 2. New broker connector. Waiting for the user: which broker, API or file export, a sample export.
 
 ## Notes for future work
+- `tests/main_page_driver.py` runs the whole `app.py` (AppTest) in a temporary folder with symlinked code, its own `data/` and no network; `tests/test_main_page_sources.py` shows how to use it for end-to-end checks of the main page.
 - Tests must never write into `data/`: modules that persist state get an autouse fixture in
   `tests/conftest.py` pointing them to `tmp_path` (see `health`).
 - `rm` on `data/` is blocked by the Claude Code permission settings even when the user approves; do not
