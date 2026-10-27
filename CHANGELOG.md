@@ -1,3 +1,7 @@
+## 0.3.18 — 2026-10-27
+
+- Times were shown in UTC (for example "Positions/cash updated" two hours behind in Romania): the container had no time zone. `docker-compose.yml` now sets `TZ`, `Europe/Bucharest` by default; another zone can be set with `TZ=...` in `.env`. Affects the times on the page, in the log and in emails.
+
 ## 0.3.17 — 2026-10-27
 
 - Automatic page reload: when the background refresh writes new data (Trading 212 portfolio, XTB prices, dividends), the open main page and the position page reload by themselves, so the sums are up to date without a click. A check runs every 30 seconds and reads a cache file only when its modification time changed; a reload happens only on a new `fetched_at`. On the position page the row is rebuilt from the fresh data without jumping to the top. Automatic reloads do not count as activity for session expiry. Per-user switch in Settings > Updates, on by default.

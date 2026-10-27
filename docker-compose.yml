@@ -5,6 +5,8 @@ services:
     user: "1000:1000"
     environment:
       - HOME=/tmp
+      # ora afisata in pagina, in log si in emailuri; alt fus orar: TZ=... in .env
+      - TZ=${TZ:-Europe/Bucharest}
       - PYTHONDONTWRITEBYTECODE=1
     # Hardening: read-only image filesystem; the only writable places are data/ (volume) and /tmp
     # (tmpfs: HOME, yfinance cache). No Linux capabilities are needed (uid 1000, port 8501).
