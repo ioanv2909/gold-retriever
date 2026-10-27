@@ -100,7 +100,7 @@ The same alert is not resent more often than the configured interval (6 hours by
 default; 24 hours for refresh and backup-missing alerts). User changes are always sent.
 Emails never contain keys, passwords or amounts.
 
-Calendar emails go to each user's own address, set in Settings, tab Calendar, together with
+Calendar emails go to each user's own address, set in Settings, tab Notifications, sub-tab Calendar, together with
 the opt-in and how many days ahead (1-30, default 7). The scheduler checks once an hour and
 sends one digest with the events not sent before; `events_notified.json` remembers them. The
 admin must also enable the Calendar event in Notifications.

@@ -1,3 +1,7 @@
+## 0.4.2 — 2026-10-27
+
+- Settings: Calendar and Alerts moved into the Notifications tab too, so every email setting is in one place. Sub-tabs: Weekly report, Calendar, Alerts and, for admins, Email (SMTP). Only the open sub-tab is rendered. Old links (`?tab=calendar`, `?tab=alerts`) open Notifications on the matching sub-tab.
+
 ## 0.4.1 — 2026-10-27
 
 - Settings: the weekly report moved into the Notifications tab (now 📬, so it no longer shares the 🔔 icon with Alerts). Every user sees Notifications with the "Weekly report" sub-tab; admins also get the "Email (SMTP)" sub-tab with the existing mail settings. Only the open sub-tab is rendered. The old link `?tab=weekly` opens Notifications on the weekly report.
