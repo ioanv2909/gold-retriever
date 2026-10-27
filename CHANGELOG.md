@@ -1,3 +1,7 @@
+## 0.3.24 — 2026-10-27
+
+- Automatic page reload now also reacts to new watchlist data (after the daily watchlist refresh, a manual refresh or an added symbol). The watchlist cache is rewritten after every symbol during a refresh, so the page reloads once, when the refresh has finished, not once per symbol.
+
 ## 0.3.23 — 2026-10-27
 
 - Backup: the archive is built from a copy of `data/`, not from the live folder. The app keeps writing while the backup runs, and tar on the live folder warned "file changed as we read it" and could store a half-written file. The app replaces files by rename, so the copy reads every file whole; if a temporary file vanishes during the copy, the copy is retried (up to 3 times). Temporary files are left out and tar errors now fail the backup instead of being ignored. After updating, copy the script to `/usr/local/sbin/` again.

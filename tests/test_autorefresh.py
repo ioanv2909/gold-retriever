@@ -45,3 +45,27 @@ def test_signature_tolerates_bad_json(tmp_path):
     a = tmp_path / "a.json"
     a.write_text("[1, 2]")
     assert autorefresh.signature({}, files=(str(a),)) == (None,)
+
+
+def _watch(path, entries, mtime):
+    path.write_text(json.dumps(entries))
+    os.utime(path, (mtime, mtime))
+
+
+def test_watchlist_signature_waits_for_the_refresh_to_finish(tmp_path):
+    cache_f, status_f = tmp_path / "watchlist_cache.json", tmp_path / "watchlist_status.json"
+    status_f.write_text(json.dumps({"in_progress": False}))
+    _watch(cache_f, {"AAPL": {"updated": "2026-10-26T10:00:00"}, "MSFT": {"updated": "2026-10-26T10:00:01"}}, 1000)
+    c = {}
+    sig = lambda: autorefresh.watchlist_signature(c, path=str(cache_f), status_path=str(status_f))
+    assert sig() == "2026-10-26T10:00:01"
+    # actualizare in curs: fisierul se schimba dupa fiecare simbol, semnatura nu
+    status_f.write_text(json.dumps({"in_progress": True}))
+    _watch(cache_f, {"AAPL": {"updated": "2026-10-27T10:00:00"}, "MSFT": {"updated": "2026-10-26T10:00:01"}}, 2000)
+    assert sig() == "2026-10-26T10:00:01"
+    status_f.write_text(json.dumps({"in_progress": False}))
+    assert sig() == "2026-10-27T10:00:00"
+
+
+def test_watchlist_signature_without_files(tmp_path):
+    assert autorefresh.watchlist_signature({}, path=str(tmp_path / "a.json"), status_path=str(tmp_path / "b.json")) is None

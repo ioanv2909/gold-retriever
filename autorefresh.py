@@ -1,4 +1,4 @@
-"""Reincarcare automata: cand firul din fundal scrie date noi (T212, preturi XTB, dividende),
+"""Reincarcare automata: cand firul din fundal scrie date noi (T212, preturi XTB, dividende, watchlist),
 pagina deschisa (principala sau detaliul unei pozitii) se reincarca singura. Un fragment verifica
 la POLL_SECONDS secunde; fisierele se citesc doar cand li s-a schimbat mtime-ul.
 Setarea e per utilizator, pornita implicit."""
@@ -6,7 +6,8 @@ import os
 
 import streamlit as st
 
-from core import DIVIDENDS_CACHE_FILE, PORTFOLIO_CACHE_FILE, XTB_PRICES_FILE, load_json_file, save_json_file
+from core import (DIVIDENDS_CACHE_FILE, PORTFOLIO_CACHE_FILE, WATCHLIST_CACHE_FILE, WATCHLIST_STATUS_FILE, XTB_PRICES_FILE,
+                  load_json_file, read_status, save_json_file)
 from userctx import UPath
 
 SETTINGS_FILE = UPath("autorefresh.json")
@@ -44,6 +45,31 @@ def signature(cache=None, files=WATCHED):
     return tuple(sig)
 
 
+def watchlist_signature(cache=None, path=WATCHLIST_CACHE_FILE, status_path=WATCHLIST_STATUS_FILE):
+    """Cel mai recent "updated" din watchlist, dar doar dupa ce actualizarea s-a terminat: in timpul ei
+    fisierul se rescrie dupa fiecare simbol si pagina s-ar reincarca de mai multe ori."""
+    cache = {} if cache is None else cache
+    if read_status(status_path).get("in_progress"):
+        return cache.get("_watchlist_last")
+    path = os.fspath(path)
+    try:
+        mtime = os.path.getmtime(path)
+    except OSError:
+        mtime = None
+    hit = cache.get(path)
+    if not hit or hit[0] != mtime:
+        data = load_json_file(path, {}) if mtime is not None else {}
+        stamps = [e.get("updated") for e in data.values() if isinstance(e, dict) and e.get("updated")] if isinstance(data, dict) else []
+        hit = (mtime, max(stamps) if stamps else None)
+        cache[path] = hit
+    cache["_watchlist_last"] = hit[1]
+    return hit[1]
+
+
+def page_signature(cache):
+    return signature(cache) + (watchlist_signature(cache),)
+
+
 def _drop_detail_row():
     # randul se reconstruieste din ?detail= de vederea principala, fara salt in capul paginii
     for k in ("selected_ticker", "selected_row", "_url_ticker"):
@@ -55,7 +81,7 @@ def _drop_detail_row():
 
 @st.fragment(run_every=POLL_SECONDS)
 def _poll(detail):
-    if signature(st.session_state.setdefault(_MTIMES, {})) == st.session_state.get(_SIG):
+    if page_signature(st.session_state.setdefault(_MTIMES, {})) == st.session_state.get(_SIG):
         return
     if detail:
         _drop_detail_row()
@@ -68,7 +94,7 @@ def watch(detail=False):
     st.session_state.pop(KEEP_SCROLL, None)  # neconsumat daca randul n-a mai putut fi refacut
     if not enabled():
         return
-    st.session_state[_SIG] = signature(st.session_state.setdefault(_MTIMES, {}))
+    st.session_state[_SIG] = page_signature(st.session_state.setdefault(_MTIMES, {}))
     _poll(detail)
 
 
