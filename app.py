@@ -924,10 +924,30 @@ def render_main_view():
                 _pl_ser = history_df["market_value"] - history_df["invested"]
                 _pl_d = float(_pl_ser.iloc[-1] - _pl_ser.iloc[0])
                 _inv_avg = float(history_df["invested"].mean())
-                st.metric(
+                _var_col, _spark_col = st.columns([3, 2], vertical_alignment="center")
+                _var_col.metric(
                     t("hist.variation", rng=range_choice), _mask(f"{_pl_d:+,.2f} {display_ccy}"),
                     f"{_pl_d / _inv_avg * 100:+.2f}%" if _inv_avg else None,
                 )
+                with _spark_col:
+                    # mini-grafic: variatia profitului fata de inceputul perioadei
+                    _spark_color = "#21c354" if _pl_d >= 0 else "#ff4b4b"
+                    _spark_fig = go.Figure(go.Scatter(
+                        x=history_df["x"], y=_pl_ser - float(_pl_ser.iloc[0]), mode="lines",
+                        line=dict(color=_spark_color, width=2), fill="tozeroy",
+                        fillcolor="rgba(33,195,84,0.15)" if _pl_d >= 0 else "rgba(255,75,75,0.15)",
+                        hovertemplate="%{x|%d.%m %H:%M}<br>%{y:+,.2f} " + display_ccy + "<extra></extra>",
+                    ))
+                    _spark_fig.update_layout(
+                        height=80, margin=dict(l=0, r=0, t=0, b=0), showlegend=False,
+                        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                    )
+                    _spark_fig.update_xaxes(visible=False, fixedrange=True)
+                    _spark_fig.update_yaxes(visible=False, fixedrange=True)
+                    if privacy.hidden():
+                        _spark_fig.update_traces(hoverinfo="skip", hovertemplate=None)
+                    st.plotly_chart(_spark_fig, width="stretch", key="profit_sparkline",
+                                    config={"displayModeBar": False, "staticPlot": privacy.hidden()})
                 if not _compact:
                     st.caption(t("hist.variation_help"))
                     st.caption(t("hist.points", n=len(history_df), a=f"{history_df['x'].iloc[0]:%d.%m %H:%M}", b=f"{history_df['x'].iloc[-1]:%d.%m %H:%M}"))

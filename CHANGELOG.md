@@ -1,3 +1,7 @@
+## 0.3.29 — 2026-10-27
+
+- Main page: a small chart next to "Profit change over period" shows how the profit moved since the start of the chosen period (green when up, red when down). With hidden amounts it shows only the shape, without values on hover.
+
 ## 0.3.28 — 2026-10-27
 
 - Settings: Trading 212 and XTB import are now one "Brokers" tab (first tab), with a sub-tab per broker, so the settings menu is shorter. Only the open sub-tab is rendered. Old links (`?tab=t212`, `?tab=xtb`) open Brokers on the matching sub-tab.
