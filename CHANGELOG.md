@@ -1,3 +1,7 @@
+## 0.3.17 — 2026-10-27
+
+- Automatic page reload: when the background refresh writes new data (Trading 212 portfolio, XTB prices, dividends), the open main page and the position page reload by themselves, so the sums are up to date without a click. A check runs every 30 seconds and reads a cache file only when its modification time changed; a reload happens only on a new `fetched_at`. On the position page the row is rebuilt from the fresh data without jumping to the top. Automatic reloads do not count as activity for session expiry. Per-user switch in Settings > Updates, on by default.
+
 ## 0.3.16 — 2026-10-26
 
 - Fix (tests): the test suite read the real SMTP settings and could send real security emails (for example "2FA dezactivat" for the test account `ana`) and write `data/notify_state.json`. Tests now use temporary notification files, a real SMTP connection fails the test instead of sending, and any write into `data/` fails the test.

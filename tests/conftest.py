@@ -42,6 +42,12 @@ def _isolated_privacy(tmp_path, monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _isolated_autorefresh(tmp_path, monkeypatch):
+    import autorefresh
+    monkeypatch.setattr(autorefresh, "SETTINGS_FILE", str(tmp_path / "autorefresh.json"))
+
+
+@pytest.fixture(autouse=True)
 def _isolated_users(tmp_path, monkeypatch):
     """Conturile se scriu in data/users.json; in teste merg intr-un director temporar, fara blocari ramase."""
     import auth

@@ -141,6 +141,7 @@ from portfolio_model import portfolio_options, default_currency, build_rows
 from url_tabs import url_tabs
 import mobile
 import privacy
+import autorefresh
 from privacy import mask as _mask
 from history_multi import multi_history_records
 from xtb import instruments as _xtb_instruments
@@ -266,6 +267,7 @@ def _section_updates():
         st.caption(t("side.auto_on", n=interval_minutes))
     else:
         st.caption(t("side.auto_off"))
+    autorefresh.render_settings_toggle()
     div_status = load_dividends_status()
     rat_status = load_ratings_status()
     if st.button(t("btn.refresh_now"), key="upd_now"):
@@ -1016,26 +1018,29 @@ def render_main_view():
 
     detail_ticker = st.query_params.get("detail")
     if detail_ticker and "selected_ticker" not in st.session_state:
+        _scroll = not st.session_state.pop(autorefresh.KEEP_SCROLL, False)
+        if not _scroll:
+            st.session_state["_auto_rerun"] = True  # refacerea randului dupa o reincarcare automata nu e activitate
         match = df[df["ticker"] == detail_ticker]
         if not match.empty:
             st.session_state["selected_ticker"] = match.iloc[0]["ticker"]
             st.session_state["selected_row"] = match.iloc[0].to_dict()
             st.session_state["total_portfolio_value"] = total_portfolio_value
-            st.session_state["scroll_to_top_detail"] = True
+            st.session_state["scroll_to_top_detail"] = _scroll
             st.rerun()
         wrow = _watch_row(detail_ticker)
         if wrow:
             st.session_state["selected_ticker"] = wrow["ticker"]
             st.session_state["selected_row"] = wrow
             st.session_state["total_portfolio_value"] = total_portfolio_value
-            st.session_state["scroll_to_top_detail"] = True
+            st.session_state["scroll_to_top_detail"] = _scroll
             st.rerun()
         xrow = _xtb_detail_row(detail_ticker)
         if xrow:
             st.session_state["selected_ticker"] = xrow["ticker"]
             st.session_state["selected_row"] = xrow
             st.session_state["total_portfolio_value"] = total_portfolio_value
-            st.session_state["scroll_to_top_detail"] = True
+            st.session_state["scroll_to_top_detail"] = _scroll
             st.rerun()
         st.query_params.pop("detail", None)
         st.rerun()
@@ -1378,6 +1383,7 @@ elif _synced is not None:
 mobile.inject_css()
 if "selected_ticker" in st.session_state and "selected_row" in st.session_state:
     render_detail_view(st.session_state["selected_row"], st.session_state.get("total_portfolio_value", 0), api_key_id, api_secret)
+    autorefresh.watch(detail=True)
 else:
     if st.session_state.get("_page") == "settings" and mobile.compact():
         # pe telefon doar aspectul (tema se tine separat in fiecare browser); restul pe desktop
@@ -1404,3 +1410,4 @@ else:
                               ("appearance", t("app.tab"), appearance.render_settings_section)])
         st.stop()
     render_main_view()
+    autorefresh.watch()
