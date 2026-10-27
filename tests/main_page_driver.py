@@ -66,7 +66,10 @@ from streamlit.testing.v1 import AppTest  # noqa: E402
 
 at = AppTest.from_file(os.path.join(work, "app.py"), default_timeout=120)
 if len(sys.argv) > 4:
-    at.query_params["detail"] = sys.argv[4]
+    # "VWCE.DE" -> ?detail=VWCE.DE; "page=settings&tab=weekly" -> parametrii dati
+    for part in sys.argv[4].split("&") if "=" in sys.argv[4] else ["detail=" + sys.argv[4]]:
+        key, _, value = part.partition("=")
+        at.query_params[key] = value
 at.run()
 print("RESULT " + json.dumps({
     "exception": [e.value for e in at.exception],
@@ -77,4 +80,5 @@ print("RESULT " + json.dumps({
     "columns": [[str(c) for c in d.value.columns] for d in at.dataframe],
     "pills": [list(p.options) for p in at.get("button_group")],
     "selected": at.session_state["selected_ticker"] if "selected_ticker" in at.session_state else None,
+    "checkboxes": [c.label for c in at.checkbox],
 }, ensure_ascii=False))

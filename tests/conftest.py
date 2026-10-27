@@ -171,3 +171,10 @@ def _isolated_symbol_resolver(tmp_path, monkeypatch):
     import symbol_resolver
     monkeypatch.setattr(symbol_resolver, "AUTO_MAP_FILE", str(tmp_path / "yahoo_auto_map.json"))
     monkeypatch.setattr(symbol_resolver, "_cache", {"mtime": None, "data": {}})
+
+
+@pytest.fixture(autouse=True)
+def _isolated_weekly_report(tmp_path, monkeypatch):
+    import weekly_report
+    monkeypatch.setattr(weekly_report, "PREFS_FILE", str(tmp_path / "weekly_report.json"))
+    monkeypatch.setattr(weekly_report, "STATE_FILE", str(tmp_path / "weekly_report_state.json"))

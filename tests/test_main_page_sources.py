@@ -67,3 +67,8 @@ def test_no_source_keeps_the_no_data_message(tmp_path):
 def test_xtb_detail_link_opens_without_t212(tmp_path):
     out = _run(tmp_path, "xtb_only", detail="VWCE.DE")
     assert out["selected"] == "VWCE.DE"
+
+
+def test_settings_has_the_weekly_report_tab(tmp_path):
+    out = _run(tmp_path, "xtb_only", detail="page=settings&tab=weekly")
+    assert "Trimite raportul săptămânal" in out["checkboxes"]

@@ -1,3 +1,8 @@
+## 0.3.26 — 2026-10-27
+
+- Weekly email report, per user, off by default (Settings > Weekly report: day and hour, default Saturday after 09:00). It contains the portfolio value now and 7 days ago (all portfolios, from the value history), the result of the week without deposits, net deposits, total unrealized P/L, the 3 biggest gains and losses over 7 days (all T212 and XTB positions, one Yahoo request), Trading 212 dividends received since the last report and the events of the next 7 days. The settings page can preview it and send a test report. It goes to the account's email address, in the user's language, at most once a week.
+- Notifications: a notification type added after the admin saved the settings (here "Weekly report") is on by default instead of silently off; the admin can still turn it off.
+
 ## 0.3.25 — 2026-10-27
 
 - Watchlist prices every 15 minutes. Between the daily full recalculation (name, scores, risk), a light job fetches only the last price of all watchlist symbols in one Yahoo request and writes it with its own time (`price_updated`); the date of the full recalculation stays unchanged, so scores are still recalculated once a day. It does not run while the full recalculation runs; new symbols keep the full calculation. The page reloads by itself when the prices change.

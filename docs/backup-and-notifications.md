@@ -94,6 +94,7 @@ like the Trading 212 keys.
 | Log errors | A new error pattern appears in the application log (not seen in the last 24 hours); at most one email every 30 minutes |
 | Position alerts | A price alert, score alert or concentration alert set by the user fires (sent to the user, not the admins) |
 | Calendar | Earnings, ex-dividend or dividend payment dates for held positions within the next N days (sent to the user, not the admins) |
+| Weekly report | Once a week, on the day and after the hour the user chose in Settings > Weekly report (off by default): portfolio value now and 7 days ago, the week's result without deposits, biggest gains and losses over 7 days, Trading 212 dividends received since the last report, events of the next 7 days. Sent to the user. A notification type added after the admin saved the settings is on by default; the admin can turn it off |
 
 The same alert is not resent more often than the configured interval (6 hours by
 default; 24 hours for refresh and backup-missing alerts). User changes are always sent.

@@ -17,7 +17,9 @@ MAIL_FILE = os.path.join(DATA_ROOT, "mail.json")
 STATE_FILE = os.path.join(DATA_ROOT, "notify_state.json")
 USERS_FILE = os.path.join(DATA_ROOT, "users.json")
 
-EVENTS = ("backup", "refresh", "xtb_import", "security", "events", "positions", "logs", "uptime")
+EVENTS = ("backup", "refresh", "xtb_import", "security", "events", "positions", "logs", "uptime", "weekly")
+# evenimentele aparute dupa ce adminul a salvat setarile sunt pornite implicit (altfel lista salvata le-ar opri tacut)
+_KNOWN_BEFORE_V0_3_26 = ("backup", "refresh", "xtb_import", "security", "events", "positions", "logs", "uptime")
 DEFAULTS = {
     "host": "", "port": 587, "security": "starttls",
     "user": "", "password": "", "sender": "",
@@ -55,6 +57,8 @@ def load_settings():
     saved = _read(MAIL_FILE, {})
     if isinstance(saved, dict):
         cfg.update({k: saved[k] for k in DEFAULTS if k in saved})
+        known = saved.get("events_known") or _KNOWN_BEFORE_V0_3_26
+        cfg["events"] = list(cfg["events"]) + [e for e in EVENTS if e not in known and e not in cfg["events"]]
     return cfg
 
 
@@ -66,7 +70,7 @@ def save_settings(new):
     if cfg["security"] not in ("starttls", "ssl", "none"):
         cfg["security"] = "starttls"
     cfg["events"] = [e for e in cfg["events"] if e in EVENTS]
-    _write(MAIL_FILE, cfg)
+    _write(MAIL_FILE, dict(cfg, events_known=list(EVENTS)))
     return cfg
 
 

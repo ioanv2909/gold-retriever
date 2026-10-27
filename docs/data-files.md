@@ -43,6 +43,7 @@ Everything is JSON except `auth_secret`. Do not commit this folder:
 | `strategy_profile.json` | Investor profile for the strategy lenses (which lenses count towards convergence) |
 | `privacy.json` | Privacy setting: start the session with amounts hidden, separately on the phone and the desktop |
 | `events_prefs.json`, `events_notified.json` | Calendar email opt-in and days ahead; events already emailed |
+| `weekly_report.json`, `weekly_report_state.json` | Weekly report opt-in, day and hour; last week sent and the dividend totals at that time (for "received since the last report") |
 | `t212_fills.json` | Executed orders used to rebuild history |
 | `t212_first_dates.json` | First purchase dates |
 | `t212_flows.json` | Deposits and withdrawals (for XIRR) |

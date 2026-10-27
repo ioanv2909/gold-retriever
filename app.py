@@ -1415,10 +1415,12 @@ else:
         from settings_page import render_settings
         from events_ui import render_settings_section as _events_settings
         from position_alerts_ui import render_settings_section as _alerts_settings
+        from weekly_report_ui import render_settings_section as _weekly_settings
         render_settings(_me, [("updates", t("side.updates"), _section_updates),
                               ("xtb", t("side.xtb_import"), _section_xtb_import),
                               ("calendar", t("set.events"), lambda: _events_settings(_me)),
                               ("alerts", t("set.alerts"), lambda: _alerts_settings(_me)),
+                              ("weekly", t("wr.tab"), lambda: _weekly_settings(_me)),
                               ("privacy", t("priv.tab"), privacy.render_settings_section),
                               ("appearance", t("app.tab"), appearance.render_settings_section)])
         st.stop()

@@ -4,6 +4,7 @@ import events
 import exposure
 import strategies
 import symbol_resolver
+import weekly_report
 import position_alerts
 from etf import compute_etf_score, extract_etf_metrics, get_instrument
 from risk import extract_risk_metrics, compute_risk
@@ -427,7 +428,7 @@ def xtb_positions_for_context():
 def start_background_scheduler(user=None):
     def run_loop():
         last_core = last_div = last_rat = last_q = last_m = last_w = last_j = last_x = last_h = 0.0
-        last_hc = last_ev = last_evn = last_pa = last_ex = last_st = last_sym = last_wp = 0.0
+        last_hc = last_ev = last_evn = last_pa = last_ex = last_st = last_sym = last_wp = last_wr = 0.0
         while True:
             cfg = load_config()
             key_id, secret = cfg.get("api_key_id"), cfg.get("api_secret")
@@ -517,6 +518,13 @@ def start_background_scheduler(user=None):
                     events.notify_upcoming(all_tickers, user)
                 except Exception as e:
                     print(f"[events] {e}", flush=True)
+
+            if (time.time() - last_wr) >= 900:
+                last_wr = time.time()
+                try:
+                    weekly_report.maybe_send(user)
+                except Exception as e:
+                    print(f"[weekly] {e}", flush=True)
 
             if (time.time() - last_pa) >= position_alerts.EVAL_INTERVAL:
                 last_pa = time.time()
