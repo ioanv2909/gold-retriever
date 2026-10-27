@@ -15,19 +15,20 @@ port 8501, uid 1000). Public repo: ioanv2909/gold-retriever, branch main.
 - New UI strings go in `i18n.py` with both RO and EN entries.
 - CHANGELOG: never leave an "Unreleased" section (Settings > About shows the file as is). Put the entry under
   `## X.Y.Z — date` for the version the commit will get: last `v*` tag patch + commits since the tag + 1.
-- Run tests before committing: `.venv/bin/python -m pytest -q` (507 tests, also run in CI).
+- Run tests before committing: `.venv/bin/python -m pytest -q` (512 tests, also run in CI).
 - Commit, `git push` and `./tools/deploy.sh` are pre-approved once the tests pass: do them without asking,
   then report the result (version, health check, log errors). Still ask before anything that deletes or
   changes data (`rm`, `data/`, git history rewrites) and before other `docker` commands.
 
 ## Deploy
 `./tools/deploy.sh` rebuilds and restarts the container and writes `build_info.json`
-(version = last `v*` tag patch + commits since the tag; the 0.3 series starts at tag `v0.3.0`).
+(version = last `v*` tag patch + commits since the tag; the 0.4 series starts at tag `v0.4.0`, put on the
+commit with message `v0.4.0: ...`; a new minor series is started the same way).
 The container is hardened (read-only filesystem, no capabilities, pids/memory limits): the app may write only
 in `data/` or `/tmp` (tmpfs, 64 MB, also HOME). New code that writes elsewhere fails in production.
 
 ## Layout
-- `app.py` main view; `detail_view.py` per-position page; `settings_page.py` settings;
+- `app.py` entry point (language, login, routing); `main_view.py` main page; `history_ui.py` value/profit charts; `cash_ui.py` cash button; `positions_data.py` position columns (no UI); `positions_table_ui.py` positions table; `watchlist_ui.py` Watchlist tab; `navigation.py` open position from table/URL; `updates_ui.py`, `xtb_import_ui.py` Settings > Updates / XTB import; `lang_prefs.py` saved language; `detail_view.py` per-position page; `settings_page.py` settings;
   `core.py` shared logic and `CHART_PERIODS`; `xtb.py`, `xtb_prices.py` XTB import;
   `notify.py`, `notify_ui.py`, `alerts.py` email notifications; `logwatch.py` log watchdog (also keeps the last 1000 log lines in memory); `log_ui.py` Settings > Log tab (admin); `health.py`, `health_ui.py` status page; `backup_ui.py` Settings > Backup tab (admin: on-demand backup via a request file + root cron, restore steps); `uptime.py` + `tools/uptime_check.py` host watchdog (cron of user ioanv, every 5 min); `events.py`, `events_ui.py` events calendar; `weekly_report.py`, `weekly_report_ui.py` weekly email report (per user, Settings > Weekly report); `position_alerts.py`, `position_alerts_ui.py` price/score/concentration alerts; `background.py` refresh loop;
   `auth.py`, `users.py`, `userctx.py` multi-user; `presence.py`, `presence_ui.py` online users (admin) and forced sign-out; `known_devices.py` new device alert at sign-in; `twofa.py`, `twofa_ui.py` two-step sign-in (TOTP, recovery codes, admin policy; storage in `users.py`); `session_policy.py`, `session_policy_ui.py` session expiry (idle/absolute limits, admin setting, activity registry); `checklist.py` quality/risk scoring; `dividend_score.py` dividend score; `analysts.py`, `analysts_ui.py` analyst data; `strategies.py`, `strategies_ui.py` strategy lenses (Strategies tab + section on the position page); `signals.py` sentiment/event data (ratings, insiders, news keywords, earnings, SEC EDGAR 8-K, market context); `exposure.py`, `exposure_ui.py` sector/country/currency exposure; `rotation.py`, `factors.py`, `portfolio_lenses_ui.py` sector rotation (RRG) and factor exposure, views of the Exposure tab; `compare.py`, `compare_ui.py` ticker comparison; `symbol_resolver.py` automatic fix of Yahoo symbols with no data (search by base symbol, then ISIN; shared `yahoo_auto_map.json`); `mobile.py` phone version (compact mode); `privacy.py` hidden amounts; `autorefresh.py` page reload on new data (per-user switch); `upload_guard.py` checks on uploaded files (size, xlsx structure, zip bomb); `appearance.py` hidden Streamlit top bar, theme (Settings), print (user menu); `i18n.py` strings; `url_tabs.py` tabs bound to `?tab=` (main page and settings).

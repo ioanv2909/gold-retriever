@@ -26,7 +26,12 @@ service of its own; it only calls the Trading 212 API and public market data
 ## Modules
 
 UI
-- `app.py` - entry point, login gate, header, main view (summary, chart, positions, watchlist).
+- `app.py` - entry point: language, login gate, routing (main page, position page, settings).
+- `main_view.py` - main page: header, summary metrics, portfolio/currency choice, tabs.
+- `history_ui.py`, `cash_ui.py` - value-over-time chart with the profit change chart; cash button.
+- `positions_data.py` (no UI), `positions_table_ui.py` - computed position columns; positions table.
+- `watchlist_ui.py` - Watchlist tab. `navigation.py` - open position from table selection, `?detail=`, `?page=`.
+- `updates_ui.py`, `xtb_import_ui.py` - Settings > Updates and XTB import. `lang_prefs.py` - saved language.
 - `auth.py` - login form, user menu, user management page.
 - `settings_page.py` - Settings tabs: Trading 212 keys, Updates, XTB import, Users (admin), About.
 - `detail_view.py` - per-position analysis page.

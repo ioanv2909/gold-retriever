@@ -1,3 +1,7 @@
+## 0.4.0 — 2026-10-27
+
+- Code: `app.py` (1,480 lines, one 700-line function for the main page) is split into modules: `main_view.py` (main page in small functions), `history_ui.py`, `cash_ui.py`, `positions_data.py`, `positions_table_ui.py`, `watchlist_ui.py`, `navigation.py`, `updates_ui.py`, `xtb_import_ui.py` and `lang_prefs.py`. `app.py` keeps only the language, the login and the routing (84 lines). Nothing changes on screen: the main page, the settings and the position page render the same as before in all checked cases. The position calculations (`positions_data.py`) now have their own tests.
+
 ## 0.3.32 — 2026-10-27
 
 - Main page, profit change chart: hovering shows a vertical line with one label (date, hour and profit change), like the market value chart.
