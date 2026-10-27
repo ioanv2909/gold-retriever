@@ -1,3 +1,7 @@
+## 0.3.19 — 2026-10-27
+
+- Backup: optional tag in the archive name, before the extension (`data-YYYY-MM-DD_HHMMSS-<tag>.tar.gz.gpg`), read from `BACKUP_TAG` or the git-ignored file `backup-tag` next to `backup-key.asc`. Only letters, digits, `_` and `-` (at most 32); an invalid tag fails the backup with an alert. After updating, copy the script to `/usr/local/sbin/` again.
+
 ## 0.3.18 — 2026-10-27
 
 - Times were shown in UTC (for example "Positions/cash updated" two hours behind in Romania): the container had no time zone. `docker-compose.yml` now sets `TZ`, `Europe/Bucharest` by default; another zone can be set with `TZ=...` in `.env`. Affects the times on the page, in the log and in emails.

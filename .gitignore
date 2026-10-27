@@ -12,3 +12,4 @@ docker-compose.override.yml
 build_info.json
 .venv/
 backup-key.asc
+backup-tag

@@ -8,6 +8,8 @@ APP=${APP:-/DATA/AppData/gold-retriever}
 SRC=${SRC:-$APP/data}
 DEST=${DEST:-/mnt/goldretriever}
 KEY=${BACKUP_KEY:-$APP/backup-key.asc}
+# eticheta optionala adaugata la numele arhivei (data-<ts>-<tag>.tar.gz[.gpg]): BACKUP_TAG sau fisierul $APP/backup-tag
+TAG_FILE=${BACKUP_TAG_FILE:-$APP/backup-tag}
 KEEP=14
 
 alert() {
@@ -37,10 +39,19 @@ if [ -e "$KEY" ]; then
     encrypt=1
 fi
 
+tag=${BACKUP_TAG:-}
+if [ -z "$tag" ] && [ -e "$TAG_FILE" ]; then
+    tag=$(tr -d '[:space:]' < "$TAG_FILE")
+fi
+if [ -n "$tag" ]; then
+    [[ "$tag" =~ ^[A-Za-z0-9_-]{1,32}$ ]] || fail "eticheta backup invalida (doar litere, cifre, _ si -, max 32)"
+    tag="-$tag"
+fi
+
 umask 077
 ts=$(date +%Y-%m-%d_%H%M%S)
 work=$(mktemp -d)
-plain="$work/data-$ts.tar.gz"
+plain="$work/data-$ts$tag.tar.gz"
 
 # cod 1 = "fisier schimbat in timpul citirii": avertisment, nu eroare
 rc=0
@@ -49,7 +60,7 @@ tar --exclude='.*.tmp' -czf "$plain" -C "$(dirname "$SRC")" "$(basename "$SRC")"
 tar -tzf "$plain" > /dev/null   # verifica arhiva inainte de criptare / copiere
 
 if [ "$encrypt" = 1 ]; then
-    out="$DEST/data-$ts.tar.gz.gpg"
+    out="$DEST/data-$ts$tag.tar.gz.gpg"
     mkdir "$work/gnupg"
     gpg --batch --yes --no-tty --quiet --homedir "$work/gnupg" --trust-model always \
         --recipient-file "$KEY" --compress-algo none --output "$out.part" --encrypt "$plain" \
@@ -59,7 +70,7 @@ if [ "$encrypt" = 1 ]; then
     packets=$(gpg --batch --no-tty --homedir "$work/gnupg" --list-packets "$out.part" 2>/dev/null || true)
     grep -q "pubkey enc packet" <<< "$packets" || fail "arhiva criptata nu se poate citi"
 else
-    out="$DEST/data-$ts.tar.gz"
+    out="$DEST/data-$ts$tag.tar.gz"
     cp "$plain" "$out.part"
     echo "$(date -Is) ATENTIE: backup necriptat (lipseste $KEY)" >&2
 fi

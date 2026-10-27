@@ -105,3 +105,21 @@ def test_status_page_flags_plain_backups(tmp_path, monkeypatch, status, level):
     monkeypatch.setattr(alerts, "BACKUP_STATUS_FILE", str(p))
     row = health_ui._backup_row()
     assert list(row.values())[1].startswith(level)
+
+
+def test_tag_from_file_is_added_before_the_extension(env):
+    (env["tmp"] / "app" / "backup-tag").write_text("2xAB\n")
+    r = _run(env)
+    assert r.returncode == 0, r.stderr
+    files = os.listdir(env["dest"])
+    assert len(files) == 1 and files[0].startswith("data-") and files[0].endswith("-2xAB.tar.gz")
+
+
+def test_tag_env_overrides_file_and_bad_tag_fails(env):
+    (env["tmp"] / "app" / "backup-tag").write_text("fromfile")
+    env["env"]["BACKUP_TAG"] = "fromenv"
+    assert _run(env).returncode == 0
+    assert os.listdir(env["dest"])[0].endswith("-fromenv.tar.gz")
+    env["env"]["BACKUP_TAG"] = "../x"
+    r = _run(env)
+    assert r.returncode != 0 and "eticheta" in r.stderr

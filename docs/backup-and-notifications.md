@@ -43,6 +43,11 @@ hashes and 2FA secrets.
    Status shows the backup as "Not encrypted". Older unencrypted archives on the share are
    removed by the 14-archive rotation.
 
+Optional tag in the archive name: put a short label (letters, digits, `_`, `-`, at most 32) in
+`/DATA/AppData/gold-retriever/backup-tag` (git-ignored) or set `BACKUP_TAG=`; archives are then named
+`data-YYYY-MM-DD_HHMMSS-<tag>.tar.gz[.gpg]`. Rotation and the status page work with or without it.
+The name is visible on the share and in the log, so do not put secrets in it.
+
 Test a failure without touching anything: `DEST=/mnt/does-not-exist /usr/local/sbin/backup-goldretriever.sh`
 
 ### Restore
