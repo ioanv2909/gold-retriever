@@ -129,7 +129,7 @@ Settings, tab Status (admin) shows the state of Yahoo Finance, justETF, Trading 
 backup, and of every background job, with a green / yellow / red / gray indicator. "Test now" makes one
 real request to each service; for SMTP it only connects and logs in.
 
-Position alerts are set per user in Settings, tab Alerts, and checked every 15 minutes:
+Position alerts are set per user in Settings, tab Notifications, sub-tab Alerts, and checked every 15 minutes:
 
 - **Price:** rises to or above / falls to or below a price, in the instrument currency (GBX shown
   as GBP). Fires once, then waits until re-armed. Can also be added from the position page.
