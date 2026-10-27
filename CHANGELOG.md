@@ -1,3 +1,8 @@
+## 0.3.20 — 2026-10-27
+
+- New Settings > Backup tab (admins only): last successful backup (time, encrypted or not, archive name), a "Back up now" button and the restore procedure (testing an encrypted archive, full restore, where the keys must live). The button writes a request into `data/backup_request.json`; a root cron line on the host (`backup-goldretriever.sh --if-requested`, every minute) runs the backup and reports `done` or `failed`, shown live on the page. If the request is not picked up within 3 minutes the page shows the missing cron line.
+- Backup script: a lock prevents two backups at the same time; status files in `data/` are written as a new file and renamed, so root never follows a symlink left there. After updating, copy the script to `/usr/local/sbin/` again.
+
 ## 0.3.19 — 2026-10-27
 
 - Backup: optional tag in the archive name, before the extension (`data-YYYY-MM-DD_HHMMSS-<tag>.tar.gz.gpg`), read from `BACKUP_TAG` or the git-ignored file `backup-tag` next to `backup-key.asc`. Only letters, digits, `_` and `-` (at most 32); an invalid tag fails the backup with an alert. After updating, copy the script to `/usr/local/sbin/` again.

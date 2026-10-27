@@ -2,6 +2,8 @@
 # Backup zilnic pentru data/ (GoldRetriever) pe share-ul Synology montat in /mnt/goldretriever.
 # Cu o cheie publica GPG in $KEY, arhiva se cripteaza (data-*.tar.gz.gpg) inainte sa ajunga pe share;
 # cheia privata nu sta pe server. Fara cheie, arhiva ramane necriptata (data-*.tar.gz) si statusul o marcheaza.
+# Cu --if-requested (cron de root, la fiecare minut) ruleaza doar daca un admin a cerut backup din
+# Setari -> Backup (data/backup_request.json cu "state": "requested"); altfel iese fara sa scrie nimic.
 set -euo pipefail
 
 APP=${APP:-/DATA/AppData/gold-retriever}
@@ -11,22 +13,51 @@ KEY=${BACKUP_KEY:-$APP/backup-key.asc}
 # eticheta optionala adaugata la numele arhivei (data-<ts>-<tag>.tar.gz[.gpg]): BACKUP_TAG sau fisierul $APP/backup-tag
 TAG_FILE=${BACKUP_TAG_FILE:-$APP/backup-tag}
 KEEP=14
+REQ="$SRC/backup_request.json"
+requested=0
 
 alert() {
     [ "${BACKUP_NO_ALERT:-}" = 1 ] && return 0
     python3 "$APP/tools/notify_cli.py" backup "Backup esuat" "$1" backup-fail > /dev/null 2>&1 || true
 }
 
+# scrie in data/ printr-un fisier nou + mv: root nu urmeaza un symlink lasat acolo de aplicatie
+write_data() {
+    local tmp
+    tmp=$(mktemp "$SRC/.$1.XXXXXX.tmp")
+    printf '%s\n' "$2" > "$tmp"
+    chown --reference="$SRC" "$tmp" 2>/dev/null || true
+    chmod 600 "$tmp"
+    mv -f "$tmp" "$SRC/$1"
+}
+
+request_state() {
+    [ "$requested" = 1 ] || return 0
+    write_data backup_request.json "$(printf '{"state": "%s", "ts": %s, "detail": "%s"}' "$1" "$(date +%s)" "$(tr -d '"\\\n' <<< "$2")")"
+}
+
 fail() {
     echo "$(date -Is) EROARE: $1" >&2
+    request_state failed "$1" || true
     alert "$1 ($(hostname), $(date -Is))"
     exit 1
 }
 trap 'fail "eroare neasteptata la linia $LINENO"' ERR
 
 work=""
-cleanup() { [ -n "$work" ] && rm -rf "$work"; }
+cleanup() { if [ -n "$work" ]; then rm -rf "$work"; fi; }
 trap cleanup EXIT
+
+# un singur backup odata (cron-ul de noapte si cererile din aplicatie); lock pe director, fara fisier nou
+exec 9< "$SRC"
+if [ "${1:-}" = "--if-requested" ]; then
+    grep -qs '"state": *"requested"' "$REQ" || exit 0
+    flock -n 9 || exit 0
+    requested=1
+    request_state running ""
+else
+    flock 9
+fi
 
 if [ "${BACKUP_SKIP_MOUNT_CHECK:-}" != 1 ]; then
     mountpoint -q "$DEST" || fail "$DEST nu este montat"
@@ -84,7 +115,7 @@ find "$DEST" -maxdepth 1 -type f \( -name 'data-*.tar.gz' -o -name 'data-*.tar.g
 # marcaj pentru detectia "backup lipsa" si "backup necriptat" (Setari -> Stare)
 enc_json=false
 [ "$encrypt" = 1 ] && enc_json=true
-printf '{"ts": %s, "file": "%s", "encrypted": %s}\n' "$(date +%s)" "$(basename "$out")" "$enc_json" > "$SRC/backup_status.json"
-chown --reference="$SRC" "$SRC/backup_status.json" 2>/dev/null || true
+write_data backup_status.json "$(printf '{"ts": %s, "file": "%s", "encrypted": %s}' "$(date +%s)" "$(basename "$out")" "$enc_json")"
+request_state done "$(basename "$out")"
 
 echo "$(date -Is) ok $out ($(du -h "$out" | cut -f1))"

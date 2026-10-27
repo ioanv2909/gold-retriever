@@ -158,3 +158,9 @@ def _no_writes_to_data(monkeypatch):
     monkeypatch.setattr(builtins, "open", guarded_open)
     monkeypatch.setattr(os, "replace", guarded_replace)
     monkeypatch.setattr(tempfile, "mkstemp", guarded_mkstemp)
+
+
+@pytest.fixture(autouse=True)
+def _isolated_backup_request(tmp_path, monkeypatch):
+    import backup_ui
+    monkeypatch.setattr(backup_ui, "REQUEST_FILE", str(tmp_path / "backup_request.json"))

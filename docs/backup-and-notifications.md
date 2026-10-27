@@ -48,6 +48,17 @@ Optional tag in the archive name: put a short label (letters, digits, `_`, `-`, 
 `data-YYYY-MM-DD_HHMMSS-<tag>.tar.gz[.gpg]`. Rotation and the status page work with or without it.
 The name is visible on the share and in the log, so do not put secrets in it.
 
+On-demand backup: admins have a **Settings > Backup** tab with the last backup, a "Back up now" button
+and the restore procedure. The container cannot run the script (no root, no access to the share), so the
+button writes `data/backup_request.json` and a root cron line on the host picks it up within a minute:
+
+    * * * * * /usr/local/sbin/backup-goldretriever.sh --if-requested >> /var/log/backup-goldretriever.log 2>&1
+
+With `--if-requested` the script exits without output unless a request is waiting; it then writes
+`running`, and `done` (archive name) or `failed` (error) back into the request file. A lock on `data/`
+keeps the nightly run and an on-demand run from overlapping. Status files in `data/` are written as a new
+file and renamed, so a symlink left there is replaced, not followed.
+
 Test a failure without touching anything: `DEST=/mnt/does-not-exist /usr/local/sbin/backup-goldretriever.sh`
 
 ### Restore

@@ -123,3 +123,45 @@ def test_tag_env_overrides_file_and_bad_tag_fails(env):
     env["env"]["BACKUP_TAG"] = "../x"
     r = _run(env)
     assert r.returncode != 0 and "eticheta" in r.stderr
+
+
+def _run_req(e):
+    return subprocess.run(["bash", SCRIPT, "--if-requested"], env=e["env"], capture_output=True, text=True, timeout=60)
+
+
+def test_if_requested_does_nothing_without_a_request(env):
+    r = _run_req(env)
+    assert r.returncode == 0 and r.stdout == "" and r.stderr == ""
+    assert os.listdir(env["dest"]) == []
+    assert not (env["src"] / "backup_status.json").exists()
+
+
+def test_if_requested_runs_and_reports_done(env):
+    import json
+    (env["src"] / "backup_request.json").write_text('{"state": "requested", "ts": 1, "by": "admin"}')
+    r = _run_req(env)
+    assert r.returncode == 0, r.stderr
+    files = os.listdir(env["dest"])
+    assert len(files) == 1
+    req = json.loads((env["src"] / "backup_request.json").read_text())
+    assert req["state"] == "done" and req["detail"] == files[0]
+    # a doua rulare nu mai face nimic: cererea a fost preluata
+    assert _run_req(env).returncode == 0 and len(os.listdir(env["dest"])) == 1
+
+
+def test_if_requested_reports_failure(env):
+    import json
+    (env["src"] / "backup_request.json").write_text('{"state": "requested", "ts": 1}')
+    env["env"]["BACKUP_TAG"] = "bad tag"
+    assert _run_req(env).returncode != 0
+    req = json.loads((env["src"] / "backup_request.json").read_text())
+    assert req["state"] == "failed" and "eticheta" in req["detail"]
+
+
+def test_status_file_replaces_a_symlink_instead_of_following_it(env):
+    victim = env["tmp"] / "victim"
+    victim.write_text("keep")
+    os.symlink(victim, env["src"] / "backup_status.json")
+    assert _run(env).returncode == 0
+    assert victim.read_text() == "keep"
+    assert not os.path.islink(env["src"] / "backup_status.json")
