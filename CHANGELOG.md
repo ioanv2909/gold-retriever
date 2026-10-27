@@ -1,3 +1,7 @@
+## 0.3.31 — 2026-10-27
+
+- Main page, profit change chart: the time axis labels adapt to the spacing (hours, days, months or years), so "Max" no longer shows "01.01" twice; the hover shows the year; the "Profit" axis title sits further from the chart.
+
 ## 0.3.30 — 2026-10-27
 
 - Main page: the profit change chart turns red (line and fill) wherever the profit falls below the start of the period and stays green above it. It now has a time axis and a money axis (in the display currency), with a zero line; with hidden amounts the money values are hidden.

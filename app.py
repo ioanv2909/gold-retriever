@@ -284,15 +284,21 @@ def _profit_sparkline(x, y, ccy):
         seg = [v if v * sign >= 0 else None for v in py_]
         fig.add_trace(go.Scatter(
             x=px_, y=seg, mode="lines", line=dict(color=color, width=2), fill="tozeroy", fillcolor=fill,
-            connectgaps=False, hovertemplate="%{x|%d.%m %H:%M}<br>%{y:+,.2f} " + ccy + "<extra></extra>",
+            connectgaps=False, hovertemplate="%{x|%d.%m.%Y %H:%M}<br>%{y:+,.2f} " + ccy + "<extra></extra>",
         ))
     fig.update_layout(
-        height=170, margin=dict(l=0, r=0, t=4, b=0), showlegend=False, font=dict(size=10),
+        height=170, margin=dict(l=6, r=0, t=4, b=0), showlegend=False, font=dict(size=10),
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
     )
-    fig.update_xaxes(title_text=t("hist.spark_x"), title_standoff=4, fixedrange=True, nticks=4,
-                     tickformat="%d.%m\n%H:%M", showgrid=False)
-    fig.update_yaxes(title_text=t("hist.spark_y", ccy=ccy), title_standoff=4, fixedrange=True, nticks=4,
+    # formatul etichetelor de timp dupa pasul dintre ele: ore, zile, luni sau ani (fara 01.01 repetat la "Max")
+    fig.update_xaxes(title_text=t("hist.spark_x"), title_standoff=4, fixedrange=True, nticks=4, showgrid=False,
+                     tickformatstops=[
+                         dict(dtickrange=[None, 86400000], value="%H:%M"),
+                         dict(dtickrange=[86400000, "M1"], value="%d.%m"),
+                         dict(dtickrange=["M1", "M12"], value="%m.%Y"),
+                         dict(dtickrange=["M12", None], value="%Y"),
+                     ])
+    fig.update_yaxes(title_text=t("hist.spark_y", ccy=ccy), title_standoff=14, fixedrange=True, nticks=4,
                      tickformat="+,.0f", zeroline=True, zerolinecolor="rgba(128,128,128,0.6)")
     if privacy.hidden():
         fig.update_yaxes(showticklabels=False)
