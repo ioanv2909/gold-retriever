@@ -1260,6 +1260,7 @@ def render_main_view():
                     item = watchlist_items_by_symbol.get(symbol, {})
                     entry = watchlist_cache.get(symbol, {})
                     updated = entry.get("updated") or ""
+                    price_at = max(filter(None, (entry.get("updated"), entry.get("price_updated"))), default="")
                     watchlist_rows.append({
                         "Simbol": symbol,
                         "ISIN": item.get("isin") or "—",
@@ -1271,9 +1272,13 @@ def render_main_view():
                         "Scor risc": format_watch_score(entry, "risk_total", "risk_coverage"),
                         "Rating risc": entry.get("risk_rating") or "n/a",
                         "Actualizat": updated[:10] if updated else "n/a",
+                        "Preț la": price_at[11:16] if price_at[:10] == datetime.now().strftime("%Y-%m-%d") else (price_at[:10] or "n/a"),
                     })
 
                 watchlist_df = pd.DataFrame(watchlist_rows)
+                _wl_help = {col(nume): text for nume, text in COLUMN_HELP.items() if nume in watchlist_df.columns}
+                _wl_help.update({col("Actualizat"): t("wl.help_updated"), col("Preț la"): t("wl.help_price_at")})
+                watchlist_df = watchlist_df.rename(columns=col)
 
                 st.session_state["_watch_rows"] = [
                     {
@@ -1290,7 +1295,7 @@ def render_main_view():
                     watchlist_df,
                     width="stretch",
                     hide_index=True,
-                    column_config={nume: st.column_config.Column(nume, help=text) for nume, text in COLUMN_HELP.items() if nume in watchlist_df.columns},
+                    column_config={nume: st.column_config.Column(nume, help=text) for nume, text in _wl_help.items()},
                     on_select="rerun",
                     selection_mode="single-row",
                     key=f"watchlist_table_{st.session_state.get('table_nonce', 0)}",

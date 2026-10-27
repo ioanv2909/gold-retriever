@@ -554,6 +554,10 @@ _T = {
     "wl.remove_label": {"RO": "Șterge din watchlist", "EN": "Remove from watchlist"},
     "wl.remove": {"RO": "Șterge", "EN": "Delete"},
     "wl.refresh": {"RO": "Actualizează acum", "EN": "Refresh now"},
+    "wl.help_updated": {"RO": "Data ultimei recalculări complete (nume, scoruri, risc); se face o dată pe zi.",
+                        "EN": "Date of the last full recalculation (name, scores, risk); done once a day."},
+    "wl.help_price_at": {"RO": "Ora ultimului preț (se actualizează la 15 minute); data, dacă prețul nu e de azi.",
+                         "EN": "Time of the last price (updated every 15 minutes); the date if the price is not from today."},
     "wl.started": {"RO": "Actualizare pornită în fundal; reîncarcă pagina peste un minut.", "EN": "Update started in the background; reload the page in a minute."},
     "wl.empty": {"RO": "Watchlist-ul e gol. Adaugă un simbol de pe Yahoo Finance.", "EN": "The watchlist is empty. Add a symbol from Yahoo Finance."},
     "xtb.import": {"RO": "Importă", "EN": "Import"},
@@ -1056,6 +1060,9 @@ _COLS = {
     "Div/Inv %": "Div/Inv %", "Rand. total %": "Total ret. %", "S&P500 %": "S&P500 %",
     "Zile": "Days", "PEG": "PEG", "vs S&P500 pp": "vs S&P500 pp", "Recomandare": "Analysts",
     "Scor TL": "TL score", "Rating": "Rating", "Scor risc": "Risk score", "Scor div.": "Div. score", "Țintă %": "Target %",
+    # watchlist
+    "Simbol": "Symbol", "Preț": "Price", "Rating TL": "TL rating", "Rating risc": "Risk rating",
+    "Actualizat": "Scores updated", "Preț la": "Price at",
 }
 
 

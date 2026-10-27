@@ -48,7 +48,9 @@ def test_xtb_positions_show_without_usable_t212_data(tmp_path, scenario):
 def test_t212_and_xtb_are_added_up(tmp_path):
     out = _run(tmp_path, "both")
     assert _metric(out, "💰") == "1,575.00" and _metric(out, "📊") == "1,860.00"
-    assert out["rows"] == [3]
+    assert out["rows"][0] == 3
+    # watchlist: pretul de la 15 minute, cu ora lui
+    assert out["rows"][1] == 1 and "Preț la" in out["columns"][1]
 
 
 def test_t212_only_is_unchanged(tmp_path):

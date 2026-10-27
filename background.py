@@ -31,6 +31,7 @@ from core import (
     MARKET_CONTEXT_CACHE_FILE,
     MARKET_CONTEXT_REFRESH_INTERVAL,
     QUALITY_CACHE_FILE,
+    WATCHLIST_PRICES_REFRESH_INTERVAL,
     WATCHLIST_REFRESH_INTERVAL,
     QUALITY_REFRESH_INTERVAL,
     RATINGS_CACHE_FILE,
@@ -48,7 +49,7 @@ from dividend_score import compute_dividend_score, extract_dividend_metrics
 from t212_api import fetch_and_cache_core, fetch_dividends_for_ticker, load_cached_snapshot
 from core import record_portfolio_point
 from justetf_data import start_justetf_refresh_background
-from watchlist import start_watchlist_refresh_background
+from watchlist import start_watchlist_prices_background, start_watchlist_refresh_background
 from xtb import first_purchase_times, load_xtb
 from xtb_prices import start_xtb_prices_refresh_background
 from yahoo import guess_yahoo_symbol, fetch_benchmark_return, fetch_yahoo_peg_ratio
@@ -426,7 +427,7 @@ def xtb_positions_for_context():
 def start_background_scheduler(user=None):
     def run_loop():
         last_core = last_div = last_rat = last_q = last_m = last_w = last_j = last_x = last_h = 0.0
-        last_hc = last_ev = last_evn = last_pa = last_ex = last_st = last_sym = 0.0
+        last_hc = last_ev = last_evn = last_pa = last_ex = last_st = last_sym = last_wp = 0.0
         while True:
             cfg = load_config()
             key_id, secret = cfg.get("api_key_id"), cfg.get("api_secret")
@@ -480,6 +481,11 @@ def start_background_scheduler(user=None):
                 started = start_xtb_prices_refresh_background()
                 if started:
                     last_x = time.time()
+
+            if last_w and (time.time() - last_wp) >= WATCHLIST_PRICES_REFRESH_INTERVAL:
+                # dupa prima recalculare completa; intre doua recalculari doar pretul
+                if start_watchlist_prices_background():
+                    last_wp = time.time()
 
             if (time.time() - last_w) >= WATCHLIST_REFRESH_INTERVAL:
                 if start_watchlist_refresh_background():

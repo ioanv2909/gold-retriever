@@ -50,6 +50,11 @@ if scenario in ("both", "t212_only"):
         "instruments": [{"ticker": "AAPL_US_EQ", "name": "Apple", "currencyCode": "EUR", "isin": "US0378331005", "type": "STOCK"}],
         "errors": {}, "stale_errors": {}})
     save_json_file(ACCOUNT_INFO_CACHE_FILE, {"currencyCode": "EUR", "fetched_at": now})
+if scenario == "both":
+    from core import WATCHLIST_CACHE_FILE, WATCHLIST_FILE
+    save_json_file(WATCHLIST_FILE, [{"symbol": "NVDA"}])
+    save_json_file(WATCHLIST_CACHE_FILE, {"NVDA": {"name": "NVIDIA", "price": 123.4, "currency": "USD",
+                                                   "updated": "2026-10-27T03:00:00", "price_updated": "2026-10-27T13:15:00"}})
 set_user(None)
 
 import auth  # noqa: E402
@@ -69,6 +74,7 @@ print("RESULT " + json.dumps({
     "error": [e.value for e in at.error],
     "metrics": [[m.label, m.value] for m in at.metric],
     "rows": [len(d.value) for d in at.dataframe],
+    "columns": [[str(c) for c in d.value.columns] for d in at.dataframe],
     "pills": [list(p.options) for p in at.get("button_group")],
     "selected": at.session_state["selected_ticker"] if "selected_ticker" in at.session_state else None,
 }, ensure_ascii=False))

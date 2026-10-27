@@ -1,3 +1,8 @@
+## 0.3.25 — 2026-10-27
+
+- Watchlist prices every 15 minutes. Between the daily full recalculation (name, scores, risk), a light job fetches only the last price of all watchlist symbols in one Yahoo request and writes it with its own time (`price_updated`); the date of the full recalculation stays unchanged, so scores are still recalculated once a day. It does not run while the full recalculation runs; new symbols keep the full calculation. The page reloads by itself when the prices change.
+- Watchlist table: new "Price at" column (time of the last price, or its date if it is not from today) and English column names (they were shown in Romanian).
+
 ## 0.3.24 — 2026-10-27
 
 - Automatic page reload now also reacts to new watchlist data (after the daily watchlist refresh, a manual refresh or an added symbol). The watchlist cache is rewritten after every symbol during a refresh, so the page reloads once, when the refresh has finished, not once per symbol.

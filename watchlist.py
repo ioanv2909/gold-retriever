@@ -6,6 +6,7 @@ from datetime import date, datetime
 from core import (
     WATCHLIST_CACHE_FILE,
     WATCHLIST_FILE,
+    WATCHLIST_PRICES_REFRESH_INTERVAL,
     WATCHLIST_REFRESH_INTERVAL,
     WATCHLIST_STATUS_FILE,
     load_json_file,
@@ -265,6 +266,69 @@ def fetch_and_cache_watchlist(force=False):
         "done": total,
     })
     return cache
+
+
+def fetch_last_prices(symbols):
+    """Ultimul pret de inchidere pentru toate simbolurile, intr-o singura cerere Yahoo."""
+    import pandas as pd
+    data = yf.download(symbols, period="5d", progress=False, group_by="ticker", auto_adjust=False, threads=False)
+    prices = {}
+    if data is None or data.empty:
+        return prices
+    for symbol in symbols:
+        try:
+            frame = data[symbol] if isinstance(data.columns, pd.MultiIndex) else data
+            close = frame["Close"].dropna()
+            if not close.empty:
+                prices[symbol] = round(float(close.iloc[-1]), 2)
+        except Exception:
+            continue
+    return prices
+
+
+def refresh_watchlist_prices():
+    """Actualizeaza doar pretul (si price_updated) intre doua recalculari complete; "updated" ramane al
+    recalcularii zilnice, care decide cand se recalculeaza scorurile. Simbolurile noi raman pe calculul complet."""
+    if not YFINANCE_AVAILABLE or read_status(WATCHLIST_STATUS_FILE).get("in_progress"):
+        return {}
+    symbols = sorted({str(i.get("symbol")).strip().upper() for i in load_watchlist() if isinstance(i, dict) and i.get("symbol")})
+    if not symbols:
+        return {}
+    try:
+        prices = fetch_last_prices(symbols)
+    except Exception as e:
+        print(f"[watchlist] price refresh failed: {e}", flush=True)
+        return {}
+    if not prices:
+        return {}
+    stamp = datetime.now().isoformat()
+
+    def updater(cache):
+        cache = dict(cache) if isinstance(cache, dict) else {}
+        for symbol, price in prices.items():
+            if isinstance(cache.get(symbol), dict):
+                cache[symbol] = dict(cache[symbol], price=price, price_updated=stamp)
+        return cache
+
+    update_json_file(WATCHLIST_CACHE_FILE, {}, updater)
+    return prices
+
+
+_prices_running = threading.Lock()
+
+
+def start_watchlist_prices_background():
+    if not _prices_running.acquire(blocking=False):
+        return False
+
+    def run():
+        try:
+            refresh_watchlist_prices()
+        finally:
+            _prices_running.release()
+
+    threading.Thread(target=run, daemon=True).start()
+    return True
 
 
 def start_watchlist_refresh_background(force=False):

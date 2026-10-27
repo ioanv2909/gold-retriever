@@ -59,7 +59,8 @@ def watchlist_signature(cache=None, path=WATCHLIST_CACHE_FILE, status_path=WATCH
     hit = cache.get(path)
     if not hit or hit[0] != mtime:
         data = load_json_file(path, {}) if mtime is not None else {}
-        stamps = [e.get("updated") for e in data.values() if isinstance(e, dict) and e.get("updated")] if isinstance(data, dict) else []
+        entries = [e for e in data.values() if isinstance(e, dict)] if isinstance(data, dict) else []
+        stamps = [s for e in entries for s in (e.get("updated"), e.get("price_updated")) if s]
         hit = (mtime, max(stamps) if stamps else None)
         cache[path] = hit
     cache["_watchlist_last"] = hit[1]

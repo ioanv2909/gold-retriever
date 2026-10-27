@@ -53,7 +53,7 @@ Everything is JSON except `auth_secret`. Do not commit this folder:
 | `portfolio_history.json` | Recorded value points |
 | `portfolio_history_multi.json` | Value points per portfolio |
 | `ticker_map.json` | Manual mapping to Yahoo symbols (wins over `yahoo_auto_map.json`) |
-| `watchlist.json`, `watchlist_cache.json`, `watchlist_status.json` | Watchlist, its data and progress |
+| `watchlist.json`, `watchlist_cache.json`, `watchlist_status.json` | Watchlist, its data (scores recalculated daily, `updated`; price every 15 min, `price_updated`) and progress |
 | `notes.json` | Per-position notes |
 | `alerts.json`, `alert_state.json` | Loss-to-profit alerts and dismissed state |
 

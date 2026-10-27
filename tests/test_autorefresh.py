@@ -69,3 +69,12 @@ def test_watchlist_signature_waits_for_the_refresh_to_finish(tmp_path):
 
 def test_watchlist_signature_without_files(tmp_path):
     assert autorefresh.watchlist_signature({}, path=str(tmp_path / "a.json"), status_path=str(tmp_path / "b.json")) is None
+
+
+def test_watchlist_signature_sees_price_only_updates(tmp_path):
+    cache_f, status_f = tmp_path / "watchlist_cache.json", tmp_path / "watchlist_status.json"
+    _watch(cache_f, {"AAPL": {"updated": "2026-10-27T03:00:00"}}, 1000)
+    c = {}
+    assert autorefresh.watchlist_signature(c, path=str(cache_f), status_path=str(status_f)) == "2026-10-27T03:00:00"
+    _watch(cache_f, {"AAPL": {"updated": "2026-10-27T03:00:00", "price_updated": "2026-10-27T13:15:00"}}, 2000)
+    assert autorefresh.watchlist_signature(c, path=str(cache_f), status_path=str(status_f)) == "2026-10-27T13:15:00"
