@@ -165,3 +165,40 @@ def test_status_file_replaces_a_symlink_instead_of_following_it(env):
     assert _run(env).returncode == 0
     assert victim.read_text() == "keep"
     assert not os.path.islink(env["src"] / "backup_status.json")
+
+
+def test_backup_of_a_folder_being_written_is_consistent(env):
+    """Aplicatia scrie in data/ in timpul backup-ului (rename atomic + fisiere temporare care apar si dispar)."""
+    import json
+    import sys
+    import time
+    big = env["src"] / "portfolio_cache.json"
+    big.write_text(json.dumps({"n": 0, "pad": "x" * 2_000_000}))
+    writer = subprocess.Popen([sys.executable, "-c", """
+import json, os, sys, time
+d = sys.argv[1]
+end = time.time() + 20
+i = 0
+while time.time() < end:
+    i += 1
+    tmp = os.path.join(d, ".portfolio_cache.json.%d.tmp" % i)
+    with open(tmp, "w") as f:
+        json.dump({"n": i, "pad": "x" * 2_000_000}, f)
+    os.replace(tmp, os.path.join(d, "portfolio_cache.json"))
+    open(os.path.join(d, ".other.%d.tmp" % i), "w").close()
+    os.remove(os.path.join(d, ".other.%d.tmp" % i))
+""", str(env["src"])])
+    try:
+        time.sleep(0.5)
+        r = _run(env)
+    finally:
+        writer.kill()
+        writer.wait()
+    assert r.returncode == 0, r.stderr
+    assert "changed as we read it" not in r.stderr
+    [name] = os.listdir(env["dest"])
+    with tarfile.open(env["dest"] / name) as tf:
+        names = tf.getnames()
+        data = json.load(tf.extractfile("data/portfolio_cache.json"))
+    assert data["n"] >= 0 and len(data["pad"]) == 2_000_000
+    assert not any(n.endswith(".tmp") for n in names)

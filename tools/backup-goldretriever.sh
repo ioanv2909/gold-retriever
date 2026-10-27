@@ -84,10 +84,25 @@ ts=$(date +%Y-%m-%d_%H%M%S)
 work=$(mktemp -d)
 plain="$work/data-$ts$tag.tar.gz"
 
-# cod 1 = "fisier schimbat in timpul citirii": avertisment, nu eroare
-rc=0
-tar --exclude='.*.tmp' -czf "$plain" -C "$(dirname "$SRC")" "$(basename "$SRC")" || rc=$?
-[ "$rc" -gt 1 ] && fail "tar a esuat (cod $rc)"
+# arhiva se face dintr-o copie: aplicatia scrie in data/ si in timpul backup-ului, iar tar pe folderul
+# activ putea prinde un fisier pe jumatate ("file changed as we read it"). Aplicatia inlocuieste fisierele
+# prin rename, deci cp citeste fiecare fisier intreg; daca dispare un fisier temporar in timpul copierii,
+# copia se reia.
+snap="$work/snap"
+copied=0
+for attempt in 1 2 3; do
+    rm -rf "$snap"
+    mkdir "$snap"
+    if cp -a "$SRC" "$snap/" 2> "$work/cp.err"; then
+        copied=1
+        break
+    fi
+    sleep 2
+done
+[ "$copied" = 1 ] || fail "copierea $SRC a esuat: $(head -c 300 "$work/cp.err")"
+find "$snap" -name '.*.tmp' -type f -delete
+tar -czf "$plain" -C "$snap" "$(basename "$SRC")" || fail "tar a esuat"
+rm -rf "$snap"
 tar -tzf "$plain" > /dev/null   # verifica arhiva inainte de criptare / copiere
 
 if [ "$encrypt" = 1 ]; then

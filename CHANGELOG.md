@@ -1,3 +1,7 @@
+## 0.3.23 — 2026-10-27
+
+- Backup: the archive is built from a copy of `data/`, not from the live folder. The app keeps writing while the backup runs, and tar on the live folder warned "file changed as we read it" and could store a half-written file. The app replaces files by rename, so the copy reads every file whole; if a temporary file vanishes during the copy, the copy is retried (up to 3 times). Temporary files are left out and tar errors now fail the backup instead of being ignored. After updating, copy the script to `/usr/local/sbin/` again.
+
 ## 0.3.22 — 2026-10-27
 
 - The main page no longer hides XTB when Trading 212 has no usable data. Before, three cases showed only a message and nothing from XTB (no sums, no table, no XTB position links): a user with only XTB imports ("no data in cache"), a Trading 212 account with no open positions ("No open positions"), and a first Trading 212 fetch that failed (only the error). Now the Trading 212 message stays on top and the page continues with the XTB positions; "Trading 212" is offered in the portfolio picker only when its data is usable (an account with cash and no positions keeps it). Without XTB accounts the behaviour is unchanged. The Trading 212 value history is not recorded while its data is missing, so the chart does not drop to zero.

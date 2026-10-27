@@ -22,7 +22,9 @@ never affects it.
    Adjust `APP` and `DEST` at the top of the script if your paths differ.
 
 What it does: refuses to run if the share is not mounted (so nothing is written to
-the local disk), builds `data-YYYY-MM-DD_HHMMSS.tar.gz` in a private temporary folder,
+the local disk), copies `data/` into a private temporary folder (the app keeps writing while the
+backup runs; the copy is retried if a temporary file vanishes mid-copy) and builds
+`data-YYYY-MM-DD_HHMMSS.tar.gz` from that copy,
 verifies that it can be read, encrypts it (see below) and copies it to the share, keeps the
 last 14 archives and writes `data/backup_status.json` with the time of the last success
 and whether it was encrypted. Archives contain API keys, the SMTP password, password
