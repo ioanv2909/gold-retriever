@@ -265,6 +265,41 @@ def _history_dialog_inner(fig):
     mobile.plotly_chart(big, width="stretch", key="portfolio_history_chart_big")
 
 
+def _profit_sparkline(x, y, ccy):
+    """Mini-grafic al variatiei profitului: verde peste zero, rosu sub zero (linie si umplere)."""
+    xs = list(pd.to_datetime(x))
+    ys = [float(v) for v in y]
+    # la fiecare trecere prin zero se adauga punctul de intersectie, ca segmentele sa se lege
+    px_, py_ = [xs[0]], [ys[0]]
+    for i in range(1, len(ys)):
+        a, b = ys[i - 1], ys[i]
+        if (a < 0 < b) or (b < 0 < a):
+            f = a / (a - b)
+            px_.append(xs[i - 1] + (xs[i] - xs[i - 1]) * f)
+            py_.append(0.0)
+        px_.append(xs[i])
+        py_.append(b)
+    fig = go.Figure()
+    for sign, color, fill in ((1, "#21c354", "rgba(33,195,84,0.18)"), (-1, "#ff4b4b", "rgba(255,75,75,0.18)")):
+        seg = [v if v * sign >= 0 else None for v in py_]
+        fig.add_trace(go.Scatter(
+            x=px_, y=seg, mode="lines", line=dict(color=color, width=2), fill="tozeroy", fillcolor=fill,
+            connectgaps=False, hovertemplate="%{x|%d.%m %H:%M}<br>%{y:+,.2f} " + ccy + "<extra></extra>",
+        ))
+    fig.update_layout(
+        height=170, margin=dict(l=0, r=0, t=4, b=0), showlegend=False, font=dict(size=10),
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+    )
+    fig.update_xaxes(title_text=t("hist.spark_x"), title_standoff=4, fixedrange=True, nticks=4,
+                     tickformat="%d.%m\n%H:%M", showgrid=False)
+    fig.update_yaxes(title_text=t("hist.spark_y", ccy=ccy), title_standoff=4, fixedrange=True, nticks=4,
+                     tickformat="+,.0f", zeroline=True, zerolinecolor="rgba(128,128,128,0.6)")
+    if privacy.hidden():
+        fig.update_yaxes(showticklabels=False)
+        fig.update_traces(hoverinfo="skip", hovertemplate=None)
+    return fig
+
+
 def _section_updates():
     """Settings > Updates: refresh buttons (moved out of the sidebar)."""
     if api_key_id and api_secret:
@@ -924,28 +959,14 @@ def render_main_view():
                 _pl_ser = history_df["market_value"] - history_df["invested"]
                 _pl_d = float(_pl_ser.iloc[-1] - _pl_ser.iloc[0])
                 _inv_avg = float(history_df["invested"].mean())
-                _var_col, _spark_col = st.columns([3, 2], vertical_alignment="center")
+                _var_col, _spark_col = st.columns([1, 1], vertical_alignment="center")
                 _var_col.metric(
                     t("hist.variation", rng=range_choice), _mask(f"{_pl_d:+,.2f} {display_ccy}"),
                     f"{_pl_d / _inv_avg * 100:+.2f}%" if _inv_avg else None,
                 )
                 with _spark_col:
-                    # mini-grafic: variatia profitului fata de inceputul perioadei
-                    _spark_color = "#21c354" if _pl_d >= 0 else "#ff4b4b"
-                    _spark_fig = go.Figure(go.Scatter(
-                        x=history_df["x"], y=_pl_ser - float(_pl_ser.iloc[0]), mode="lines",
-                        line=dict(color=_spark_color, width=2), fill="tozeroy",
-                        fillcolor="rgba(33,195,84,0.15)" if _pl_d >= 0 else "rgba(255,75,75,0.15)",
-                        hovertemplate="%{x|%d.%m %H:%M}<br>%{y:+,.2f} " + display_ccy + "<extra></extra>",
-                    ))
-                    _spark_fig.update_layout(
-                        height=80, margin=dict(l=0, r=0, t=0, b=0), showlegend=False,
-                        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                    )
-                    _spark_fig.update_xaxes(visible=False, fixedrange=True)
-                    _spark_fig.update_yaxes(visible=False, fixedrange=True)
-                    if privacy.hidden():
-                        _spark_fig.update_traces(hoverinfo="skip", hovertemplate=None)
+                    # variatia profitului fata de inceputul perioadei
+                    _spark_fig = _profit_sparkline(history_df["x"], _pl_ser - float(_pl_ser.iloc[0]), display_ccy)
                     st.plotly_chart(_spark_fig, width="stretch", key="profit_sparkline",
                                     config={"displayModeBar": False, "staticPlot": privacy.hidden()})
                 if not _compact:

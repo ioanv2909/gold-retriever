@@ -22,6 +22,8 @@ _T = {
     "btn.refresh_rat_busy": {"RO": "🎯 Actualizare recomandări...", "EN": "🎯 Updating ratings..."},
     "filter.rating": {"RO": "Filtrează după recomandare", "EN": "Filter by rating"},
     "hist.variation": {"RO": "Variație profit în perioadă ({rng})", "EN": "Profit change over period ({rng})"},
+    "hist.spark_x": {"RO": "Timp", "EN": "Time"},
+    "hist.spark_y": {"RO": "Profit ({ccy})", "EN": "Profit ({ccy})"},
     "hist.variation_help": {
         "RO": "Câștig/pierdere de piață, fără depuneri. % = față de media sumei investite pe perioadă.",
         "EN": "Market gain/loss, excluding deposits. % = relative to the average amount invested over the period.",
