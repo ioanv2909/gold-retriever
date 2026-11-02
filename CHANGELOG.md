@@ -1,3 +1,7 @@
+## 0.4.5 — 2026-11-02
+
+- Calendar email: company names with HTML-escaped characters are shown correctly ("Stanley Black & Decker", not "&amp;amp;"), and an event held both at Trading 212 and XTB is listed only once.
+
 ## 0.4.4 — 2026-11-02
 
 - Calendar email: each event now shows the company name and its plain symbol (e.g. "Plată dividend - Mastercard Inc (MA)") instead of the internal Trading 212 code (`MA_US_EQ`). Without a known name, the plain Yahoo symbol is shown.

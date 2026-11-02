@@ -116,3 +116,14 @@ def test_digest_label_falls_back_to_symbol():
     assert "Mastercard (MA)" in events.format_digest(evs, "EN", {"MA_US_EQ": "Mastercard"})
     body = events.format_digest(evs, "EN", {}, {"MA_US_EQ": {"symbol": "MA"}})
     assert "MA_US_EQ" not in body and "MA" in body
+
+
+def test_digest_unescapes_names_and_drops_duplicates():
+    evs = [{"ticker": "SWK_US_EQ", "type": "earnings", "date": "2026-11-04"},
+           {"ticker": "RHM", "type": "earnings", "date": "2026-11-05"},
+           {"ticker": "RHMd_EQ", "type": "earnings", "date": "2026-11-05"}]
+    names = {"SWK_US_EQ": "Stanley Black &amp; Decker", "RHM": "Rheinmetall", "RHMd_EQ": "Rheinmetall"}
+    cache = {"RHM": {"symbol": "RHM.DE"}, "RHMd_EQ": {"symbol": "RHM.DE"}}
+    body = events.format_digest(evs, "EN", names, cache)
+    assert "Stanley Black & Decker (SWK)" in body
+    assert body.count("Rheinmetall (RHM.DE)") == 1

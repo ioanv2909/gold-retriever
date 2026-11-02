@@ -164,7 +164,8 @@ def _label(ticker, names, cache):
     """'Mastercard Inc (MA)' in loc de MA_US_EQ; fara nume ramane simbolul Yahoo."""
     from yahoo import guess_yahoo_symbol
     symbol = (cache.get(ticker) or {}).get("symbol") or guess_yahoo_symbol(ticker) or ticker
-    name = (names.get(ticker) or "").strip()
+    import html
+    name = html.unescape(names.get(ticker) or "").strip()
     return "%s (%s)" % (name, symbol) if name and name not in (ticker, symbol) else symbol
 
 
@@ -185,7 +186,8 @@ def format_digest(events, lang="RO", names=None, cache=None):
         line = "%s  %s  -  %s" % (when, t("ev.type." + ev["type"], _lang=lang), _label(ev["ticker"], names, cache))
         if ev.get("eps_avg") is not None:
             line += "  (" + t("ev.eps_est", _lang=lang, v="%.2f" % ev["eps_avg"]) + ")"
-        lines.append(line)
+        if line not in lines:  # acelasi titlu la T212 si XTB
+            lines.append(line)
     return t("ev.mail_intro", _lang=lang) + "\n\n" + "\n".join(lines)
 
 
