@@ -1,3 +1,7 @@
+## 0.4.6 — 2026-11-02
+
+- Settings > Notifications > Calendar: new "Send a test email now" button. It sends the events of the chosen window to the account's address, with [TEST] in the subject, and does not mark them as sent, so the automatic emails are unchanged.
+
 ## 0.4.5 — 2026-11-02
 
 - Calendar email: company names with HTML-escaped characters are shown correctly ("Stanley Black & Decker", not "&amp;amp;"), and an event held both at Trading 212 and XTB is listed only once.

@@ -219,3 +219,21 @@ def notify_upcoming(tickers, user=None, today=None, cache=None):
         sent.update({event_id(ev): ev.get("date_end") or ev["date"] for ev in new})
         save_json_file(EVENTS_NOTIFIED_FILE, sent)
     return ok
+
+
+def send_test(user, today=None):
+    """Trimite acum evenimentele din fereastra aleasa, cu [TEST] in subiect; nu le marcheaza ca trimise."""
+    import notify
+    import users
+    from i18n import t
+    email = users.email(user) if user else None
+    if not email:
+        return False
+    names = _holding_names()
+    cache = load_cache()
+    evs = upcoming(cache, list(names), today, load_prefs()["days_ahead"])
+    lang = _user_lang()
+    body = format_digest(evs, lang, names, cache) if evs else t("ev.mail_none", _lang=lang)
+    subject = "[TEST] " + t("ev.mail_subject", _lang=lang, n=len(evs))
+    return notify.notify("events", subject, body, to=[email], sync=True,
+                         key="events-test:%s:%s" % (user, time.time()), min_hours=0)

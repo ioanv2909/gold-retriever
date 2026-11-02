@@ -52,9 +52,18 @@ def render_settings_section(me):
     days = st.number_input(t("set.ev_days"), min_value=1, max_value=30, value=int(prefs["days_ahead"]), key="ev_set_days")
     if not notify.configured():
         st.caption(t("set.ev_no_smtp"))
-    if st.button(t("set.ev_save"), key="ev_set_save"):
+    b1, b2 = st.columns([1, 3])
+    if b1.button(t("set.ev_save"), key="ev_set_save"):
         if users.set_email(me, mail):
             st.error(t("set.ev_bad_email"))
         else:
             events.save_prefs(enabled, days)
             st.success(t("set.ev_saved"))
+    email = users.email(me)
+    if b2.button(t("ev.test_send"), key="ev_test_send", disabled=not (email and notify.configured())):
+        with st.spinner("…"):
+            ok = events.send_test(me)
+        if ok:
+            st.success(t("ev.test_sent", email=email))
+        else:
+            st.error(t("ev.test_not_sent"))

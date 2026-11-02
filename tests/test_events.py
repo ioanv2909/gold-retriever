@@ -127,3 +127,14 @@ def test_digest_unescapes_names_and_drops_duplicates():
     body = events.format_digest(evs, "EN", names, cache)
     assert "Stanley Black & Decker (SWK)" in body
     assert body.count("Rheinmetall (RHM.DE)") == 1
+
+
+def test_send_test_does_not_mark_events(env, monkeypatch):
+    monkeypatch.setattr(events, "load_cache", lambda: CACHE)
+    monkeypatch.setattr(events, "_holding_names", lambda: {"KO_US_EQ": "Coca-Cola", "OTHER": ""})
+    assert events.send_test("bob", TODAY) is True
+    (event, subject, body), kw = env[0]
+    assert subject.startswith("[TEST]") and "Coca-Cola (KO)" in body and kw["to"] == ["bob@example.com"]
+    events.save_prefs(True, 7)
+    assert events.notify_upcoming(["KO_US_EQ", "OTHER"], "bob", TODAY, CACHE) is True  # testul nu a marcat nimic
+    assert events.send_test("nomail", TODAY) is False
