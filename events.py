@@ -160,12 +160,29 @@ def _user_lang():
         return "RO"
 
 
-def format_digest(events, lang="RO"):
+def _label(ticker, names, cache):
+    """'Mastercard Inc (MA)' in loc de MA_US_EQ; fara nume ramane simbolul Yahoo."""
+    from yahoo import guess_yahoo_symbol
+    symbol = (cache.get(ticker) or {}).get("symbol") or guess_yahoo_symbol(ticker) or ticker
+    name = (names.get(ticker) or "").strip()
+    return "%s (%s)" % (name, symbol) if name and name not in (ticker, symbol) else symbol
+
+
+def _holding_names():
+    try:
+        import weekly_report
+        return weekly_report.holdings()
+    except Exception:
+        return {}
+
+
+def format_digest(events, lang="RO", names=None, cache=None):
     from i18n import t
+    names, cache = names or {}, cache or {}
     lines = []
     for ev in events:
         when = ev["date"] + (" - " + ev["date_end"] if ev.get("date_end") else "")
-        line = "%s  %-10s  %s" % (when, ev["ticker"], t("ev.type." + ev["type"], _lang=lang))
+        line = "%s  %s  -  %s" % (when, t("ev.type." + ev["type"], _lang=lang), _label(ev["ticker"], names, cache))
         if ev.get("eps_avg") is not None:
             line += "  (" + t("ev.eps_est", _lang=lang, v="%.2f" % ev["eps_avg"]) + ")"
         lines.append(line)
@@ -186,14 +203,15 @@ def notify_upcoming(tickers, user=None, today=None, cache=None):
     if not email:
         return False
     today = today or date.today()
-    events = upcoming(cache if cache is not None else load_cache(), tickers, today, prefs["days_ahead"])
+    cache = cache if cache is not None else load_cache()
+    events = upcoming(cache, tickers, today, prefs["days_ahead"])
     sent = {k: v for k, v in load_json_file(EVENTS_NOTIFIED_FILE, {}).items() if v >= (today - timedelta(days=7)).isoformat()}
     new = [ev for ev in events if event_id(ev) not in sent]
     if not new:
         return False
     lang = _user_lang()
     subject = t("ev.mail_subject", _lang=lang, n=len(new))
-    ok = notify.notify("events", subject, format_digest(new, lang), to=[email], sync=True,
+    ok = notify.notify("events", subject, format_digest(new, lang, _holding_names(), cache), to=[email], sync=True,
                        key="events:%s:%s" % (user, today.isoformat()), min_hours=0)
     if ok:
         sent.update({event_id(ev): ev.get("date_end") or ev["date"] for ev in new})

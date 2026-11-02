@@ -65,6 +65,7 @@ def env(tmp_path, monkeypatch):
         monkeypatch.setattr(events, name, str(tmp_path / (name.lower() + ".json")))
     monkeypatch.setattr(users, "email", lambda name: "bob@example.com" if name == "bob" else None)
     monkeypatch.setattr(events, "_user_lang", lambda: "EN")
+    monkeypatch.setattr(events, "_holding_names", lambda: {"KO_US_EQ": "Coca-Cola"})
     sent = []
     monkeypatch.setattr(notify, "notify", lambda *a, **kw: sent.append((a, kw)) or True)
     return sent
@@ -81,14 +82,14 @@ def test_notify_sends_each_event_once(env):
     (event, subject, body), kw = env[0]
     assert event == "events" and kw["to"] == ["bob@example.com"]
     assert "2 upcoming" in subject
-    assert "KO_US_EQ" in body and "OTHER" in body and "AAPL_US_EQ" not in body
+    assert "Coca-Cola (KO)" in body and "OTHER" in body and "AAPL" not in body and "_US_EQ" not in body
 
     assert events.notify_upcoming(["KO_US_EQ", "OTHER"], "bob", TODAY, CACHE) is False
     assert len(env) == 1
     # mai tarziu intra in fereastra si rezultatele AAPL: doar ele sunt trimise
     assert events.notify_upcoming(["KO_US_EQ", "AAPL_US_EQ"], "bob", date(2026, 10, 27), CACHE) is True
     body = env[1][0][2]
-    assert "AAPL_US_EQ" in body and "KO_US_EQ" not in body
+    assert "AAPL" in body and "KO" not in body
 
 
 def test_notify_needs_user_email(env):
@@ -108,3 +109,10 @@ def test_fetch_skips_fresh_entries(env, monkeypatch):
     with open(events.EVENTS_CACHE_FILE) as f:
         assert set(json.load(f)) == {"A", "B"}
     assert events.load_status().get("in_progress") is False
+
+
+def test_digest_label_falls_back_to_symbol():
+    evs = [{"ticker": "MA_US_EQ", "type": "dividend_payment", "date": "2026-11-09"}]
+    assert "Mastercard (MA)" in events.format_digest(evs, "EN", {"MA_US_EQ": "Mastercard"})
+    body = events.format_digest(evs, "EN", {}, {"MA_US_EQ": {"symbol": "MA"}})
+    assert "MA_US_EQ" not in body and "MA" in body

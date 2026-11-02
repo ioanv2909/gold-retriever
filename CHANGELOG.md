@@ -1,3 +1,7 @@
+## 0.4.4 — 2026-11-02
+
+- Calendar email: each event now shows the company name and its plain symbol (e.g. "Plată dividend - Mastercard Inc (MA)") instead of the internal Trading 212 code (`MA_US_EQ`). Without a known name, the plain Yahoo symbol is shown.
+
 ## 0.4.2 — 2026-10-27
 
 - Settings: Calendar and Alerts moved into the Notifications tab too, so every email setting is in one place. Sub-tabs: Weekly report, Calendar, Alerts and, for admins, Email (SMTP). Only the open sub-tab is rendered. Old links (`?tab=calendar`, `?tab=alerts`) open Notifications on the matching sub-tab.
