@@ -788,44 +788,49 @@ _S.update({
 })
 
 
-def _btn(label, key):
-    try:
-        return st.button(label, key=key, width="stretch")
-    except TypeError:
-        return st.button(label, key=key, use_container_width=True)
+_MENU_CSS = """<style>
+div[data-testid='stPopoverBody']:has(.um-marker){width:14rem !important;min-width:0 !important;padding:0.4rem !important;}
+/* elementele meniului ca in AstroLibrary: text pe rand, fara chenar, fundal discret la hover */
+.st-key-um_items [data-testid='stVerticalBlock']{gap:0 !important;}
+.st-key-um_items button{width:100% !important;justify-content:flex-start !important;padding:0.4rem 0.75rem !important;
+  border:none !important;border-radius:6px !important;background:transparent !important;min-height:0 !important;}
+.st-key-um_items button:hover{background:color-mix(in srgb, currentColor 9%, transparent) !important;}
+.st-key-um_items button p{text-align:left !important;font-size:0.95rem;}
+.um-who{padding:0.2rem 0.75rem 0.45rem;font-size:0.8rem;opacity:0.65;}
+.um-sep{height:1px;margin:0.35rem 0.25rem;background:color-mix(in srgb, currentColor 15%, transparent);}
+</style>"""
+
+
+def _item(label, key):
+    return st.button(label, key=key, type="tertiary", width="stretch")
 
 
 def user_menu(me):
-    """Top-right user menu: Settings / Log out."""
-    try:
-        pop = st.popover("👤 " + me)
-    except TypeError:
-        pop = st.popover("👤 " + me)
+    """Meniul utilizatorului (dreapta sus), ca in AstroLibrary: cine e conectat, apoi elementele ca lista."""
+    pop = st.popover("👤 " + me)
     with pop:
-        st.markdown(
-            "<span class='um-marker'></span><style>"
-            "div[data-testid='stPopoverBody']:has(.um-marker){width:13rem !important;min-width:0 !important;}"
-            "</style>",
-            unsafe_allow_html=True,
-        )
-        st.caption(users.role(me))
-        import mobile
         from i18n import t
+        import html as _html
+        import mobile
+        st.markdown(_MENU_CSS + "<span class='um-marker'></span><div class='um-who'>%s · %s</div>"
+                    % (_html.escape(me), _html.escape(str(users.role(me) or ""))), unsafe_allow_html=True)
         _compact = mobile.compact()
-        if _btn(t("mob.full") if _compact else t("mob.compact"), "menu_view"):
-            mobile.set_mode("full" if _compact else "compact")
-            st.rerun()
-        if _btn(t("app.print"), "menu_print"):
-            import appearance
-            appearance.print_page()
-        if _btn("⚙️ " + _tr("settings"), "menu_settings"):
-            # URL-ul dedicat pastreaza pagina la refresh; pagina pozitiei se inchide
-            for k in ("selected_ticker", "selected_row", "_url_ticker"):
-                st.session_state.pop(k, None)
-            st.query_params.pop("detail", None)
-            reset_tabs("settings_tab")
-            st.query_params["page"] = "settings"
-            st.session_state["_page"] = "settings"
-            st.rerun()
-        if _btn(_tr("logout"), "menu_logout"):
-            _logout()
+        with st.container(key="um_items"):
+            if _item("⚙️ " + _tr("settings"), "menu_settings"):
+                # URL-ul dedicat pastreaza pagina la refresh; pagina pozitiei se inchide
+                for k in ("selected_ticker", "selected_row", "_url_ticker"):
+                    st.session_state.pop(k, None)
+                st.query_params.pop("detail", None)
+                reset_tabs("settings_tab")
+                st.query_params["page"] = "settings"
+                st.session_state["_page"] = "settings"
+                st.rerun()
+            if _item(t("mob.full") if _compact else t("mob.compact"), "menu_view"):
+                mobile.set_mode("full" if _compact else "compact")
+                st.rerun()
+            if _item(t("app.print"), "menu_print"):
+                import appearance
+                appearance.print_page()
+            st.markdown("<div class='um-sep'></div>", unsafe_allow_html=True)
+            if _item(_tr("logout"), "menu_logout"):
+                _logout()

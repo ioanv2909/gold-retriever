@@ -1,3 +1,7 @@
+## 0.4.18 — 2026-11-03
+
+- User menu (👤, top right) as in AstroLibrary: the signed-in name and role in small grey text at the top, then Settings, Phone/Full version, Print page and, after a separator line, Log out, as plain list entries (no button frames, a light background on hover) instead of buttons.
+
 ## 0.4.17 — 2026-11-03
 
 - Header fixed at the top, as in AstroLibrary: on the main page (logo, title, language, user menu with Settings) and in Settings (Back, title, language and now the user menu too) the bar stays visible while scrolling, with a translucent, blurred background in the colors of the current theme and a thin line below; the title and logo shrink as the page scrolls. The position page's fixed bar now uses the theme colors too (it was dark in the light theme).

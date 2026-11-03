@@ -188,3 +188,17 @@ def test_unlinked_or_paused_tailscale_login_asks_for_password(ts_env):
     ts_env["paused"] = True
     at = AppTest.from_function(_page).run()
     assert not any(m.value.startswith("in:") for m in at.markdown)
+
+
+def _menu_page():
+    import auth
+    auth.user_menu("ana")
+
+
+def test_user_menu_items_are_plain_list_entries(ana):
+    at = AppTest.from_function(_menu_page).run()
+    keys = [b.key for b in at.button]
+    assert keys == ["menu_settings", "menu_view", "menu_print", "menu_logout"]
+    assert all(b.proto.type == "tertiary" for b in at.button)  # fara chenar de buton, ca in AstroLibrary
+    at.button(key="menu_settings").click().run()
+    assert at.query_params.get("page") == "settings" and at.session_state["_page"] == "settings"
