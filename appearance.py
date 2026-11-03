@@ -59,33 +59,6 @@ def sticky_header(key):
     _run_js(_THEME_VARS_JS)
 
 
-def copy_button(text, key, label="📋 Copy", done="✓"):
-    """Buton care copiaza `text` in clipboard. Iconul de copiere din st.code foloseste navigator.clipboard, care
-    exista doar pe HTTPS sau localhost; pe http://<ip>:8501 nu merge. Aici: clipboard-ul nou unde exista, altfel
-    metoda veche (textarea + execCommand), care merge si pe HTTP."""
-    import html
-    import json
-    def _js(v):
-        return json.dumps(v).replace("</", "<\\/")  # un "</script>" din text nu inchide scriptul
-
-    bid = "gr-copy-" + "".join(ch for ch in str(key) if ch.isalnum() or ch in "-_")
-    st.html(
-        '<button id="%s" type="button" style="cursor:pointer;padding:0.3rem 0.8rem;border-radius:0.5rem;'
-        'border:1px solid color-mix(in srgb, currentColor 30%%, transparent);background:transparent;color:inherit;'
-        'font:inherit;font-size:0.9rem">%s</button>'
-        '<script>(function(){var b=document.getElementById(%s);if(!b||b.dataset.ready)return;b.dataset.ready=1;'
-        'var txt=%s,lab=%s,ok=%s;'
-        'function old(){var t=document.createElement("textarea");t.value=txt;t.setAttribute("readonly","");'
-        't.style.position="fixed";t.style.opacity="0";document.body.appendChild(t);t.select();'
-        'var r=false;try{r=document.execCommand("copy");}catch(e){}document.body.removeChild(t);return r;}'
-        'function shown(){b.textContent=ok;setTimeout(function(){b.textContent=lab;},1500);}'
-        'b.addEventListener("click",function(){if(navigator.clipboard&&window.isSecureContext){'
-        'navigator.clipboard.writeText(txt).then(shown,function(){if(old())shown();});}else if(old()){shown();}});'
-        '})();</script>' % (bid, html.escape(label), _js(bid), _js(text), _js(label), _js(done)),
-        unsafe_allow_javascript=True,
-    )
-
-
 def print_page():
     """Inchide popover-ul deschis (Escape) si deschide dialogul de tiparire al browserului."""
     _run_js("""

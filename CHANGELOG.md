@@ -1,3 +1,7 @@
+## 0.4.20 — 2026-11-03
+
+- Settings > Users > Tailscale: the extra "Copy the command" button is gone again; the copy icon of the code block is enough at the Tailscale (HTTPS) address, where it works. Over plain HTTP (`http://<server>:8501`) browsers block that icon; select the text there instead.
+
 ## 0.4.19 — 2026-11-03
 
 - Settings > Users > Tailscale: "Generate a new secret" (after a confirmation), for when the secret path has been seen by someone else. The old `tailscale serve` route stops being trusted at once; the tab then shows the new command to run on the server.

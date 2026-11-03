@@ -32,9 +32,7 @@ def render_admin(me):
     st.caption(t("ts.intro", port=tsauth.HTTPS_PORT))
     st.markdown(t("ts.setup"))
     cmd = tsauth.serve_command()
-    st.code(cmd, language="bash")
-    import appearance
-    appearance.copy_button(cmd, "ts_cmd", t("ts.copy"), t("ts.copied"))
+    st.code(cmd, language="bash")  # iconul de copiere merge pe HTTPS (adresa Tailscale) si pe localhost
     st.caption(t("ts.setup_note"))
     _here()
     with st.expander(t("ts.rotate_title")):

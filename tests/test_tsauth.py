@@ -228,17 +228,3 @@ def test_admin_tab_rotates_after_confirmation(ana, monkeypatch):
     assert not at.exception and tsauth.secret() != first
     assert at.checkbox(key="ts_rot_sure").value is False and at.success
     assert any(tsauth.secret() in c.value for c in at.code)
-
-
-def test_copy_button_has_a_fallback_for_plain_http(monkeypatch):
-    import json as _json
-
-    import appearance
-    shown = []
-    monkeypatch.setattr(appearance.st, "html", lambda body, **k: shown.append((body, k)))
-    text = "docker exec x 'a</b>'"
-    appearance.copy_button(text, "ts cmd", "Copy", "Done")
-    body, kw = shown[0]
-    assert kw.get("unsafe_allow_javascript") is True
-    assert 'execCommand("copy")' in body and "isSecureContext" in body and 'id="gr-copy-tscmd"' in body
-    assert _json.dumps(text).replace("</", "<\\/") in body and "</b>" not in body  # sir JSON, fara "</" brut

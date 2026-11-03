@@ -560,8 +560,6 @@ _T = {
     "pwd.tab": {"RO": "🔐 Securitate", "EN": "🔐 Security"},
     "about.canis": {"RO": "Canis Major (Câinele Mare), cu stelele la distanțele lor reale. Trage ca s-o rotești; dublu clic pentru ecran complet.", "EN": "Canis Major (the Great Dog), its stars at their real distances. Drag to turn it; double-click for full screen."},
     "ts.tab": {"RO": "🔗 Tailscale", "EN": "🔗 Tailscale"},
-    "ts.copy": {"RO": "📋 Copiază comanda", "EN": "📋 Copy the command"},
-    "ts.copied": {"RO": "✓ Copiată", "EN": "✓ Copied"},
     "ts.rotate_title": {"RO": "🔄 Generează alt secret", "EN": "🔄 Generate a new secret"},
     "ts.rotate_help": {"RO": "Folosește-l dacă secretul a fost văzut de altcineva (lipit într-un chat, într-o captură de ecran). Adresa Tailscale nu mai recunoaște pe nimeni până rulezi pe server comanda nouă de mai sus; întâi oprește ruta veche cu `docker exec tailscale tailscale serve --https={port} off`. Accesul direct pe portul 8501, cu parolă, nu e afectat.", "EN": "Use it if someone else has seen the secret (pasted in a chat, in a screenshot). The Tailscale address recognises nobody until you run the new command above on the server; first stop the old route with `docker exec tailscale tailscale serve --https={port} off`. Direct access on port 8501, with a password, is not affected."},
     "ts.rotate_confirm": {"RO": "Înțeleg: autentificarea prin Tailscale se oprește până rulez comanda nouă", "EN": "I understand: sign-in through Tailscale stops until I run the new command"},
