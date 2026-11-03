@@ -80,6 +80,18 @@ def _tab_notifications(me, notify_sections):
             subs[i][1]()
 
 
+CANIS_MAJOR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "canis_major.html")
+
+
+def _canis_major():
+    """Constelatia Canis Major (Cainele Mare) in 3D: stelele la distantele lor reale; trage cu mouse-ul ca s-o rotesti."""
+    if not os.path.exists(CANIS_MAJOR):
+        return
+    from pathlib import Path
+    st.iframe(Path(CANIS_MAJOR), height=260)
+    st.caption(t("about.canis"))
+
+
 def _tab_about():
     st.markdown("### GoldRetriever")
     info = {}
@@ -92,6 +104,7 @@ def _tab_about():
     if info.get("sha"):
         label += " \u00b7 " + info["sha"] + (_L(" (necomis)", " (uncommitted)") if info.get("dirty") else "")
     st.caption(label)
+    _canis_major()
     st.markdown(
         f"[GitHub]({REPO_URL}) · MIT license\n\n"
         + _L("Aplicație self-hosted pentru analiza portofoliilor Trading 212 și XTB. Datele rămân pe serverul tău.",

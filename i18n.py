@@ -558,6 +558,7 @@ _T = {
     "set.ev_saved": {"RO": "Salvat.", "EN": "Saved."},
     "set.ev_bad_email": {"RO": "Adresă de email invalidă.", "EN": "Invalid email address."},
     "pwd.tab": {"RO": "🔐 Securitate", "EN": "🔐 Security"},
+    "about.canis": {"RO": "Canis Major (Câinele Mare), cu stelele la distanțele lor reale. Trage ca s-o rotești; dublu clic pentru ecran complet.", "EN": "Canis Major (the Great Dog), its stars at their real distances. Drag to turn it; double-click for full screen."},
     "ts.tab": {"RO": "🔗 Tailscale", "EN": "🔗 Tailscale"},
     "ts.title": {"RO": "Autentificare prin Tailscale", "EN": "Sign-in through Tailscale"},
     "ts.intro": {"RO": "Cine deschide GoldRetriever la adresa Tailscale a serverului (https://<mașina>.<tailnet>.ts.net:{port}) intră fără parolă și fără cod 2FA, dacă login-ul lui Tailscale e legat de un cont. Accesul direct din rețea (portul 8501) cere în continuare parola.", "EN": "People who open GoldRetriever at the server's Tailscale address (https://<machine>.<tailnet>.ts.net:{port}) get in without a password or 2FA code when their Tailscale login is linked to an account. Direct access on the network (port 8501) still asks for the password."},

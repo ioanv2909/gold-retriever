@@ -118,3 +118,8 @@ def test_settings_log_tab_shows_the_disk_archive(tmp_path):
     assert "lg_n" in out["keys"]
     # sectiunea Arhiva si spatiu pe disc: setarile, arhivarea manuala, stergerea doar dupa confirmare
     assert {"lg_st_save", "lg_st_arch", "lg_st_del", "lg_st_sure"} <= set(out["keys"])
+
+
+def test_about_tab_shows_canis_major(tmp_path):
+    out = _run(tmp_path, "xtb_only", detail="page=settings&tab=about")
+    assert out["exception"] == []

@@ -1,3 +1,7 @@
+## 0.4.16 — 2026-11-03
+
+- Settings > About: the constellation Canis Major (the Great Dog) in 3D, its 19 stars at their real sky positions and distances (Sirius in front). It sways by itself; drag to turn it, double-click for full screen; still picture with reduced motion. Made in the AstroLibrary session, which now shows Canis Minor instead.
+
 ## 0.4.15 — 2026-11-03
 
 - Sign-in through Tailscale, as in AstroLibrary: at the server's Tailscale address (`https://casaos.<tailnet>.ts.net:8443`) a person whose Tailscale login is linked to an account gets in without a password or 2FA code. Set up once with the command shown in Settings > Users > Tailscale (`tailscale serve` on port 8443 to a secret path; the secret is in `data/ts_secret`). Accounts are linked by an admin (Settings > Users > Tailscale) or by the person (Settings > Security, after one password sign-in at the Tailscale address). Signing out there pauses the automatic sign-in on that browser until the next password sign-in. Direct access on port 8501 is unchanged; nobody on the network can claim a Tailscale identity there.

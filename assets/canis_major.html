@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Canis Major</title>
+<style>
+  html, body { margin: 0; height: 100%; background: transparent; }
+  /* a night sky in both themes */
+  #sky { display: block; width: 100%; height: 100%; border-radius: 12px; cursor: grab; touch-action: pan-y;
+         background: radial-gradient(ellipse at 40% 30%, #22345c 0%, #131d38 55%, #0a1024 100%); }
+  #sky.dragging { cursor: grabbing; }
+  #sky:fullscreen { border-radius: 0; }
+</style></head>
+<body>
+<canvas id="sky" role="img" aria-label="The constellation Canis Major, its stars at their real distances: drag to turn it, double-click for full screen"></canvas>
+<script>
+// Canis Major, in 3D: the stars at their sky positions and at their real distances
+// (log scale: Sirius, 8.6 light-years away, stands in front; τ CMa, ~3200, at the back), each on its line of sight
+// from Earth, so the front view is the figure in the sky and turning it shows that it is only how they line up. The view sways by itself; drag it with the mouse or a finger
+// to turn it; double-click to see it on the whole screen, and again to put it back. Stars drift and twinkle; the figure's lines are always drawn, and a
+// web joins stars that come close on screen. Faint field stars give depth. Still picture with reduced motion;
+// paused while the page is hidden or the sky is scrolled away.
+(() => {
+  const canvas = document.getElementById("sky");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+
+  // [name (traditional, else Bayer letter), RA (degrees), Dec (degrees), magnitude, distance (light-years)]
+  const STARS = [
+    ["Sirius", 101.29, -16.72, -1.46, 8.6],
+    ["Mirzam", 95.68, -17.96, 1.98, 490],
+    ["Adhara", 104.66, -28.97, 1.50, 430],
+    ["Wezen", 107.10, -26.39, 1.84, 1600],
+    ["Aludra", 111.02, -29.30, 2.45, 2000],
+    ["Furud", 95.08, -30.06, 3.02, 360],
+    ["Muliphein", 105.94, -15.63, 4.11, 400],
+    ["ι", 104.03, -17.05, 4.37, 2500],
+    ["θ", 103.55, -12.04, 4.07, 270],
+    ["ο²", 105.76, -23.83, 3.02, 2800],
+    ["ο¹", 103.53, -24.18, 3.87, 2000],
+    ["Unurgunite", 105.43, -27.93, 3.47, 1100],
+    ["ν²", 99.17, -19.26, 3.95, 65],
+    ["ξ¹", 97.96, -23.42, 4.33, 1400],
+    ["κ", 102.46, -32.51, 3.96, 660],
+    ["ω", 108.70, -26.77, 3.85, 920],
+    ["τ", 109.68, -24.95, 4.40, 3200],
+    ["λ", 97.04, -32.58, 4.48, 420],
+    ["π", 103.90, -20.14, 4.68, 97],
+  ];
+  // the figure: front leg to Mirzam, head (ι, Muliphein, θ), body to Wezen, tail to Aludra, hind legs
+  const LINES = [[0, 1], [0, 7], [7, 6], [7, 8], [0, 9], [9, 3], [3, 4], [3, 2], [2, 5], [2, 14], [9, 10], [3, 11]];
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // sky map: RA grows to the left; coordinates centred on the figure, depth from log10(distance)
+  const dec0 = STARS.reduce((a, s) => a + s[2], 0) / STARS.length;
+  const cosd = Math.cos(dec0 * Math.PI / 180);
+  const xs = STARS.map((s) => -s[1] * cosd), ys = STARS.map((s) => -s[2]);
+  const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+  const logs = STARS.map((s) => Math.log10(s[4]));
+  const l0 = (Math.min(...logs) + Math.max(...logs)) / 2, lspan = Math.max(...logs) - Math.min(...logs);
+
+  let w = 0, h = 0, k = 1, u = 1, stars = [], field = [], looping = false, running = true, visible = true;
+  function layout() {
+    const dpr = window.devicePixelRatio || 1;
+    w = canvas.clientWidth;
+    h = canvas.clientHeight;
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    u = Math.max(1, Math.min(w, h) / 230);  // the sky's size: stars, names and lines grow with it on the big screen
+    k = Math.min((w - 70 * u) / (x1 - x0), (h - 40 * u) / (y1 - y0));  // room for the names
+    const depth = Math.min(w, h) * 1.1;
+    stars = STARS.map(([name, ra, dec, mag], i) => ({
+      name, mag,
+      x: (-ra * cosd - (x0 + x1) / 2) * k,
+      y: (-dec - (y0 + y1) / 2) * k,
+      z: (logs[i] - l0) / lspan * depth,
+      r: Math.max(1.3, 4.2 - mag * 0.62) * u,  // brighter = bigger
+      // each star drifts on its own Lissajous path
+      ax: 4 + (i * 7) % 6, ay: 4 + (i * 5) % 6, az: 6 + (i * 3) % 8,
+      fx: 0.00028 + ((i * 37) % 13) * 0.00003, fy: 0.00024 + ((i * 53) % 11) * 0.000035,
+      fz: 0.0002 + (i % 7) * 0.00003,
+      px: i * 1.7, py: i * 2.3, tw: 0.003 + (i % 5) * 0.0008,
+    }));
+    let seed = 7;  // the same field every time
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    field = Array.from({ length: Math.round(60 * u * u) }, () => ({
+      x: (rnd() - 0.5) * w * 1.6, y: (rnd() - 0.5) * h * 1.6, z: (rnd() - 0.5) * depth * 2.2,
+      r: (0.4 + rnd() * 0.7) * Math.sqrt(u), a: 0.15 + rnd() * 0.35, tw: 0.001 + rnd() * 0.004, p: rnd() * 6,
+    }));
+  }
+
+  // the view: yaw (around the vertical) and pitch; the owner's drag on top of a slow sway
+  let zoom = 1, yaw = 0, pitch = 0, vyaw = 0, vpitch = 0, dragging = false, lastX = 0, lastY = 0, touched = -1e9, sway = 1;
+  const CAM = 1.0;  // camera distance in canvas sizes: lower = stronger perspective
+  function project(x, y, z, cy, sy, cp, sp) {
+    const x1_ = x * cy + z * sy, z1 = -x * sy + z * cy;
+    const y1_ = y * cp - z1 * sp, z2 = y * sp + z1 * cp;
+    const d = CAM * Math.max(w, h);
+    const s = d / (d + z2);
+    return { x: w / 2 + x1_ * s, y: h / 2 + y1_ * s, s, z: z2 };
+  }
+
+  function frame(t) {
+    // the sway fades out while the owner turns the sky and comes back a few seconds later
+    sway += ((t - touched > 3000 && !dragging ? 1 : 0) - sway) * 0.03;
+    if (!dragging) {  // a flick keeps turning, slowing down
+      yaw += vyaw; pitch += vpitch;
+      vyaw *= 0.94; vpitch *= 0.94;
+    }
+    pitch = Math.max(-1.2, Math.min(1.2, pitch));
+    const ay = reduce ? 0 : sway * (0.5 * Math.sin(t * 0.00021) + 0.2 * Math.sin(t * 0.00053));
+    const ap = reduce ? 0 : sway * 0.18 * Math.sin(t * 0.00017 + 1);
+    const Y = yaw + ay, P = pitch + ap;
+    const cy = Math.cos(Y), sy = Math.sin(Y), cp = Math.cos(P), sp = Math.sin(P);
+
+    // each star sits on its line of sight from Earth (the camera, facing it): seen from the front the figure is the
+    // one in the sky, and turning it shows how far apart the stars really are
+    const cam = CAM * Math.max(w, h);
+    const pos = stars.map((s) => {
+      const z = s.z + (reduce ? 0 : Math.sin(t * s.fz + s.py) * s.az), along = (cam + z) / cam;
+      return project((s.x + (reduce ? 0 : Math.sin(t * s.fx + s.px) * s.ax)) * along,
+                     (s.y + (reduce ? 0 : Math.cos(t * s.fy + s.py) * s.ay)) * along, z, cy, sy, cp, sp);
+    });
+    // zoomed out smoothly when a turn would take the figure out of the sky
+    const fit = Math.min(1, ...pos.map((p) => Math.min((w / 2 - 34 * u) / Math.max(1, Math.abs(p.x - w / 2)),
+                                                        (h / 2 - 16 * u) / Math.max(1, Math.abs(p.y - h / 2)))));
+    zoom += (fit - zoom) * (reduce ? 1 : 0.12);
+    for (const p of pos) { p.x = w / 2 + (p.x - w / 2) * zoom; p.y = h / 2 + (p.y - h / 2) * zoom; }
+
+    ctx.clearRect(0, 0, w, h);
+    for (const f of field) {
+      const p = project(f.x, f.y, f.z, cy, sy, cp, sp);
+      if (p.s <= 0) continue;
+      p.x = w / 2 + (p.x - w / 2) * zoom; p.y = h / 2 + (p.y - h / 2) * zoom;
+      ctx.fillStyle = `rgba(210, 220, 255, ${f.a * (reduce ? 1 : 0.6 + 0.4 * Math.sin(t * f.tw + f.p))})`;
+      ctx.beginPath(); ctx.arc(p.x, p.y, f.r * p.s, 0, Math.PI * 2); ctx.fill();
+    }
+    // the web: links between stars close on screen, within a reach that breathes
+    const reach = Math.min(w, h) * (0.3 + (reduce ? 0 : 0.1 * Math.sin(t * 0.0006)));
+    ctx.lineWidth = 0.8 * Math.sqrt(u);
+    for (let i = 0; i < pos.length; i++) {
+      for (let j = i + 1; j < pos.length; j++) {
+        const d = Math.hypot(pos[i].x - pos[j].x, pos[i].y - pos[j].y);
+        if (d > reach) continue;
+        ctx.strokeStyle = `rgba(140, 175, 255, ${0.42 * (1 - d / reach) ** 1.4})`;
+        ctx.beginPath(); ctx.moveTo(pos[i].x, pos[i].y); ctx.lineTo(pos[j].x, pos[j].y); ctx.stroke();
+      }
+    }
+    ctx.strokeStyle = "rgba(255, 210, 140, 0.8)";
+    ctx.lineWidth = 1.4 * Math.sqrt(u);
+    for (const [a, b] of LINES) {
+      ctx.beginPath(); ctx.moveTo(pos[a].x, pos[a].y); ctx.lineTo(pos[b].x, pos[b].y); ctx.stroke();
+    }
+    // stars far to near, with a glow for the bright ones
+    stars.map((s, i) => i).sort((a, b) => pos[b].z - pos[a].z).forEach((i) => {
+      const s = stars[i], { x, y, s: sc } = pos[i];
+      const twinkle = reduce ? 1 : 0.75 + 0.25 * Math.sin(t * s.tw + s.px * 3);
+      const r = s.r * Math.min(1.8, sc) * twinkle;
+      if (s.mag < 2.6) {
+        const g = ctx.createRadialGradient(x, y, 0, x, y, r * 5.5);
+        g.addColorStop(0, `rgba(255, 236, 200, ${0.5 * twinkle})`);
+        g.addColorStop(1, "rgba(255, 236, 200, 0)");
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(x, y, r * 5.5, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.fillStyle = `rgba(255, 250, 240, ${Math.min(1, (1.2 - s.mag * 0.09) * twinkle)})`;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+      {  // every star's name; the faint ones smaller and dimmer
+        const bright = s.mag < 3.1;
+        ctx.fillStyle = bright ? "rgba(225, 230, 245, 0.75)" : "rgba(190, 200, 225, 0.5)";
+        ctx.font = `${(bright ? 10 : 8.5) * Math.sqrt(u)}px system-ui, sans-serif`;
+        const tw = ctx.measureText(s.name).width;  // on the left when it would leave the sky
+        ctx.fillText(s.name, x + r + 5 + tw > w - 4 ? x - r - 5 - tw : x + r + 5, y + 3 * Math.sqrt(u));
+      }
+    });
+    ctx.fillStyle = "rgba(200, 210, 235, 0.55)";
+    ctx.font = `italic ${11 * Math.sqrt(u)}px Georgia, serif`;
+    ctx.fillText("Canis Major", 10 * u, h - 10 * u);
+    if (running && visible && (!reduce || dragging || Math.abs(vyaw) + Math.abs(vpitch) > 1e-4)) requestAnimationFrame(frame);
+    else looping = false;
+  }
+
+  function start() {
+    if (looping || !running || !visible) return;
+    looping = true;
+    requestAnimationFrame(frame);
+  }
+
+  // turning the sky by hand (horizontal drags on a phone; vertical ones still scroll the page)
+  canvas.addEventListener("pointerdown", (e) => {
+    dragging = true; lastX = e.clientX; lastY = e.clientY; vyaw = vpitch = 0; touched = performance.now();
+    canvas.setPointerCapture(e.pointerId);
+    canvas.classList.add("dragging");
+    start();
+  });
+  canvas.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - lastX, dy = e.clientY - lastY;
+    lastX = e.clientX; lastY = e.clientY;
+    vyaw = dx * 0.01; vpitch = dy * 0.01;
+    yaw += vyaw; pitch += vpitch;
+    touched = performance.now();
+  });
+  const release = () => { dragging = false; touched = performance.now(); canvas.classList.remove("dragging"); start(); };
+  canvas.addEventListener("pointerup", release);
+  canvas.addEventListener("pointercancel", release);
+  // double-click: full screen (the Fullscreen API; inside an iframe it needs allow="fullscreen") and back
+  canvas.addEventListener("dblclick", () => {
+    const fs = document.fullscreenElement;
+    (fs ? document.exitFullscreen() : (canvas.requestFullscreen ? canvas.requestFullscreen() : Promise.reject()))
+      .catch(() => {});
+    yaw = pitch = vyaw = vpitch = 0; touched = performance.now(); start();
+  });
+
+  layout();
+  start();
+  new ResizeObserver(() => { layout(); if (!looping) frame(performance.now()); }).observe(canvas);
+  document.addEventListener("visibilitychange", () => { running = !document.hidden; start(); });
+  // the last report counts (moving the sky to the whole screen and back reports "hidden", then "shown")
+  new IntersectionObserver((es) => { visible = es[es.length - 1].isIntersecting; start(); }).observe(canvas);
+})();
+
+</script>
+</body></html>
