@@ -1,3 +1,7 @@
+## 0.4.21 — 2026-11-03
+
+- Value chart: on short periods part of the data was missing (on 3H only the last hour, on 1D two hours less). Since 0.3.18 (27.10) the history points are written in local time, but the chart still treated them as UTC and moved them two more hours ahead, past "now". Points written before 0.3.18 (UTC) and after it (local time) are now both placed correctly; the saved history is not changed.
+
 ## 0.4.20 — 2026-11-03
 
 - Settings > Users > Tailscale: the extra "Copy the command" button is gone again; the copy icon of the code block is enough at the Tailscale (HTTPS) address, where it works. Over plain HTTP (`http://<server>:8501`) browsers block that icon; select the text there instead.

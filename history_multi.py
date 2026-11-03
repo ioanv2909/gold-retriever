@@ -11,6 +11,32 @@ HISTORY_MULTI_FILE = UPath("portfolio_history_multi.json")
 MIN_GAP_SECONDS = 14 * 60
 
 
+# pana la v0.3.18 (2026-10-27 07:34 UTC) containerul nu avea fus orar: datetime.now() era ora UTC. De atunci
+# punctele se scriu in ora locala (TZ din docker-compose). Ambele fara fus in text, deci momentul schimbarii decide.
+TZ_SWITCH_UTC = datetime(2026, 10, 27, 7, 34)
+
+
+def _local_zone():
+    try:
+        from zoneinfo import ZoneInfo
+        return ZoneInfo(os.environ.get("TZ") or "Europe/Bucharest")
+    except Exception:
+        from datetime import timezone
+        return timezone.utc
+
+
+def to_local(ts):
+    """Ora locala (fara fus) a unui moment din istoric: cu fus -> convertit; fara fus, inainte de TZ_SWITCH_UTC
+    -> era UTC; dupa -> e deja ora locala."""
+    from datetime import timezone
+    d = datetime.fromisoformat(str(ts).replace("Z", "+00:00")) if "T" in str(ts) else datetime.fromisoformat(str(ts) + "T00:00:00")
+    if d.tzinfo is not None:
+        return d.astimezone(_local_zone()).replace(tzinfo=None)
+    if d < TZ_SWITCH_UTC:
+        return d.replace(tzinfo=timezone.utc).astimezone(_local_zone()).replace(tzinfo=None)
+    return d
+
+
 def load_multi_history():
     return load_json_file(HISTORY_MULTI_FILE, [])
 

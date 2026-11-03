@@ -7,7 +7,7 @@ import streamlit as st
 
 import mobile
 import privacy
-from history_multi import multi_history_records
+from history_multi import multi_history_records, to_local
 from core import load_portfolio_history
 from i18n import t, x as _tx
 from portfolio_model import fx as _fx
@@ -82,7 +82,8 @@ def render_history(sel_portfolios, display_ccy, native, compact, right_extra):
         return False
     history_df = pd.DataFrame(portfolio_history)
     history_df["x"] = history_df["ts"].fillna(history_df["date"]) if "ts" in history_df.columns else history_df["date"]
-    history_df["x"] = pd.to_datetime(history_df["x"], format="ISO8601")
+    # toate momentele in ora locala (vezi history_multi.to_local: punctele vechi in UTC, cele noi in ora locala)
+    history_df["x"] = pd.to_datetime([to_local(v) for v in history_df["x"]])
     history_df = history_df.sort_values("x")
     _thr = 40.0 * float(_fx("EUR", display_ccy) or 1.0)
     if st.session_state.get("hist_hide_small", True):
@@ -116,13 +117,9 @@ def render_history(sel_portfolios, display_ccy, native, compact, right_extra):
         _sel = history_df[history_df["x"] >= _start]
         history_df = _sel if len(_sel) >= 2 else history_df.tail(2)
     history_df = history_df.copy()
-    try:
-        history_df["x"] = history_df["x"].dt.tz_localize("UTC").dt.tz_convert("Europe/Bucharest").dt.tz_localize(None)
-    except Exception:
-        pass
     _show_inv = range_choice in ("1M", "1Y", "YTD", "Max")
-    _nowl = pd.Timestamp.now(tz="Europe/Bucharest").tz_localize(None)
-    _first_local = pd.Timestamp(_first_all).tz_localize("UTC").tz_convert("Europe/Bucharest").tz_localize(None)
+    _nowl = pd.Timestamp(datetime.now())
+    _first_local = pd.Timestamp(_first_all)
     if range_choice == "YTD":
         _ps = pd.Timestamp(_nowl.year, 1, 1)
     elif range_choice == "Max":
@@ -193,7 +190,7 @@ def render_history(sel_portfolios, display_ccy, native, compact, right_extra):
         # forma curbei ramane, valorile nu (fara axa Y si fara hover)
         history_fig.update_yaxes(showticklabels=False)
         history_fig.update_traces(hoverinfo="skip", hovertemplate=None)
-    _x1 = pd.Timestamp.now(tz="Europe/Bucharest").tz_localize(None)
+    _x1 = pd.Timestamp(datetime.now())
     if range_choice == "YTD":
         _x0 = pd.Timestamp(_x1.year, 1, 1)
     elif range_choice == "Max":
