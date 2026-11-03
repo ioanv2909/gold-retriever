@@ -1,5 +1,6 @@
 import re
 import threading
+import joblog
 import time
 from datetime import date, datetime
 
@@ -327,7 +328,7 @@ def start_watchlist_prices_background():
         finally:
             _prices_running.release()
 
-    threading.Thread(target=run, daemon=True).start()
+    threading.Thread(target=joblog.wrap("watchlist_prices", run, often=True), daemon=True).start()
     return True
 
 
@@ -336,6 +337,6 @@ def start_watchlist_refresh_background(force=False):
     if status.get("in_progress"):
         return False
 
-    thread = threading.Thread(target=fetch_and_cache_watchlist, args=(force,), daemon=True)
+    thread = threading.Thread(target=joblog.wrap("watchlist", fetch_and_cache_watchlist), args=(force,), daemon=True)
     thread.start()
     return True

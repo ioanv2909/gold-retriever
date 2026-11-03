@@ -2,6 +2,7 @@
 import math
 import os
 import threading
+import joblog
 import time
 
 import pandas as pd
@@ -193,7 +194,7 @@ def ensure_async():
         if _running:
             return
         _running = True
-    threading.Thread(target=_run, daemon=True).start()
+    threading.Thread(target=joblog.wrap("xtb_history", _run), daemon=True).start()
 
 
 def load_points():

@@ -2,6 +2,7 @@
 import json
 import os
 import threading
+import joblog
 import time
 from datetime import datetime, timezone
 
@@ -121,7 +122,7 @@ def start_refresh():
         if _running:
             return False
         _running = True
-    threading.Thread(target=_refresh_flows, daemon=True).start()
+    threading.Thread(target=joblog.wrap("t212_transactions", _refresh_flows), daemon=True).start()
     return True
 
 
@@ -141,7 +142,7 @@ def _flows():
             start = not _running
             _running = True
         if start:
-            threading.Thread(target=_refresh_flows, daemon=True).start()
+            threading.Thread(target=joblog.wrap("t212_transactions", _refresh_flows), daemon=True).start()
     return data
 
 

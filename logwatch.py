@@ -50,7 +50,7 @@ def signature(line):
     return s[:160]
 
 
-INFO = re.compile(r"^\[auth\] ")  # evenimente de autentificare: apar in Setari -> Log, dar nu sunt erori
+INFO = re.compile(r"^\[(auth|job)\] ")  # autentificari si start/final de joburi: apar in Setari -> Log, dar nu sunt erori
 
 
 def is_problem(line):

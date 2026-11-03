@@ -2,6 +2,7 @@
 import math
 import os
 import threading
+import joblog
 import time
 from collections import Counter
 
@@ -265,7 +266,7 @@ def ensure_async(force=False):
         if _running:
             return False
         _running = True
-    threading.Thread(target=_run, daemon=True).start()
+    threading.Thread(target=joblog.wrap("t212_orders_history", _run), daemon=True).start()
     return True
 
 

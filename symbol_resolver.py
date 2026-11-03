@@ -4,6 +4,7 @@ si se pastreaza doar un simbol care chiar are preturi. Rezultatul e comun tuturo
 maparea manuala din pagina pozitiei (ticker_map) are mereu prioritate."""
 import os
 import threading
+import joblog
 import time
 
 from core import load_json_file, save_json_file
@@ -103,7 +104,7 @@ def start_fix_background(tickers, isins=None):
     def run():
         try:
             set_user(user)
-            fix_symbols(tickers, isins)
+            joblog.wrap("symbol_check", fix_symbols, skip_fast=True)(tickers, isins)
         except Exception as e:
             print(f"[yahoo] symbol check failed: {e}", flush=True)
         finally:

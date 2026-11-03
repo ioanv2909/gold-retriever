@@ -1,6 +1,7 @@
 from datetime import datetime
 import copy
 import threading
+import joblog
 import time
 
 from core import (
@@ -172,7 +173,7 @@ def start_xtb_prices_refresh_background():
     if not (xtb_data.get("accounts") or {}):
         return False
 
-    thread = threading.Thread(target=refresh_xtb_prices, daemon=True)
+    thread = threading.Thread(target=joblog.wrap("xtb_prices", refresh_xtb_prices, often=True), daemon=True)
     thread.start()
     return True
 

@@ -1,6 +1,7 @@
 from datetime import date, datetime
 import math
 import threading
+import joblog
 import time
 
 from core import (
@@ -147,7 +148,7 @@ def get_justetf_entry(isin):
 
 def start_justetf_refresh_background(force=False):
     thread = threading.Thread(
-        target=refresh_justetf_cache,
+        target=joblog.wrap("justetf", refresh_justetf_cache),
         args=(force,),
         daemon=True,
     )

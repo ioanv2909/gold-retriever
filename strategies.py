@@ -6,6 +6,7 @@ in scor X/100, verdict si semnale; convergence() numara lentilele pozitive si ne
 """
 import math
 import threading
+import joblog
 import time
 from datetime import date
 
@@ -603,5 +604,5 @@ def fetch_and_cache(tickers, resolve=None, now=None, sleep=1.0, fetch=None, ctx_
 def start_fetch_background(tickers):
     if load_status().get("in_progress"):
         return False
-    threading.Thread(target=fetch_and_cache, args=(list(tickers),), daemon=True).start()
+    threading.Thread(target=joblog.wrap("strategies", fetch_and_cache, skip_fast=True), args=(list(tickers),), daemon=True).start()
     return True

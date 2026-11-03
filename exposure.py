@@ -4,6 +4,7 @@ Actiuni: sectorul si tara din Yahoo. ETF-uri: defalcarea pe sectoare din Yahoo s
 ambele look-through; ETF-urile fara date raman intr-o categorie separata. Moneda: moneda de tranzactionare.
 """
 import threading
+import joblog
 import time
 import types
 
@@ -246,6 +247,6 @@ def fetch_and_cache(tickers, resolve=None, now=None, sleep=1.0, isins=None, coun
 def start_fetch_background(tickers, isins=None):
     if load_status().get("in_progress"):
         return False
-    threading.Thread(target=fetch_and_cache, args=(list(tickers),), kwargs={"isins": dict(isins or {})},
+    threading.Thread(target=joblog.wrap("exposure", fetch_and_cache, skip_fast=True), args=(list(tickers),), kwargs={"isins": dict(isins or {})},
                      daemon=True).start()
     return True

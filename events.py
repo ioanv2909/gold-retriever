@@ -6,6 +6,7 @@ import copy
 import json
 import os
 import threading
+import joblog
 import time
 from datetime import date, datetime, timedelta
 
@@ -115,7 +116,7 @@ def fetch_and_cache_events(tickers, resolve=None, now=None, sleep=1.0):
 def start_events_fetch_background(tickers):
     if load_status().get("in_progress"):
         return False
-    threading.Thread(target=fetch_and_cache_events, args=(list(tickers),), daemon=True).start()
+    threading.Thread(target=joblog.wrap("events", fetch_and_cache_events, skip_fast=True), args=(list(tickers),), daemon=True).start()
     return True
 
 

@@ -18,6 +18,7 @@ import os
 import json
 import time
 import threading
+import joblog
 import tempfile
 from datetime import datetime
 from urllib.parse import quote
@@ -101,7 +102,7 @@ def start_dividends_fetch_background(key_id, secret, tickers):
     status = load_dividends_status()
     if status.get("in_progress"):
         return False
-    t = threading.Thread(target=fetch_and_cache_dividends, args=(key_id, secret, tickers), daemon=True)
+    t = threading.Thread(target=joblog.wrap("t212_dividends", fetch_and_cache_dividends), args=(key_id, secret, tickers), daemon=True)
     t.start()
     return True
 
@@ -159,7 +160,7 @@ def start_ratings_fetch_background(tickers):
     status = load_ratings_status()
     if status.get("in_progress"):
         return False
-    t = threading.Thread(target=fetch_and_cache_ratings, args=(tickers,), daemon=True)
+    t = threading.Thread(target=joblog.wrap("ratings", fetch_and_cache_ratings), args=(tickers,), daemon=True)
     t.start()
     return True
 
@@ -248,7 +249,7 @@ def start_market_context_fetch_background(positions):
     status = read_status(MARKET_CONTEXT_STATUS_FILE)
     if status.get("in_progress"):
         return False
-    t = threading.Thread(target=fetch_and_cache_market_context, args=(positions,), daemon=True)
+    t = threading.Thread(target=joblog.wrap("market_context", fetch_and_cache_market_context), args=(positions,), daemon=True)
     t.start()
     return True
 
@@ -356,7 +357,7 @@ def start_quality_fetch_background(tickers):
     status = load_quality_status()
     if status.get("in_progress"):
         return False
-    t = threading.Thread(target=fetch_and_cache_quality, args=(tickers,), daemon=True)
+    t = threading.Thread(target=joblog.wrap("quality", fetch_and_cache_quality), args=(tickers,), daemon=True)
     t.start()
     return True
 
@@ -436,7 +437,7 @@ def start_background_scheduler(user=None):
             interval_s = max(1, int(cfg.get("interval_minutes", 15))) * 60
 
             if key_id and secret and (time.time() - last_core) >= interval_s:
-                snap_c = fetch_and_cache_core(key_id, secret)
+                snap_c = joblog.wrap("t212_core", fetch_and_cache_core, often=True)(key_id, secret)
                 last_core = time.time()
                 try:
                     errs_c = dict((snap_c or {}).get("errors") or {})
