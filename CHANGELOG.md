@@ -1,3 +1,10 @@
+## 0.4.12 — 2026-11-03
+
+- Settings > Log keeps the last 5000 lines in memory (was 1000) and can show all of them.
+- The whole log is now also kept on disk, one file per day in `data/logs/`, so it survives restarts and deploys. New "Archive and disk space" section in Settings > Log (admin): size of the logs and archives, free disk space, the list of files with download, settings and manual actions. Files older than N days (default 7) are gzipped automatically, without losing data; archives older than N days can be deleted after a confirmation.
+- Hourly space check: the admins get an email (at most one a day) when the logs exceed a size (default 200 MB) or the free disk space drops below a percentage (default 10%).
+- The Docker log is rotated (at most 3 files of 20 MB) instead of growing without a limit.
+
 ## 0.4.11 — 2026-11-03
 
 - Log: start/finish lines of jobs running at the same time no longer get mixed on one line, and the justETF job writes only when it had work to do.

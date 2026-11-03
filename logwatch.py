@@ -12,6 +12,7 @@ import sys
 import threading
 import time
 
+import logstore
 import notify
 
 PROBLEMS_FILE = os.path.join(notify.DATA_ROOT, "log_problems.json")
@@ -19,7 +20,7 @@ WINDOW = 24 * 3600        # un tipar e "nou" daca nu a aparut in ultimele 24 de 
 MAIL_EVERY = 30 * 60      # cel mult un email la 30 de minute
 FLUSH_EVERY = 60
 KEEP = 100
-TAIL = 1000               # ultimele linii din log, in memorie (Setari -> Log)
+TAIL = 5000               # ultimele linii din log, in memorie (Setari -> Log); tot logul e si pe disc (logstore)
 
 # o linie e problema daca se potriveste cu PROBLEM si nu cu IGNORE
 PROBLEM = re.compile(r"Traceback \(most recent call last\)|HTTP Error \d{3}|^\[[a-z_]+\] |\bERROR\b|Exception\b|Error:")
@@ -99,7 +100,9 @@ class _Tee:
     def _line(self, line):
         line = line.rstrip("\r")
         if line.strip():
-            _tail.append((time.time(), line))
+            now = time.time()
+            _tail.append((now, line))
+            logstore.write(now, line)
         if line.startswith("Traceback (most recent call last)"):
             self._in_tb = True
             return
@@ -213,6 +216,10 @@ def install():
                 flush()
             except Exception:
                 pass
+            try:
+                logstore.check()  # arhivarea automata si spatiul pe disc, o data pe ora
+            except Exception as e:
+                print(f"[logstore] check failed: {e}", flush=True)
 
     threading.Thread(target=loop, daemon=True, name="logwatch").start()
     return True

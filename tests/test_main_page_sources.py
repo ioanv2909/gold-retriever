@@ -111,3 +111,10 @@ def test_journal_tab_lists_account_operations(tmp_path):
     assert "jr_types_deposit" in out["keys"] and "jr_types__all" in out["keys"]
     assert "Depunere" in out["checkboxes"]
     assert "jr_t212_now" not in out["keys"]
+
+
+def test_settings_log_tab_shows_the_disk_archive(tmp_path):
+    out = _run(tmp_path, "xtb_only", detail="page=settings&tab=log")
+    assert "lg_n" in out["keys"]
+    # sectiunea Arhiva si spatiu pe disc: setarile, arhivarea manuala, stergerea doar dupa confirmare
+    assert {"lg_st_save", "lg_st_arch", "lg_st_del", "lg_st_sure"} <= set(out["keys"])

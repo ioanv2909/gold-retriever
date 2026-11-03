@@ -178,3 +178,13 @@ def _isolated_weekly_report(tmp_path, monkeypatch):
     import weekly_report
     monkeypatch.setattr(weekly_report, "PREFS_FILE", str(tmp_path / "weekly_report.json"))
     monkeypatch.setattr(weekly_report, "STATE_FILE", str(tmp_path / "weekly_report_state.json"))
+
+
+@pytest.fixture(autouse=True)
+def _isolated_logstore(tmp_path, monkeypatch):
+    """Logul pe disc si setarile lui se scriu in data/; in teste merg intr-un director temporar."""
+    import logstore
+    monkeypatch.setattr(logstore, "LOG_DIR", str(tmp_path / "logs"))
+    monkeypatch.setattr(logstore, "SETTINGS_FILE", str(tmp_path / "log_settings.json"))
+    monkeypatch.setattr(logstore, "_fh", {"day": None, "f": None})
+    monkeypatch.setattr(logstore, "_state", {"last_check": 0.0})

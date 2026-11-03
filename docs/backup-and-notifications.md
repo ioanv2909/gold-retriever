@@ -111,6 +111,13 @@ warnings, HTTP 404 for ETFs without fundamentals, Streamlit context warnings), g
 and keeps the last 24 hours in `log_problems.json`. Admins see the list in Settings, Notifications > Email (SMTP). It
 cannot report a crashed or stopped container; check `docker ps` / the health endpoint for that.
 
+Every log line is also written to `data/logs/app-YYYY-MM-DD.log` (`logstore.py`). Once an hour the app
+gzips the files older than the configured number of days (default 7) and checks the space: when the logs
+exceed the size threshold (default 200 MB) or the free space on the `data/` disk drops below the threshold
+(default 10%), the admins get a "logs" email, at most one a day. Settings > Log > Archive and disk space shows
+the files, lets an admin download one, archive now, and delete archives older than N days (after a
+confirmation). The Docker log itself is rotated (`docker-compose.yml`: 3 files of 20 MB).
+
 ### Host watchdog
 
 `tools/uptime_check.py` (standard library only) checks `http://localhost:8501/_stcore/health`. Two

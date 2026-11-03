@@ -122,13 +122,21 @@ def test_tail_keeps_every_line_in_order(env, tail):
     assert lw.tail(1)[0].endswith("  last")
 
 
-def test_tail_is_capped_at_1000_lines(env, tail):
+def test_tail_is_capped_at_5000_lines(env, tail):
     tee = lw._Tee(io.StringIO())
-    tee.write("".join("line %d\n" % i for i in range(1500)))
+    tee.write("".join("line %d\n" % i for i in range(6500)))
     rows = lw.tail()
-    assert lw.TAIL == 1000 and len(rows) == 1000
-    assert rows[0].endswith("line 500") and rows[-1].endswith("line 1499")
-    assert len(lw.tail(100)) == 100 and lw.tail(100)[0].endswith("line 1400")
+    assert lw.TAIL == 5000 and len(rows) == 5000
+    assert rows[0].endswith("line 1500") and rows[-1].endswith("line 6499")
+    assert len(lw.tail(100)) == 100 and lw.tail(100)[0].endswith("line 6400")
+
+
+def test_tee_also_writes_the_log_to_disk(env, tail):
+    import logstore
+    lw._Tee(io.StringIO()).write("[job] done demo user=ana 1.0s\n\nsecond\n")
+    (f,) = logstore.files()
+    text = logstore.read(f["name"]).decode().splitlines()
+    assert len(text) == 2 and text[0].endswith("  [job] done demo user=ana 1.0s") and text[1].endswith("  second")
 
 
 def test_tail_filters_noise_and_text(env, tail):

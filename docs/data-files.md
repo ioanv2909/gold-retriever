@@ -21,6 +21,8 @@ Everything is JSON except `auth_secret`. Do not commit this folder:
 | `presence.json` | Online users view (admin): per signed-in browser session a random id, user, first/last seen, User-Agent and IP; entries older than 24 h are removed. No passwords, tokens or cookies |
 | `service_status.json` | Status page: the last requests to Yahoo, justETF, Trading 212 and SMTP (time, success, duration) and the last error of each |
 | `log_problems.json` | Log watchdog: error patterns from the last 24 hours with count, last time and an example |
+| `logs/app-YYYY-MM-DD.log`, `logs/app-YYYY-MM-DD.log.gz` | The whole app log, one file per day (local time); older files are gzipped automatically, old archives are deleted only by an admin (Settings > Log) |
+| `log_settings.json` | Log archive settings: archive after N days, alert thresholds for log size (MB) and free disk space (%) |
 | `strategy_cache.json`, `strategy_status.json` | Raw metrics for the strategy lenses per ticker (financial statements, estimates, dividend history, 10-year bond yield, sentiment, event timeline) and the market context (`_market`), daily, and job progress |
 | `sec_tickers.json` | SEC ticker to CIK map for EDGAR requests, weekly |
 | `exposure_cache.json`, `exposure_status.json` | Sector, country, ETF sector weights (Yahoo Finance) and ETF country weights (justETF) per ticker, weekly, and job progress |
