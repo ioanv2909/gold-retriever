@@ -148,7 +148,7 @@ def get_justetf_entry(isin):
 
 def start_justetf_refresh_background(force=False):
     thread = threading.Thread(
-        target=joblog.wrap("justetf", refresh_justetf_cache),
+        target=joblog.wrap("justetf", refresh_justetf_cache, skip_fast=True),
         args=(force,),
         daemon=True,
     )

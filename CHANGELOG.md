@@ -1,3 +1,7 @@
+## 0.4.11 — 2026-11-03
+
+- Log: start/finish lines of jobs running at the same time no longer get mixed on one line, and the justETF job writes only when it had work to do.
+
 ## 0.4.10 — 2026-11-03
 
 - Log: background jobs now write when they start and finish, with the user and duration ("[job] start t212_dividends user=…", "[job] done … 63.2s"). To keep the log small, the jobs that run every 15 minutes (T212 refresh, XTB prices, watchlist prices) write only the finish line, and the hourly jobs that skip fresh tickers (events, exposure, strategies, symbol check) write only when they had work to do. A job that fails writes "[job_failed] …", which the log watchdog reports like any other problem; start/finish lines are not reported as problems.
