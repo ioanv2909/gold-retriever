@@ -110,6 +110,21 @@ def _refresh_flows():
             _running = False
 
 
+def running():
+    return _running
+
+
+def start_refresh():
+    """Descarca acum tranzactiile T212 in fundal. True daca a pornit acum."""
+    global _running
+    with _lock:
+        if _running:
+            return False
+        _running = True
+    threading.Thread(target=_refresh_flows, daemon=True).start()
+    return True
+
+
 def _flows():
     """Fluxurile T212 din cache; porneste in fundal reimprospatarea cand lipsesc sau sunt vechi."""
     global _running

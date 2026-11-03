@@ -251,17 +251,22 @@ def _run():
             _running = False
 
 
-def ensure_async():
-    """Reconstructie in fundal, cel mult o data la 24h."""
+def running():
+    return _running
+
+
+def ensure_async(force=False):
+    """Reconstructie in fundal, cel mult o data la 24h (force: acum). True daca a pornit acum."""
     global _running
     data = load_json_file(FILE, {})
-    if isinstance(data, dict) and time.time() - data.get("updated", 0) < MAX_AGE_S:
-        return
+    if not force and isinstance(data, dict) and time.time() - data.get("updated", 0) < MAX_AGE_S:
+        return False
     with _lock:
         if _running:
-            return
+            return False
         _running = True
     threading.Thread(target=_run, daemon=True).start()
+    return True
 
 
 def load_points():

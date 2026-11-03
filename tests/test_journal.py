@@ -121,3 +121,23 @@ def test_xirr_flows_ignore_fees_and_interest(monkeypatch):
     lines, _notes = returns_summary.compute(show_t212=True, show_xtb=False)
     # comisioanele/dobanzile nu sunt bani retrasi: castigul net ramane 6000 - 5000
     assert any("5,000" in ln and "+1,000" in ln for ln in lines), lines
+
+
+def test_forced_t212_downloads_start_even_when_fresh(monkeypatch, tmp_path):
+    import time
+    import returns_summary
+    import t212_history_rebuild as rb
+    started = []
+    monkeypatch.setattr(rb, "FILE", str(tmp_path / "rebuilt.json"))
+    (tmp_path / "rebuilt.json").write_text('{"updated": %f}' % time.time())
+    monkeypatch.setattr(rb, "_run", lambda: started.append("rebuild"))
+    monkeypatch.setattr(rb, "_running", False)
+    assert rb.ensure_async() is False
+    assert rb.ensure_async(force=True) is True
+    assert rb.ensure_async(force=True) is False  # deja pornita
+    monkeypatch.setattr(returns_summary, "_refresh_flows", lambda: started.append("flows"))
+    monkeypatch.setattr(returns_summary, "_running", False)
+    assert returns_summary.start_refresh() is True
+    assert returns_summary.start_refresh() is False
+    time.sleep(0.2)
+    assert sorted(started) == ["flows", "rebuild"]

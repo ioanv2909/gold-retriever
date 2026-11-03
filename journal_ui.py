@@ -15,7 +15,54 @@ def _fmt(v):
     return mask(f"{float(v):+,.2f}") if v is not None else ""
 
 
+def _set_all(key, options, value):
+    for o in options:
+        st.session_state[f"{key}_{o}"] = value
+
+
+def check_dropdown(container, label, options, key, fmt=str):
+    """Lista dropdown cu bife: un popover cu cate o casuta pentru fiecare optiune (toate bifate la inceput)."""
+    for o in options:
+        st.session_state.setdefault(f"{key}_{o}", True)
+    chosen = [o for o in options if st.session_state[f"{key}_{o}"]]
+    if len(chosen) == len(options):
+        summary = t("jr.all")
+    elif len(chosen) == 1:
+        summary = fmt(chosen[0])
+    else:
+        summary = t("jr.n_of", n=len(chosen), m=len(options))
+    with container.popover(f"{label}: {summary}", width="stretch"):
+        b1, b2 = st.columns(2)
+        b1.button(t("jr.check_all"), key=f"{key}__all", on_click=_set_all, args=(key, options, True), type="tertiary")
+        b2.button(t("jr.check_none"), key=f"{key}__none", on_click=_set_all, args=(key, options, False), type="tertiary")
+        for o in options:
+            st.checkbox(fmt(o), key=f"{key}_{o}")
+    return [o for o in options if st.session_state[f"{key}_{o}"]]
+
+
+def _t212_download():
+    """Butonul care porneste acum descarcarea tranzactiilor si a ordinelor T212 (cu comisioane)."""
+    try:
+        from core import load_config
+        cfg = load_config()
+        if not (cfg.get("api_key_id") and cfg.get("api_secret")):
+            return
+        import returns_summary
+        import t212_history_rebuild
+    except Exception:
+        return
+    busy = returns_summary.running() or t212_history_rebuild.running()
+    c1, c2 = st.columns([3, 7], vertical_alignment="center")
+    if c1.button(t("jr.t212_now"), key="jr_t212_now", disabled=busy):
+        returns_summary.start_refresh()
+        t212_history_rebuild.ensure_async(force=True)
+        busy = True
+    if busy:
+        c2.caption(t("jr.t212_busy"))
+
+
 def render_journal_tab(names=None):
+    _t212_download()
     ops = journal.load_all(names)
     if not ops:
         st.info(t("jr.empty"))
@@ -23,11 +70,10 @@ def render_journal_tab(names=None):
 
     accounts = sorted({op["account"] for op in ops})
     present = [k for k in journal.TYPES if any(op["type"] == k for op in ops)]
-    c1, c2, c3 = st.columns([2, 5, 3], vertical_alignment="bottom")
+    c1, c2, c3 = st.columns([3, 4, 3], vertical_alignment="bottom")
     period = c1.selectbox(t("jr.period"), PERIODS, index=4, format_func=lambda p: t("jr.period." + p), key="jr_period")
-    types = c2.multiselect(t("jr.types"), present, default=present,
-                           format_func=lambda k: t("jr.type." + k), key="jr_types")
-    chosen = c3.multiselect(t("jr.accounts"), accounts, default=accounts, key="jr_accounts") if len(accounts) > 1 else accounts
+    types = check_dropdown(c2, t("jr.types"), present, "jr_types", fmt=lambda k: t("jr.type." + k))
+    chosen = check_dropdown(c3, t("jr.accounts"), accounts, "jr_accounts") if len(accounts) > 1 else accounts
 
     start, end = journal.period_start(period), None
     if period == "custom":

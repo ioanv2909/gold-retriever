@@ -1,3 +1,8 @@
+## 0.4.9 — 2026-11-03
+
+- Journal: the operation type and account filters are now dropdown lists with a checkbox in front of each item (plus "All" / "None"); the button shows what is selected ("all", one name or "3 of 9").
+- Journal: new "Download the T212 history now" button (shown when Trading 212 keys are set). It starts in the background the download of the account transactions (deposits, withdrawals, fees, interest) and of the executed orders with their fees, without waiting for the daily refresh.
+
 ## 0.4.8 — 2026-11-03
 
 - Journal: Trading 212 fees and interest are now included. Account transactions keep every type from the API (fees, interest on free cash, share lending interest, transfers), not only deposits and withdrawals; the XIRR still uses only deposits and withdrawals. Executed orders now keep their fees (currency conversion fee, stamp duty, FINRA fee etc.), shown as "Fee" lines, and appear as purchases and sales. New "Fee" type in the filter. Both caches are downloaded again once, in the background, in the new format.

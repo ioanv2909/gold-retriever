@@ -107,3 +107,7 @@ def test_journal_tab_lists_account_operations(tmp_path):
     journal_cols = [cols for cols in out["columns"] if "Sumă" in cols and "Cont" in cols]
     assert journal_cols, out["columns"]
     assert "jr_period" in out["keys"]
+    # tipurile si conturile sunt liste cu bife; fara chei T212 nu apare butonul de descarcare T212
+    assert "jr_types_deposit" in out["keys"] and "jr_types__all" in out["keys"]
+    assert "Depunere" in out["checkboxes"]
+    assert "jr_t212_now" not in out["keys"]
