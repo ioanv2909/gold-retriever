@@ -28,3 +28,31 @@ services:
         max-size: "20m"
         max-file: "3"
     restart: unless-stopped
+    x-casaos:
+      ports:
+        - container: "8501"
+          description:
+            en_us: Web UI
+            ro_ro: Interfața web
+
+# CasaOS gaseste proiectul dupa etichetele compose si citeste de aici numele, iconul si linkul aplicatiei
+# (fara blocul acesta apare un icon gri, fara link). Containerul ramane pornit de ./tools/deploy.sh.
+x-casaos:
+  architectures:
+    - amd64
+  main: gold-retriever
+  author: ioanv2909
+  developer: ioanv2909
+  category: Finance
+  icon: https://raw.githubusercontent.com/ioanv2909/gold-retriever/main/assets/icon-192.png
+  title:
+    en_us: GoldRetriever
+  tagline:
+    en_us: Portfolio analyzer for Trading 212 and XTB
+    ro_ro: Analiză de portofoliu pentru Trading 212 și XTB
+  description:
+    en_us: Self-hosted portfolio analyzer (Trading 212 API, XTB import, Yahoo Finance, justETF).
+    ro_ro: Analizor de portofoliu găzduit local (API Trading 212, import XTB, Yahoo Finance, justETF).
+  scheme: http
+  port_map: "8501"
+  index: /

@@ -1,3 +1,7 @@
+## 0.4.14 — 2026-11-03
+
+- CasaOS: `docker-compose.yml` now has the `x-casaos` metadata (title GoldRetriever, icon, category, port 8501 and link), so the app shows in the CasaOS dashboard with its name and icon and opens from there, instead of a gray icon without a link. The container is still started by `./tools/deploy.sh`.
+
 ## 0.4.13 — 2026-11-03
 
 - New `tools/nas_copy.py` (host cron, every night at 04:00): copies to the GoldRetriever share on the NAS, next to the encrypted `data/` backups, a detailed restore procedure for this server (`RESTORE-CASAOS.md`, from the private git-ignored `RESTORE-CASAOS.local.md`), the whole code as a git bundle with the version tags, the git-ignored configuration (compose override, public backup key, backup tag) and `LAST_COPY.json`. The app can thus be restored from the NAS alone, without Kopia or GitHub.
