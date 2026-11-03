@@ -1,3 +1,8 @@
+## 0.4.19 — 2026-11-03
+
+- Settings > Users > Tailscale: "Generate a new secret" (after a confirmation), for when the secret path has been seen by someone else. The old `tailscale serve` route stops being trusted at once; the tab then shows the new command to run on the server.
+- The Tailscale command has its own "Copy the command" button. The copy icon of Streamlit code blocks uses the browser clipboard API, which exists only over HTTPS or on localhost, so it did nothing at `http://<server>:8501`; the new button falls back to the older copy method there.
+
 ## 0.4.18 — 2026-11-03
 
 - User menu (👤, top right) as in AstroLibrary: the signed-in name and role in small grey text at the top, then Settings, Phone/Full version, Print page and, after a separator line, Log out, as plain list entries (no button frames, a light background on hover) instead of buttons.

@@ -105,7 +105,8 @@ the same address, so the address proves nothing; the secret path does. `tsauth.M
 strips the prefix, takes the browser's host and address from `X-Forwarded-Host` / `X-Forwarded-For` and adds an
 internal header with a per-process random value; on every other request the `Tailscale-*` headers and the internal
 one are dropped. The script reads them from `st.context.headers` (the websocket handshake). The secret is in
-`data/ts_secret` (600); Settings > Users > Tailscale shows the command:
+`data/ts_secret` (600); Settings > Users > Tailscale shows the command (with a copy button that also works over
+plain HTTP) and "Generate a new secret" (after a confirmation; the old route stops being trusted at once):
 
     docker exec tailscale tailscale serve --bg --https=8443 http://127.0.0.1:8501/ts-<secret>
 

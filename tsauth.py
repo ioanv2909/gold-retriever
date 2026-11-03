@@ -48,6 +48,17 @@ def secret(create=False):
     return s
 
 
+def rotate_secret():
+    """Un secret nou in locul celui vechi (de ex. dupa ce a fost aratat cuiva). Ruta veche a `tailscale serve`
+    nu mai e de incredere imediat; comanda noua trebuie rulata pe gazda."""
+    try:
+        os.remove(SECRET_FILE)
+    except OSError:
+        pass
+    _cache.update(secret=None, checked=0.0)
+    return secret(create=True)
+
+
 def serve_command():
     """Comanda de rulat o data pe gazda (aratata adminului)."""
     s = secret(create=True)

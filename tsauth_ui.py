@@ -18,14 +18,31 @@ def _here():
         st.caption(t("ts.here_none"))
 
 
+def _rotate(me):
+    """Callback: secretul nou, bifa de confirmare stearsa (inainte ca widget-urile sa fie desenate din nou)."""
+    tsauth.rotate_secret()
+    alerts.record_user_event("secret Tailscale regenerat", me, me, "")
+    st.session_state["ts_rot_sure"] = False
+    st.session_state["_ts_rotated"] = True
+
+
 def render_admin(me):
     """Admin: comanda `tailscale serve`, adresa, legarea fiecarui cont de un login Tailscale."""
     st.markdown("#### " + t("ts.title"))
     st.caption(t("ts.intro", port=tsauth.HTTPS_PORT))
     st.markdown(t("ts.setup"))
-    st.code(tsauth.serve_command(), language="bash")
+    cmd = tsauth.serve_command()
+    st.code(cmd, language="bash")
+    import appearance
+    appearance.copy_button(cmd, "ts_cmd", t("ts.copy"), t("ts.copied"))
     st.caption(t("ts.setup_note"))
     _here()
+    with st.expander(t("ts.rotate_title")):
+        st.caption(t("ts.rotate_help", port=tsauth.HTTPS_PORT))
+        if st.session_state.pop("_ts_rotated", False):
+            st.success(t("ts.rotated"))
+        sure = st.checkbox(t("ts.rotate_confirm"), key="ts_rot_sure")
+        st.button(t("ts.rotate"), key="ts_rot", disabled=not sure, on_click=_rotate, args=(me,))
 
     st.markdown("**" + t("ts.links") + "**")
     recs = users.records()

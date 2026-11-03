@@ -202,3 +202,43 @@ def test_user_menu_items_are_plain_list_entries(ana):
     assert all(b.proto.type == "tertiary" for b in at.button)  # fara chenar de buton, ca in AstroLibrary
     at.button(key="menu_settings").click().run()
     assert at.query_params.get("page") == "settings" and at.session_state["_page"] == "settings"
+
+
+def test_rotate_secret_replaces_the_trusted_prefix(secret):
+    new = tsauth.rotate_secret()
+    assert new != secret and tsauth.secret() == new
+    old_req = tsauth.rewrite(_scope("/ts-%s/" % secret, [("tailscale-user-login", "a@b.c")]))
+    assert old_req["path"] == "/ts-%s/" % secret and "tailscale-user-login" not in _h(old_req)
+    assert tsauth.rewrite(_scope("/ts-%s/" % new))["path"] == "/"
+
+
+def _ts_admin_page():
+    import tsauth_ui
+    tsauth_ui.render_admin("ana")
+
+
+def test_admin_tab_rotates_after_confirmation(ana, monkeypatch):
+    import alerts
+    monkeypatch.setattr(alerts, "record_user_event", lambda *a, **k: None)
+    first = tsauth.secret(create=True)
+    at = AppTest.from_function(_ts_admin_page).run()
+    assert at.button(key="ts_rot").disabled
+    at.checkbox(key="ts_rot_sure").check().run()
+    at.button(key="ts_rot").click().run()
+    assert not at.exception and tsauth.secret() != first
+    assert at.checkbox(key="ts_rot_sure").value is False and at.success
+    assert any(tsauth.secret() in c.value for c in at.code)
+
+
+def test_copy_button_has_a_fallback_for_plain_http(monkeypatch):
+    import json as _json
+
+    import appearance
+    shown = []
+    monkeypatch.setattr(appearance.st, "html", lambda body, **k: shown.append((body, k)))
+    text = "docker exec x 'a</b>'"
+    appearance.copy_button(text, "ts cmd", "Copy", "Done")
+    body, kw = shown[0]
+    assert kw.get("unsafe_allow_javascript") is True
+    assert 'execCommand("copy")' in body and "isSecureContext" in body and 'id="gr-copy-tscmd"' in body
+    assert _json.dumps(text).replace("</", "<\\/") in body and "</b>" not in body  # sir JSON, fara "</" brut
