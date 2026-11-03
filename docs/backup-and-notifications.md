@@ -63,6 +63,20 @@ file and renamed, so a symlink left there is replaced, not followed.
 
 Test a failure without touching anything: `DEST=/mnt/does-not-exist /usr/local/sbin/backup-goldretriever.sh`
 
+### NAS copy of the restore procedure and the code
+
+`tools/nas_copy.py` (standard library + git, run as the user that owns the repo, not root) copies to the share,
+next to the archives: `RESTORE-CASAOS.md` (the full restore procedure of this server, from the git-ignored
+`RESTORE-CASAOS.local.md`), `code/gold-retriever.bundle` (the whole git history with tags),
+`config/` (the git-ignored `docker-compose.override.yml`, `backup-key.asc` public key, `backup-tag`) and
+`LAST_COPY.json`. Files that did not change are not copied again; it refuses a private key in
+`backup-key.asc` and an unmounted share. Its status is in `data/nas_copy_status.json` and on the Status page
+("NAS copy"). Install it in the same crontab as the host watchdog:
+
+    0 4 * * * /usr/bin/python3 /DATA/AppData/gold-retriever/tools/nas_copy.py >> /home/ioanv/goldretriever-nas-copy.log 2>&1
+
+The archive rotation of the backup script only touches `data-*.tar.gz[.gpg]`, so these files stay.
+
 ### Restore
 
     cd /DATA/AppData/gold-retriever

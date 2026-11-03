@@ -1,3 +1,8 @@
+## 0.4.13 — 2026-11-03
+
+- New `tools/nas_copy.py` (host cron, every night at 04:00): copies to the GoldRetriever share on the NAS, next to the encrypted `data/` backups, a detailed restore procedure for this server (`RESTORE-CASAOS.md`, from the private git-ignored `RESTORE-CASAOS.local.md`), the whole code as a git bundle with the version tags, the git-ignored configuration (compose override, public backup key, backup tag) and `LAST_COPY.json`. The app can thus be restored from the NAS alone, without Kopia or GitHub.
+- Settings > Status: new "NAS copy (procedure, code)" row (green, old after 26 hours, red after a failed run, gray when the cron job is not installed).
+
 ## 0.4.12 — 2026-11-03
 
 - Settings > Log keeps the last 5000 lines in memory (was 1000) and can show all of them.

@@ -13,3 +13,4 @@ build_info.json
 .venv/
 backup-key.asc
 backup-tag
+*.local.md

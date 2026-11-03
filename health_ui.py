@@ -44,8 +44,39 @@ def _sources():
             t("hs.col.last_error"): err or "—",
         })
     rows.append(_backup_row())
+    rows.append(_nas_copy_row())
     rows.append(_uptime_row())
     return rows
+
+
+NAS_COPY_MAX_AGE_H = 26
+
+
+def _nas_copy_row():
+    """Copia de noapte pe NAS (tools/nas_copy.py, cron ioanv): procedura de restaurare, codul, configurarea."""
+    import notify
+    try:
+        with open(os.path.join(notify.DATA_ROOT, "nas_copy_status.json"), encoding="utf-8") as f:
+            s = json.load(f)
+    except Exception:
+        s = {}
+    ok, fail = s.get("ok_ts"), s.get("fail_ts")
+    note = "—"
+    if not ok and not fail:
+        level, text = "gray", t("nc.not_installed")
+    elif fail and (not ok or fail > ok):
+        level, text, note = "red", t("hs.level.red"), s.get("error") or "—"
+    elif time.time() - ok > NAS_COPY_MAX_AGE_H * 3600:
+        level, text, note = "yellow", t("nc.old"), t("nc.old_note", h=NAS_COPY_MAX_AGE_H)
+    else:
+        level, text = "green", t("hs.level.green")
+    return {
+        t("hs.col.service"): t("hs.src.nas_copy"),
+        t("hs.col.state"): _dot(level, text),
+        t("hs.col.last_ok"): _ago(ok),
+        t("hs.col.requests"): s.get("code") or "—", t("hs.col.ms"): "—",
+        t("hs.col.last_error"): note,
+    }
 
 
 def _uptime_row():
