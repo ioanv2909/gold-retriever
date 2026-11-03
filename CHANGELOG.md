@@ -1,3 +1,7 @@
+## 0.4.7 — 2026-11-03
+
+- New "📒 Journal" tab on the main page: every account operation (deposits, withdrawals, dividends, withholding tax, interest, purchases, sales), filtered by operation type, account and period (last 30 days, 3 months, year to date, 12 months, all history or a custom range), with totals per type and currency and a CSV download. Sources: all cash operations from the imported XTB exports; for Trading 212, deposits/withdrawals and dividend payments (the dividend cache now keeps each payment with its date, filled at the next dividend update).
+
 ## 0.4.6 — 2026-11-02
 
 - Settings > Notifications > Calendar: new "Send a test email now" button. It sends the events of the chosen window to the account's address, with [TEST] in the subject, and does not mark them as sent, so the automatic emails are unchanged.

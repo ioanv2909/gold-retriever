@@ -99,3 +99,11 @@ def test_brokers_tab_holds_trading212_and_xtb(tmp_path, query, inner):
     # se randeaza doar sub-tabul deschis
     other = "xtb_prices_refresh" if inner == "set_kid" else "set_kid"
     assert other not in out["keys"]
+
+
+def test_journal_tab_lists_account_operations(tmp_path):
+    out = _run(tmp_path, "both", "tab=journal")
+    assert any(t.startswith("📒") for t in out["tabs"])
+    journal_cols = [cols for cols in out["columns"] if "Sumă" in cols and "Cont" in cols]
+    assert journal_cols, out["columns"]
+    assert "jr_period" in out["keys"]

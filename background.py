@@ -85,7 +85,8 @@ def fetch_and_cache_dividends(key_id, secret, tickers):
             continue
         total = sum(it.get("amount", 0.0) for it in items)
         last_paid = max((it.get("paidOn") for it in items), default=None)
-        dividends[ticker] = {"total": total, "count": len(items), "last_paid_on": last_paid}
+        payments = [{"paidOn": it.get("paidOn"), "amount": it.get("amount", 0.0)} for it in items if it.get("paidOn")]
+        dividends[ticker] = {"total": total, "count": len(items), "last_paid_on": last_paid, "payments": payments}
         save_dividends_status({"in_progress": True, "started_at": None, "total": len(tickers), "done": idx + 1})
         if idx < len(tickers) - 1:
             time.sleep(12)

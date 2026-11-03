@@ -37,7 +37,7 @@ Everything is JSON except `auth_secret`. Do not commit this folder:
 | `config.json` | Trading 212 key and secret, refresh interval |
 | `account_info_cache.json` | Account currency |
 | `portfolio_cache.json` | Latest Trading 212 snapshot |
-| `dividends_cache.json`, `dividends_status.json` | Dividends per ticker and job progress |
+| `dividends_cache.json`, `dividends_status.json` | Dividends per ticker (total and each payment) and job progress |
 | `ratings_cache.json`, `ratings_status.json` | Analyst recommendations, upside to the mean price target, and job progress |
 | `alert_rules.json`, `alert_rules_state.json`, `alert_log.json` | Position alert rules (price, score, concentration, events), their state between checks, and the last 200 fired alerts |
 | `strategy_profile.json` | Investor profile for the strategy lenses (which lenses count towards convergence) |
@@ -46,7 +46,7 @@ Everything is JSON except `auth_secret`. Do not commit this folder:
 | `weekly_report.json`, `weekly_report_state.json` | Weekly report opt-in, day and hour; last week sent and the dividend totals at that time (for "received since the last report") |
 | `t212_fills.json` | Executed orders used to rebuild history |
 | `t212_first_dates.json` | First purchase dates |
-| `t212_flows.json` | Deposits and withdrawals (for XIRR) |
+| `t212_flows.json` | Deposits and withdrawals (for XIRR and the Journal tab) |
 | `t212_history_reconstructed.json` | Rebuilt daily history, Trading 212 |
 | `xtb.json` | Imported XTB accounts, positions, cash operations |
 | `xtb_prices.json`, `xtb_prices_status.json` | Yahoo prices for XTB positions and progress |

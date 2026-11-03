@@ -185,10 +185,11 @@ def _render_tabs(df, df_display, vdf, display_ccy, total_portfolio_value, compac
     # pe telefon lipsesc taburile grele (strategii, expunere, comparare)
     _tabs = url_tabs([e for e in [("positions", t("tab.positions")), ("strategies", t("tab.strategies")),
                                   ("exposure", t("tab.exposure")), ("compare", t("tab.compare")),
-                                  ("calendar", t("tab.events")), ("watchlist", t("tab.watchlist"))]
+                                  ("calendar", t("tab.events")), ("journal", t("tab.journal")),
+                                  ("watchlist", t("tab.watchlist"))]
                       if not (compact and e[0] in ("strategies", "exposure", "compare"))], "main_tab")
-    tab_pos, tab_st, tab_ex, tab_cmp, tab_ev, tab_wl = (
-        _tabs.get(k) for k in ("positions", "strategies", "exposure", "compare", "calendar", "watchlist"))
+    tab_pos, tab_st, tab_ex, tab_cmp, tab_ev, tab_jr, tab_wl = (
+        _tabs.get(k) for k in ("positions", "strategies", "exposure", "compare", "calendar", "journal", "watchlist"))
     with tab_pos:
         render_positions_table(df, df_display, display_ccy, total_portfolio_value, compact)
 
@@ -212,6 +213,11 @@ def _render_tabs(df, df_display, vdf, display_ccy, total_portfolio_value, compac
         with tab_ev:
             from events_ui import render_calendar_tab
             render_calendar_tab(dict(zip(df_display["ticker"], df_display["name"])))
+
+    if tab_jr.open is not False:
+        with tab_jr:
+            from journal_ui import render_journal_tab
+            render_journal_tab(dict(zip(df_display["ticker"], df_display["name"])))
 
     if not detail_loading:
         with tab_wl:
