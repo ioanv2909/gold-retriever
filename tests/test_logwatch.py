@@ -157,8 +157,12 @@ def test_log_tab_only_for_admins(monkeypatch):
     monkeypatch.setattr(settings_page, "url_tabs", fake_tabs)
     monkeypatch.setattr(settings_page.st, "columns", lambda *a, **k: [type("C", (), {
         "button": lambda *a, **k: False, "markdown": lambda *a, **k: None,
-        "__enter__": lambda s: s, "__exit__": lambda s, *a: None})() for _ in range(3)])
+        "__enter__": lambda s: s, "__exit__": lambda s, *a: None})() for _ in range(4)])
     monkeypatch.setattr(settings_page, "lang_button", lambda key: None)
+    import appearance
+    import auth
+    monkeypatch.setattr(appearance, "sticky_header", lambda key: None)
+    monkeypatch.setattr(auth, "user_menu", lambda me: None)
     for role, has_log in (("admin", True), ("user", False)):
         monkeypatch.setattr(settings_page.users, "role", lambda me, r=role: r)
         settings_page.render_settings("ana")

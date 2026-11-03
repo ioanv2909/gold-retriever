@@ -52,6 +52,8 @@ def _render_header(me, compact, detail_loading):
             "Demo account: all data is fictional (real tickers and prices, invented purchases). This is not financial advice.",
             icon="🧪",
         )
+    import appearance
+    appearance.sticky_header("app_header")  # stilul si culorile temei inainte de bara, ca sa nu adauge spatiu in ea
     _hdr = st.container(key="app_header")
     # pe telefon fara sigla si titlu (sigla apare la login), doar limba si utilizatorul
     if compact:
@@ -62,7 +64,7 @@ def _render_header(me, compact, detail_loading):
             if os.path.exists("assets/icon-192.png"):
                 with open("assets/icon-192.png", "rb") as _f:
                     st.markdown(
-                        '<img src="data:image/png;base64,%s" width="64">' % base64.b64encode(_f.read()).decode(),
+                        '<img class="gr-logo" src="data:image/png;base64,%s" width="64">' % base64.b64encode(_f.read()).decode(),
                         unsafe_allow_html=True,
                     )
         with _c_title:

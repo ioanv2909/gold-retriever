@@ -1,3 +1,7 @@
+## 0.4.17 — 2026-11-03
+
+- Header fixed at the top, as in AstroLibrary: on the main page (logo, title, language, user menu with Settings) and in Settings (Back, title, language and now the user menu too) the bar stays visible while scrolling, with a translucent, blurred background in the colors of the current theme and a thin line below; the title and logo shrink as the page scrolls. The position page's fixed bar now uses the theme colors too (it was dark in the light theme).
+
 ## 0.4.16 — 2026-11-03
 
 - Settings > About: the constellation Canis Major (the Great Dog) in 3D, its 19 stars at their real sky positions and distances (Sirius in front). It sways by itself; drag to turn it, double-click for full screen; still picture with reduced motion. Made in the AstroLibrary session, which now shows Canis Minor instead.

@@ -137,16 +137,22 @@ def _tab_users(me):
 
 
 def render_settings(me, sections=()):
-    top = st.columns([2, 7, 2], vertical_alignment="center")
-    if top[0].button(_L("← Înapoi", "← Back"), key="settings_back"):
-        st.session_state.pop("_page", None)
-        st.query_params.pop("page", None)
-        reset_tabs("settings_tab")
-        st.rerun()
-    top[1].markdown("## ⚙️ " + _L("Setări", "Settings"))
-    with top[2]:
-        # aceeasi cheie ca in pagina principala, deci limba se salveaza la fel
-        lang_button("lang_switch_settings")
+    import appearance
+    appearance.sticky_header("settings_header")
+    with st.container(key="settings_header"):
+        top = st.columns([2, 7, 2, 2], vertical_alignment="center")
+        if top[0].button(_L("← Înapoi", "← Back"), key="settings_back"):
+            st.session_state.pop("_page", None)
+            st.query_params.pop("page", None)
+            reset_tabs("settings_tab")
+            st.rerun()
+        top[1].markdown("## ⚙️ " + _L("Setări", "Settings"))
+        with top[2]:
+            # aceeasi cheie ca in pagina principala, deci limba se salveaza la fel
+            lang_button("lang_switch_settings")
+        with top[3]:
+            from auth import user_menu
+            user_menu(me)
 
     # (id, eticheta, functie); id-ul apare in URL (?tab=...), deci nu depinde de limba
     sections = list(sections)

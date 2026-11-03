@@ -241,10 +241,11 @@ def render_detail_view(position_row, total_portfolio_value, api_key_id, api_secr
 [data-testid="stMainBlockContainer"], .block-container {padding-top: 0.5rem !important;}
 .st-key-detail_header {
     position: sticky; top: 0; z-index: 999;
-    background: var(--background-color, #0e1117);
+    background: color-mix(in srgb, var(--gr-bg, #0e1117) 90%, transparent);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
     padding: 0.35rem 0 0.25rem 0;
     min-height: 3.6rem;
-    border-bottom: 1px solid rgba(250,250,250,0.12);
+    border-bottom: 1px solid color-mix(in srgb, var(--gr-fg, #fafafa) 14%, transparent);
 }
 [data-testid="stLayoutWrapper"]:has(> .st-key-detail_header),
 [data-testid="stElementContainer"]:has(> .st-key-detail_header) {
@@ -263,6 +264,8 @@ def render_detail_view(position_row, total_portfolio_value, api_key_id, api_secr
 }
 </style>"""
 
+    import appearance
+    appearance._run_js(appearance._THEME_VARS_JS)  # fundalul temei curente pentru bara fixa
     with st.container(key="detail_header"):
         st.markdown(_HEADER_CSS, unsafe_allow_html=True)
         mapping = load_ticker_map()

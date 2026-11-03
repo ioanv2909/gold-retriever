@@ -21,6 +21,44 @@ def _run_js(body):
     st.html("<script>// " + str(time.time()) + "\n" + body + "</script>", unsafe_allow_javascript=True)
 
 
+_STICKY_CSS = """<style>
+/* bara de sus fixa (ca in AstroLibrary): titlul, limba si meniul raman vizibile la derulare */
+[data-testid="stLayoutWrapper"]:has(> .st-key-%(k)s),
+[data-testid="stElementContainer"]:has(> .st-key-%(k)s),
+.st-key-%(k)s {
+    position: sticky; top: 0; z-index: 999;
+}
+.st-key-%(k)s {
+    background: color-mix(in srgb, var(--gr-bg, #0e1117) 90%%, transparent);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    border-bottom: 1px solid color-mix(in srgb, var(--gr-fg, #fafafa) 14%%, transparent);
+    padding: 0.35rem 0 0.35rem 0;
+}
+.st-key-%(k)s h1 {padding: 0 !important; margin: 0 !important; line-height: 1.15;}
+.st-key-%(k)s img {transition: width 0.2s;}
+@keyframes gr-hdr-title {from {font-size: 2.6rem;} to {font-size: 1.5rem;}}
+@keyframes gr-hdr-logo {from {width: 64px;} to {width: 40px;}}
+@supports (animation-timeline: scroll()) {
+    .st-key-%(k)s h1 {animation: gr-hdr-title linear both; animation-timeline: scroll(nearest); animation-range: 0px 160px;}
+    .st-key-%(k)s img.gr-logo {animation: gr-hdr-logo linear both; animation-timeline: scroll(nearest); animation-range: 0px 160px;}
+}
+</style>"""
+
+# culorile temei curente (Streamlit nu le expune ca variabile CSS): fundalul si textul aplicatiei
+_THEME_VARS_JS = """
+var w = window.parent || window, d = w.document, app = d.querySelector('[data-testid="stApp"]') || d.body;
+var cs = w.getComputedStyle(app);
+d.documentElement.style.setProperty('--gr-bg', cs.backgroundColor);
+d.documentElement.style.setProperty('--gr-fg', cs.color);
+"""
+
+
+def sticky_header(key):
+    """Containerul cu cheia `key` devine bara de sus fixa, cu fundalul temei (deschisa sau inchisa)."""
+    st.markdown(_STICKY_CSS % {"k": key}, unsafe_allow_html=True)
+    _run_js(_THEME_VARS_JS)
+
+
 def print_page():
     """Inchide popover-ul deschis (Escape) si deschide dialogul de tiparire al browserului."""
     _run_js("""
