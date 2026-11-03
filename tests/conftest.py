@@ -188,3 +188,11 @@ def _isolated_logstore(tmp_path, monkeypatch):
     monkeypatch.setattr(logstore, "SETTINGS_FILE", str(tmp_path / "log_settings.json"))
     monkeypatch.setattr(logstore, "_fh", {"day": None, "f": None})
     monkeypatch.setattr(logstore, "_state", {"last_check": 0.0})
+
+
+@pytest.fixture(autouse=True)
+def _isolated_tsauth(tmp_path, monkeypatch):
+    """Secretul Tailscale se scrie in data/; in teste merge intr-un director temporar."""
+    import tsauth
+    monkeypatch.setattr(tsauth, "SECRET_FILE", str(tmp_path / "ts_secret"))
+    monkeypatch.setattr(tsauth, "_cache", {"secret": None, "checked": 0.0})

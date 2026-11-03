@@ -1,3 +1,10 @@
+## 0.4.15 — 2026-11-03
+
+- Sign-in through Tailscale, as in AstroLibrary: at the server's Tailscale address (`https://casaos.<tailnet>.ts.net:8443`) a person whose Tailscale login is linked to an account gets in without a password or 2FA code. Set up once with the command shown in Settings > Users > Tailscale (`tailscale serve` on port 8443 to a secret path; the secret is in `data/ts_secret`). Accounts are linked by an admin (Settings > Users > Tailscale) or by the person (Settings > Security, after one password sign-in at the Tailscale address). Signing out there pauses the automatic sign-in on that browser until the next password sign-in. Direct access on port 8501 is unchanged; nobody on the network can claim a Tailscale identity there.
+- The container now starts `server.py` (Streamlit `st.App` around `app.py` with the Tailscale middleware) instead of `app.py`.
+- Settings > Users > Manage: rename a user. Data, role, password, 2FA, email and Tailscale link stay; the account's sessions end and the person signs in with the new name. The background jobs of the old name stop by themselves.
+- The users list shows the linked Tailscale login.
+
 ## 0.4.14 — 2026-11-03
 
 - CasaOS: `docker-compose.yml` now has the `x-casaos` metadata (title GoldRetriever, icon, category, port 8501 and link), so the app shows in the CasaOS dashboard with its name and icon and opens from there, instead of a gray icon without a link. The container is still started by `./tools/deploy.sh`.

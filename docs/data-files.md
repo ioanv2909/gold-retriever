@@ -7,9 +7,10 @@ Everything is JSON except `auth_secret`. Do not commit this folder:
 
 | File | Content |
 |---|---|
-| `users.json` | Accounts, roles, salted PBKDF2 password hashes; for accounts with 2FA also the TOTP secret, the last used time step and salted SHA-256 hashes of the recovery codes |
+| `users.json` | Accounts, roles, salted PBKDF2 password hashes; for accounts with 2FA also the TOTP secret, the last used time step and salted SHA-256 hashes of the recovery codes; the linked Tailscale login (`ts_login`) |
 | `twofa_policy.json` | Admin 2FA policy: `optional`, `admins` or `all` (missing file: optional) |
 | `auth_secret` | Secret used by the login session |
+| `ts_secret` | Secret path prefix for `tailscale serve` (sign-in through Tailscale; mode 600) |
 | `ui_prefs.json` | Interface preferences |
 | `instruments_cache.json` | Trading 212 instrument metadata |
 | `justetf_cache.json` | justETF data for ETFs |

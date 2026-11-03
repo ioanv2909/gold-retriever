@@ -218,11 +218,93 @@ def bump_session(name):
     return None
 
 
+def rename_user(old, new):
+    """Redenumeste un cont: cheia din users.json, folderul data/users/<cheie>/ si dispozitivele cunoscute.
+    Rolul, parola, 2FA, emailul si legatura Tailscale raman. Sesiunile contului ies (token-urile contin numele).
+    Returneaza (cheie_noua, None) sau (None, cod_eroare)."""
+    new = str(new).strip()
+    if not _NAME_RE.match(new):
+        return None, "name"
+    d = _load()
+    okey, nkey = str(old).lower(), new.lower()
+    rec = d["users"].get(okey)
+    if not rec:
+        return None, "name"
+    if nkey != okey and nkey in d["users"]:
+        return None, "exists"
+    base = os.path.join(DATA_ROOT, "users")
+    src = contained_path(base, safe_name(okey))
+    dst = contained_path(base, safe_name(nkey))
+    moved = False
+    if nkey != okey:
+        if os.path.exists(dst):
+            return None, "dir_exists"
+        if os.path.isdir(src):
+            os.rename(src, dst)
+            moved = True
+    try:
+        rec = dict(rec, name=new, sess_ver=int(rec.get("sess_ver") or 0) + 1)
+        del d["users"][okey]
+        d["users"][nkey] = rec
+        _save(d)
+    except Exception:
+        if moved:
+            os.rename(dst, src)
+        raise
+    if nkey != okey:
+        try:
+            import known_devices
+            known_devices.rename_user(okey, nkey)
+        except Exception:
+            pass
+        try:
+            import presence
+            presence.forget_user(okey)
+        except Exception:
+            pass
+    return nkey, None
+
+
+def set_ts_login(name, login):
+    """Leaga contul de un login Tailscale ('' dezleaga). Un login pe cont si un cont pe login."""
+    login = str(login or "").strip().lower()
+    if login and (len(login) > 254 or " " in login):
+        return "ts_login"
+    d = _load()
+    key = str(name).lower()
+    rec = d["users"].get(key)
+    if not rec:
+        return "name"
+    if login and any(k != key and (r.get("ts_login") or "") == login for k, r in d["users"].items()):
+        return "ts_taken"
+    if login:
+        rec["ts_login"] = login
+    else:
+        rec.pop("ts_login", None)
+    _save(d)
+    return None
+
+
+def by_ts_login(login):
+    """Cheia contului legat de login-ul Tailscale, sau None."""
+    login = str(login or "").strip().lower()
+    if not login:
+        return None
+    for k, r in _load()["users"].items():
+        if (r.get("ts_login") or "") == login:
+            return k
+    return None
+
+
+def ts_login(name):
+    return (_load()["users"].get(str(name).lower()) or {}).get("ts_login")
+
+
 def records():
     d = _load()["users"]
     return [
         {"key": k, "name": v.get("name", k), "role": v.get("role"), "created": v.get("created"), "email": v.get("email"),
-         "twofa": bool(v.get("totp_secret"))}
+         "twofa": bool(v.get("totp_secret")), "ts_login": v.get("ts_login")}
         for k, v in sorted(d.items())
     ]
 

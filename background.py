@@ -19,6 +19,7 @@ import json
 import time
 import threading
 import joblog
+import users as users_mod
 import tempfile
 from datetime import datetime
 from urllib.parse import quote
@@ -426,12 +427,29 @@ def xtb_positions_for_context():
     return list(out.values())
 
 
-@st.cache_resource
+_schedulers = {}
+_sched_lock = threading.Lock()
+
+
 def start_background_scheduler(user=None):
+    """Un fir de fundal pe utilizator si proces; pornit din nou daca s-a oprit (cont sters, apoi recreat)."""
+    with _sched_lock:
+        t = _schedulers.get(user)
+        if t is not None and t.is_alive():
+            return t
+        t = _schedulers[user] = _start_scheduler(user)
+        return t
+
+
+def _start_scheduler(user=None):
     def run_loop():
         last_core = last_div = last_rat = last_q = last_m = last_w = last_j = last_x = last_h = 0.0
         last_hc = last_ev = last_evn = last_pa = last_ex = last_st = last_sym = last_wp = last_wr = 0.0
         while True:
+            if user and not users_mod.exists(user):
+                # contul a fost sters sau redenumit: fara ciclu orfan care sa scrie in data/users/<vechiul nume>/
+                print(f"[job] stop scheduler user={user} (account no longer exists)", flush=True)
+                return
             cfg = load_config()
             key_id, secret = cfg.get("api_key_id"), cfg.get("api_secret")
             interval_s = max(1, int(cfg.get("interval_minutes", 15))) * 60

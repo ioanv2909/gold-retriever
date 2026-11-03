@@ -78,3 +78,16 @@ def check_login(user, ua, ip=None, now=None):
         alerts.record_user_event("autentificare de pe dispozitiv nou", user, user,
                                  "dispozitiv: %s, ora: %s, IP: %s" % (label, when, short_ip(ip)))
     return status
+
+
+def rename_user(old, new):
+    """Dispozitivele cunoscute trec la numele nou al contului (redenumire din Setari -> Utilizatori)."""
+    old, new = str(old).lower(), str(new).lower()
+
+    def upd(d):
+        d = d if isinstance(d, dict) else {}
+        if old in d:
+            d[new] = d.pop(old)
+        return d
+
+    update_json_file(DEVICES_FILE, {}, upd)

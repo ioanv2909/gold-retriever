@@ -113,6 +113,9 @@ def _tab_password(me):
     render_change_password(me)
     st.divider()
     render_security(me)
+    st.divider()
+    from tsauth_ui import render_own
+    render_own(me)
 
 
 def _tab_users(me):

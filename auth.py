@@ -14,6 +14,7 @@ from url_tabs import reset as reset_tabs
 import known_devices
 import presence
 import session_policy
+import tsauth
 import twofa
 import users
 
@@ -83,6 +84,29 @@ def _tr(key, **kw):
 def _cookie_js(value, max_age):
     # st.html cu JavaScript ruleaza direct in pagina (fara iframe); inlocuieste components.html
     _run_js("document.cookie = '%s=%s; max-age=%d; path=/; SameSite=Lax';" % (_COOKIE, value, max_age))
+
+
+def _no_ts_cookie(on):
+    """Opreste (on) sau reporneste autentificarea automata prin Tailscale in acest browser."""
+    _run_js("document.cookie = '%s=%s; max-age=%d; path=/; SameSite=Lax';"
+            % (tsauth.NO_AUTO_COOKIE, "1" if on else "", 365 * 86400 if on else 0))
+
+
+def _ts_paused():
+    if st.session_state.get("_ts_paused_now"):
+        return True
+    try:
+        return st.context.cookies.get(tsauth.NO_AUTO_COOKIE) == "1"
+    except Exception:
+        return False
+
+
+def _tailscale_user():
+    """Contul legat de persoana Tailscale din spatele cererii (prin `tailscale serve`), sau None."""
+    if st.session_state.get("_auth_loggedout") or _ts_paused():
+        return None, None
+    login, _ = tsauth.identity()
+    return users.by_ts_login(login), login
 
 
 def _read_cookie():
@@ -314,6 +338,9 @@ def render_change_password(me):
 
 def _logout():
     _log("logout", st.session_state.get("_user"))
+    if tsauth.via_tailscale():
+        # altfel identitatea Tailscale te-ar autentifica imediat din nou; cookie-ul se pune la randarea urmatoare
+        st.session_state["_auth_ts_pause"] = True
     try:
         presence.forget_session(st.session_state.pop("_presence_id", None))
     except Exception:
@@ -448,6 +475,16 @@ def _authenticate():
 
     if st.session_state.pop("_auth_clear_cookie", False):
         _cookie_js("", 0)
+    if st.session_state.pop("_auth_ts_pause", False):
+        _no_ts_cookie(True)
+        st.session_state["_ts_paused_now"] = True
+
+    ts_key, ts_login = _tailscale_user()
+    if ts_key and not st.session_state.get("_pending_2fa"):
+        # tailnet-ul a autentificat deja persoana (cont Tailscale + dispozitiv); parola si 2FA nu se mai cer
+        _log("login ok", ts_key, via="tailscale", ts=ts_login)
+        st.session_state["_via_ts"] = True
+        return _finish_login(ts_key, st.empty())
 
     pending = st.session_state.get("_pending_2fa")
     if pending:
@@ -481,6 +518,10 @@ def _authenticate():
                 st.warning(i18n.t("tfa.step_expired"))
             if setup:
                 st.info(_tr("setup_info"))
+            notice = st.session_state.pop("_auth_notice", None)
+            if notice:
+                st.success(notice)
+            _ts_login_hint()
             with st.form("login_form"):
                 uname = st.text_input(_tr("user"))
                 pw = st.text_input(_tr("pwd"), type="password")
@@ -524,7 +565,24 @@ def _authenticate():
             st.rerun()
         _clear_fails(key)
         _log("login ok", key, via="password")
+    if _ts_paused():
+        _no_ts_cookie(False)  # dupa o autentificare cu parola, Tailscale te recunoaste din nou in acest browser
+        st.session_state.pop("_ts_paused_now", None)
     return _finish_login(key, ph)
+
+
+def _ts_login_hint():
+    """Pe formularul de autentificare, la adresa Tailscale: de ce nu s-a intrat automat."""
+    from i18n import t
+    if not tsauth.via_tailscale():
+        return
+    login, _ = tsauth.identity()
+    if _ts_paused():
+        st.caption(t("ts.paused"))
+    elif login:
+        st.caption(t("ts.not_linked", login=login))
+    else:
+        st.caption(t("ts.no_identity"))
 
 
 def _finish_login(key, ph):
@@ -625,8 +683,12 @@ def render_users_page(me, embedded=False):
 
     names = users.names()
     from i18n import t
-    t_list, t_add, t_manage, t_online, t_sess = st.tabs(
-        [_tr("tab_list"), _tr("tab_add"), _tr("tab_manage"), t("pres.tab"), t("sess.tab")])
+    t_list, t_add, t_manage, t_online, t_sess, t_ts = st.tabs(
+        [_tr("tab_list"), _tr("tab_add"), _tr("tab_manage"), t("pres.tab"), t("sess.tab"), t("ts.tab")])
+
+    with t_ts:
+        from tsauth_ui import render_admin
+        render_admin(me)
 
     with t_online:
         from presence_ui import render_online
@@ -646,6 +708,7 @@ def render_users_page(me, embedded=False):
                 _tr("col_role"): r["role"],
                 _tr("col_created"): time.strftime("%Y-%m-%d", time.localtime(r["created"])) if r.get("created") else "",
                 "2FA": "✅" if r.get("twofa") else "—",
+                "Tailscale": r.get("ts_login") or "—",
             }
             for r in users.records()
         ]
@@ -695,6 +758,29 @@ def render_users_page(me, embedded=False):
         with c4:
             from twofa_ui import render_admin_reset
             render_admin_reset(me, names)
+        st.divider()
+        _render_rename(me, names)
+
+
+def _render_rename(me, names):
+    """Redenumirea unui cont (admin): datele, rolul, parola, 2FA si legatura Tailscale raman."""
+    from i18n import t
+    st.markdown("**" + t("rn.title") + "**")
+    st.caption(t("rn.help"))
+    c1, c2, c3 = st.columns([2, 2, 2], vertical_alignment="bottom")
+    old = c1.selectbox(_tr("user"), names, key="adm_rn_user")
+    new = c2.text_input(t("rn.new"), key="adm_rn_new")
+    if c3.button(t("rn.apply"), key="adm_rn"):
+        key, err = users.rename_user(old, new)
+        if err:
+            _flash("err", t("rn.err_" + err) if err == "dir_exists" else _tr("err_" + err))
+        alerts.record_user_event("utilizator redenumit", me, key, "nume vechi: " + str(old))
+        _log("user renamed", me, old=old, new=key)
+        if old == me:
+            # sesiunea veche nu mai e valida: intra din nou cu numele nou (aceeasi parola si 2FA)
+            st.session_state["_auth_notice"] = t("rn.self_done", new=key)
+            _logout()
+        _flash("ok", t("rn.done", old=old, new=key))
 
 
 _S.update({

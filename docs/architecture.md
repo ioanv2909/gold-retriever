@@ -17,6 +17,8 @@ service of its own; it only calls the Trading 212 API and public market data
 
 ## Startup and routing
 
+0. The container runs `streamlit run server.py`: `server.py` is an `st.App("app.py")` with the Tailscale
+   middleware (`tsauth.Middleware`, ASGI), see Users below.
 1. `app.py` calls `require_login()` (`auth.py`). Nothing else renders before login.
 2. The header shows the logo, language switch and the user menu (Settings, Log out).
 3. If the session flag `_page == "settings"`, `settings_page.render_settings()`
@@ -33,6 +35,7 @@ UI
 - `watchlist_ui.py` - Watchlist tab. `navigation.py` - open position from table selection, `?detail=`, `?page=`.
 - `updates_ui.py`, `xtb_import_ui.py` - Settings > Updates and XTB import. `lang_prefs.py` - saved language.
 - `auth.py` - login form, user menu, user management page.
+- `tsauth.py`, `tsauth_ui.py`, `server.py` - sign-in through Tailscale: ASGI middleware, linking accounts.
 - `settings_page.py` - Settings tabs: Trading 212 keys, Updates, XTB import, Users (admin), About.
 - `detail_view.py` - per-position analysis page.
 - `holdings_ui.py`, `watchlist.py`, `gauges.py` - positions table, watchlist, gauge charts.
@@ -87,6 +90,31 @@ fragment (`st.fragment(run_every=60)`) updates it, at most one write per 45 s.
 Forced sign-out bumps a per-user `sess_ver` in `users.json`; once it is above 0
 it is part of the cookie signature, and the heartbeat compares it with the
 version the session started with, so open sessions end within a minute.
+
+Admins can rename an account (Settings > Users > Manage): `users.rename_user` moves the key in `users.json`,
+the folder `data/users/<name>/` and the known devices; role, password, 2FA, email and the Tailscale link stay.
+The cookie signature contains the name, so the account's sessions end. The background scheduler of a user stops
+by itself when the account no longer exists (deleted or renamed) and starts again under the new name.
+
+### Sign-in through Tailscale
+
+As in AstroLibrary: `tailscale serve` (the `tailscale` container, host network) proxies
+`https://casaos.<tailnet>.ts.net:8443/` to `http://127.0.0.1:8501/ts-<secret>/` and adds `Tailscale-User-Login` /
+`Tailscale-User-Name` for people (not for tagged devices). Every client reaches the app through docker's proxy with
+the same address, so the address proves nothing; the secret path does. `tsauth.Middleware` (ASGI, in `server.py`)
+strips the prefix, takes the browser's host and address from `X-Forwarded-Host` / `X-Forwarded-For` and adds an
+internal header with a per-process random value; on every other request the `Tailscale-*` headers and the internal
+one are dropped. The script reads them from `st.context.headers` (the websocket handshake). The secret is in
+`data/ts_secret` (600); Settings > Users > Tailscale shows the command:
+
+    docker exec tailscale tailscale serve --bg --https=8443 http://127.0.0.1:8501/ts-<secret>
+
+An account is linked to one Tailscale login (`ts_login` in `users.json`) by an admin (Settings > Users > Tailscale)
+or by the person (Settings > Security, "Link to …", after one password sign-in at the Tailscale address). A linked
+login signs in without password and 2FA (the tailnet has authenticated the person and the device); sign-ins are
+logged as `[auth] login ok ... via=tailscale`. Signing out at the Tailscale address sets the `gr_no_ts` cookie,
+which stops the automatic sign-in on that browser until the next password sign-in. Direct access on port 8501 is
+unchanged.
 
 ## Background work
 
