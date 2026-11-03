@@ -14,6 +14,7 @@ from userctx import UPath
 FILE = UPath("t212_history_reconstructed.json")
 FILLS_FILE = UPath("t212_fills.json")
 MAX_AGE_S = 24 * 3600
+FILLS_VERSION = 2  # 2: cu comisioanele/taxele fiecarui ordin si sensul (BUY/SELL)
 PAUSE = 11
 MAX_PAGES = 150
 _lock = threading.Lock()
@@ -30,8 +31,10 @@ def _sync_fills():
     if not kid or not sec:
         return None
     cache = load_json_file(FILLS_FILE, {})
-    fills = list(cache.get("fills") or []) if isinstance(cache, dict) else []
-    had_cache = bool(fills)
+    if not isinstance(cache, dict) or cache.get("v") != FILLS_VERSION:
+        cache = {}  # format vechi (fara comisioane): o descarcare completa
+    fills = list(cache.get("fills") or [])
+    had_cache = bool(fills) and cache.get("complete", True)  # dupa o descarcare intrerupta: toate paginile
     known = {str(f["id"]) for f in fills}
     host = BASE_URL.split("/api/")[0]
     url, params, pages, retries = BASE_URL + "/equity/history/orders", {"limit": 50}, 0, 0
@@ -72,6 +75,9 @@ def _sync_fills():
                 "net": abs(float(wi.get("netValue") or 0)),
                 "wccy": wi.get("currency"),
                 "ftype": f.get("type"),
+                "side": o.get("side"),
+                "taxes": [{"name": tx.get("name"), "amount": float(tx.get("quantity") or 0), "ccy": tx.get("currency"),
+                           "time": tx.get("chargedAt")} for tx in (wi.get("taxes") or []) if tx.get("quantity")],
             })
             known.add(fid)
         pages += 1
@@ -82,7 +88,7 @@ def _sync_fills():
         time.sleep(PAUSE)
     if not fills:
         return None
-    update_json_file(FILLS_FILE, {}, lambda _: {"updated": time.time(), "complete": complete, "fills": fills})
+    update_json_file(FILLS_FILE, {}, lambda _: {"updated": time.time(), "v": FILLS_VERSION, "complete": complete, "fills": fills})
     return fills
 
 

@@ -44,9 +44,9 @@ Everything is JSON except `auth_secret`. Do not commit this folder:
 | `privacy.json` | Privacy setting: start the session with amounts hidden, separately on the phone and the desktop |
 | `events_prefs.json`, `events_notified.json` | Calendar email opt-in and days ahead; events already emailed |
 | `weekly_report.json`, `weekly_report_state.json` | Weekly report opt-in, day and hour; last week sent and the dividend totals at that time (for "received since the last report") |
-| `t212_fills.json` | Executed orders used to rebuild history |
+| `t212_fills.json` | Executed orders with their fees (history rebuild, Journal tab) |
 | `t212_first_dates.json` | First purchase dates |
-| `t212_flows.json` | Deposits and withdrawals (for XIRR and the Journal tab) |
+| `t212_flows.json` | All account transactions: deposits, withdrawals, fees, interest, transfers (XIRR uses deposits/withdrawals; all shown in the Journal tab) |
 | `t212_history_reconstructed.json` | Rebuilt daily history, Trading 212 |
 | `xtb.json` | Imported XTB accounts, positions, cash operations |
 | `xtb_prices.json`, `xtb_prices_status.json` | Yahoo prices for XTB positions and progress |

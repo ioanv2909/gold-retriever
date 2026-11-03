@@ -13,6 +13,7 @@ from privacy import mask
 from userctx import UPath
 FLOWS_FILE = UPath("t212_flows.json")
 MAX_AGE_S = 24 * 3600
+FLOWS_VERSION = 2  # 2: toate tipurile de tranzactii, nu doar depuneri/retrageri
 PAUSE = 11
 MAX_PAGES = 80
 MIN_REAL_DEPOSIT = 1000.0
@@ -92,12 +93,15 @@ def _refresh_flows():
         tx, ok = _fetch_transactions(kid, sec)
         if not ok or not tx:
             return
-        flows = [{"t": t["dateTime"], "type": t["type"], "amount": abs(float(t.get("amount") or 0))}
-                 for t in tx if t.get("type") in ("DEPOSIT", "WITHDRAW") and t.get("dateTime")]
+        # toate tipurile (depuneri, retrageri, comisioane, dobanzi, transferuri); XIRR foloseste doar depunerile
+        # si retragerile. "amount" e pozitiv, "signed" e suma cu semnul din API, "ccy" moneda tranzactiei.
+        flows = [{"t": t["dateTime"], "type": t["type"], "amount": abs(float(t.get("amount") or 0)),
+                  "signed": float(t.get("amount") or 0), "ccy": t.get("currency"), "ref": t.get("reference")}
+                 for t in tx if t.get("type") and t.get("dateTime")]
         os.makedirs(os.path.dirname(FLOWS_FILE), exist_ok=True)
         tmp = FLOWS_FILE + ".tmp"
         with open(tmp, "w") as f:
-            json.dump({"updated": time.time(), "flows": flows}, f)
+            json.dump({"updated": time.time(), "v": FLOWS_VERSION, "flows": flows}, f)
         os.replace(tmp, FLOWS_FILE)
     except Exception:
         pass
@@ -115,7 +119,8 @@ def _flows():
             data = json.load(f)
     except Exception:
         pass
-    stale = data is None or time.time() - data.get("updated", 0) > MAX_AGE_S
+    stale = (data is None or time.time() - data.get("updated", 0) > MAX_AGE_S
+             or data.get("v") != FLOWS_VERSION)
     if stale:
         with _lock:
             start = not _running
@@ -203,7 +208,8 @@ def compute(show_t212=True, show_xtb=True):
         t212_total = cash.get("total")
         if t212_total is None:
             t212_total = sum(cash.get(k) or 0 for k in ("free", "invested", "ppl", "pieCash"))
-        t212_flows = [(_parse(x["t"]), -x["amount"] if x["type"] == "DEPOSIT" else x["amount"]) for x in data["flows"]]
+        t212_flows = [(_parse(x["t"]), -x["amount"] if x["type"] == "DEPOSIT" else x["amount"])
+                      for x in data["flows"] if x.get("type") in ("DEPOSIT", "WITHDRAW")]
 
     if show_t212:
         res = _xirr_line("Trading 212", t212_flows, t212_total, now, t("ret.exact"), ccy=base) if t212_flows else None

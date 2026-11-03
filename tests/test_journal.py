@@ -71,3 +71,53 @@ def test_period_start():
     assert journal.period_start("30d", today) == date(2026, 10, 4)
     assert journal.period_start("all", today) is None
     assert journal.period_start("custom", today) is None
+
+
+def test_t212_fees_interest_and_transfers():
+    flows = {"flows": [
+        {"t": "2026-03-01T00:00:00Z", "type": "FEE", "amount": 2.5, "signed": -2.5, "ccy": "EUR"},
+        {"t": "2026-03-02T00:00:00Z", "type": "INTEREST_ON_FREE_CASH", "amount": 1.2, "signed": 1.2, "ccy": "EUR"},
+        {"t": "2026-03-03T00:00:00Z", "type": "LENDING_INTEREST", "amount": 0.3, "signed": 0.3},
+        {"t": "2026-03-04T00:00:00Z", "type": "TRANSFER", "amount": 50.0, "signed": -50.0},
+    ]}
+    ops = {op["raw_type"]: op for op in journal.t212_operations(flows, None, "EUR")}
+    assert ops["FEE"]["type"] == "fee" and ops["FEE"]["amount"] == -2.5
+    assert ops["INTEREST_ON_FREE_CASH"]["type"] == "interest" and ops["INTEREST_ON_FREE_CASH"]["amount"] == 1.2
+    assert ops["LENDING_INTEREST"]["type"] == "interest"
+    assert ops["TRANSFER"]["type"] == "other" and ops["TRANSFER"]["amount"] == -50.0
+
+
+def test_t212_fills_give_trades_and_order_fees():
+    fills = {"fills": [
+        {"id": "1", "ticker": "MA_US_EQ", "time": "2026-04-01T14:00:00Z", "qty": 2.0, "price": 500.0, "net": 905.0,
+         "wccy": "EUR", "ftype": "TRADE", "side": "BUY",
+         "taxes": [{"name": "CURRENCY_CONVERSION_FEE", "amount": -1.36, "ccy": "EUR", "time": "2026-04-01T14:00:00Z"}]},
+        {"id": "2", "ticker": "MA_US_EQ", "time": "2026-05-01T14:00:00Z", "qty": -1.0, "price": 520.0, "net": 470.0,
+         "wccy": "EUR", "ftype": "TRADE", "side": "SELL", "taxes": []},
+        {"id": "3", "ticker": "MA_US_EQ", "time": "2026-06-01T14:00:00Z", "qty": 1.0, "price": 0, "net": 0,
+         "ftype": "STOCK_SPLIT"},
+    ]}
+    ops = journal.t212_operations(None, None, "EUR", {"MA_US_EQ": "Mastercard"}, fills)
+    kinds = sorted(op["type"] for op in ops)
+    assert kinds == ["buy", "fee", "sell"]
+    fee = next(op for op in ops if op["type"] == "fee")
+    assert fee["amount"] == -1.36 and fee["instrument"] == "Mastercard"
+    assert fee["comment"] == "Taxă de conversie valutară"
+    assert next(op for op in ops if op["type"] == "buy")["amount"] == -905.0
+    assert next(op for op in ops if op["type"] == "sell")["amount"] == 470.0
+
+
+def test_xirr_flows_ignore_fees_and_interest(monkeypatch):
+    import returns_summary
+    flows = {"updated": 0, "v": returns_summary.FLOWS_VERSION, "flows": [
+        {"t": "2024-01-01T00:00:00Z", "type": "DEPOSIT", "amount": 5000.0},
+        {"t": "2025-01-01T00:00:00Z", "type": "FEE", "amount": 4000.0},
+        {"t": "2025-02-01T00:00:00Z", "type": "INTEREST_ON_FREE_CASH", "amount": 4000.0},
+    ]}
+    monkeypatch.setattr(returns_summary, "_flows", lambda: flows)
+    monkeypatch.setattr(returns_summary, "_base_ccy", lambda: "EUR")
+    import t212_api
+    monkeypatch.setattr(t212_api, "load_cached_snapshot", lambda: {"cash": {"total": 6000.0}})
+    lines, _notes = returns_summary.compute(show_t212=True, show_xtb=False)
+    # comisioanele/dobanzile nu sunt bani retrasi: castigul net ramane 6000 - 5000
+    assert any("5,000" in ln and "+1,000" in ln for ln in lines), lines

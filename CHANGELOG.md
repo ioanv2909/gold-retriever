@@ -1,3 +1,7 @@
+## 0.4.8 — 2026-11-03
+
+- Journal: Trading 212 fees and interest are now included. Account transactions keep every type from the API (fees, interest on free cash, share lending interest, transfers), not only deposits and withdrawals; the XIRR still uses only deposits and withdrawals. Executed orders now keep their fees (currency conversion fee, stamp duty, FINRA fee etc.), shown as "Fee" lines, and appear as purchases and sales. New "Fee" type in the filter. Both caches are downloaded again once, in the background, in the new format.
+
 ## 0.4.7 — 2026-11-03
 
 - New "📒 Journal" tab on the main page: every account operation (deposits, withdrawals, dividends, withholding tax, interest, purchases, sales), filtered by operation type, account and period (last 30 days, 3 months, year to date, 12 months, all history or a custom range), with totals per type and currency and a CSV download. Sources: all cash operations from the imported XTB exports; for Trading 212, deposits/withdrawals and dividend payments (the dividend cache now keeps each payment with its date, filled at the next dividend update).
