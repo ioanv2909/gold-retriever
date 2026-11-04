@@ -15,7 +15,8 @@ from detail_view import scroll_page_to_top
 from history_ui import render_history
 from i18n import lang_button, t, x as _tx
 from navigation import open_detail_from_url
-from portfolio_model import build_rows, default_currency, portfolio_options
+from lang_prefs import load_pref, save_pref
+from portfolio_model import build_rows, portfolio_options
 from position_alerts_ui import render_banner as _alerts_banner
 from positions_data import build_t212_frame, enrich_view, finish_t212_frame
 from positions_table_ui import render_positions_table
@@ -25,6 +26,7 @@ from url_tabs import url_tabs
 from watchlist_ui import render_watchlist_tab
 from xtb import accounts_summary
 
+DEFAULT_DISPLAY_CCY = "EUR"
 _CCY_OPTIONS = ["EUR", "USD", "GBP", "CHF", "RON", "PLN", "CZK", "HUF", "SEK", "NOK", "DKK",
                 "ISK", "BGN", "TRY", "UAH", "RSD", "CAD", "AUD", "NZD", "JPY", "CNY", "HKD", "SGD",
                 "KRW", "INR", "ILS", "ZAR", "BRL", "MXN"]
@@ -107,7 +109,8 @@ def _pick_portfolios(has_t212, account_currency, detail_loading):
             _ccy_opts.insert(0, _c)
     if detail_loading:
         sel_portfolios = [x for x in _ui.get("portfolios", _opts) if x in _opts] or list(_opts)
-        display_ccy = _ui.get("ccy") or account_currency
+        display_ccy = _ui.get("ccy") or load_pref("display_ccy") or DEFAULT_DISPLAY_CCY
+        _ui.setdefault("ccy", display_ccy)
         return sel_portfolios, display_ccy
     _cur = [x for x in st.session_state.get("portfolio_sel", _ui.get("portfolios", _opts)) if x in _opts]
     st.session_state["portfolio_sel"] = _cur or list(_opts)
@@ -118,19 +121,17 @@ def _pick_portfolios(has_t212, account_currency, detail_loading):
         else:
             _picked = list(_opts)
     sel_portfolios = list(_picked or []) or list(_opts)
-    _dflt_ccy = default_currency(sel_portfolios, account_currency)
-    if _dflt_ccy not in _ccy_opts:
-        _dflt_ccy = "EUR"
-    _sel_key = tuple(sorted(sel_portfolios))
-    if st.session_state.get("_last_portfolio_sel") != _sel_key:
-        st.session_state["_last_portfolio_sel"] = _sel_key
-        st.session_state["display_ccy"] = _dflt_ccy
-    elif "display_ccy" not in st.session_state:
+    # moneda aleasa ramane la reincarcarea paginii si la schimbarea portofoliilor (salvata per utilizator);
+    # fara alegere salvata: EUR
+    _saved_ccy = load_pref("display_ccy")
+    _dflt_ccy = _saved_ccy if _saved_ccy in _ccy_opts else DEFAULT_DISPLAY_CCY
+    if st.session_state.get("display_ccy") not in _ccy_opts:
         st.session_state["display_ccy"] = _ui.get("ccy") if _ui.get("ccy") in _ccy_opts else _dflt_ccy
     with _col_c:
         st.markdown("<style>.st-key-display_ccy{max-width:7rem;}</style>", unsafe_allow_html=True)
         _picked_ccy = st.selectbox(t("main.display_ccy"), _ccy_opts, key="display_ccy")
     display_ccy = _picked_ccy or _dflt_ccy
+    save_pref("display_ccy", display_ccy)
     _ui["portfolios"] = sel_portfolios
     _ui["ccy"] = display_ccy
     return sel_portfolios, display_ccy

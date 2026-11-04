@@ -50,19 +50,6 @@ def portfolio_options():
     return ["Trading 212"] + xtb_labels
 
 
-def default_currency(portfolios, t212_account_currency):
-    selected = list(portfolios or [])
-
-    if len(selected) != 1:
-        return t212_account_currency
-
-    account = _xtb_accounts_by_label().get(selected[0])
-    if account is None:
-        return t212_account_currency
-
-    return account.get("currency") or t212_account_currency
-
-
 def build_rows(t212_df, display_ccy, portfolios, t212_account_currency):
     selected = set(portfolios or [])
     rows = []

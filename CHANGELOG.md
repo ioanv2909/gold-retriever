@@ -1,3 +1,7 @@
+## 0.4.26 — 2026-11-04
+
+- Main page: the display currency no longer jumps back to the Trading 212 account currency (for example RON) when the page is reloaded. The chosen currency is saved per user and kept across reloads, portfolio changes and the position page; without a saved choice the page opens in EUR.
+
 ## 0.4.25 — 2026-11-04
 
 - Market hours (value chart bands, 🕒 Markets tab) now know public holidays, half days and lunch breaks, from the `exchange_calendars` library: for example NYSE is closed on Thanksgiving (26.11) and closes at 20:00 Romanian time the day after, BVB is closed on 30.11 and 1.12. An exchange closed for a holiday gets its own grey bar marked "🎌 holiday", a half day is marked "⏱️ half day", also in the Status column of the tab. Frankfurt (.F) keeps its 08:00–22:00 hours and takes only the closed days from the calendar. If the calendar is not available, the regular hours are used as before.

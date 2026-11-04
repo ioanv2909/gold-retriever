@@ -68,3 +68,31 @@ def apply_user_lang(me):
         if _pl in LANGS:
             st.session_state["lang"] = _pl
             st.session_state["_lang"] = _pl
+
+
+def load_pref(key):
+    """O preferinta salvata a utilizatorului curent (ui_prefs.json), sau None."""
+    try:
+        with open(_pref_file(), encoding="utf-8") as _f:
+            return _json.load(_f).get(key)
+    except Exception:
+        return None
+
+
+def save_pref(key, value):
+    """Salveaza o preferinta in ui_prefs.json, doar cand s-a schimbat."""
+    _pf = _pref_file()
+    try:
+        with open(_pf, encoding="utf-8") as _f:
+            _p = _json.load(_f)
+    except Exception:
+        _p = {}
+    if _p.get(key) == value:
+        return
+    _p[key] = value
+    try:
+        _os.makedirs(_os.path.dirname(_pf), exist_ok=True)
+        with open(_pf, "w", encoding="utf-8") as _f:
+            _json.dump(_p, _f)
+    except Exception:
+        pass
