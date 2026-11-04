@@ -503,6 +503,7 @@ _T = {
     "mh.region.oceania": {"RO": "Oceania", "EN": "Oceania"},
     "mh.closed_today": {"RO": "închis azi", "EN": "closed today"},
     "mh.n_pos": {"RO": "{n} poziții", "EN": "{n} positions"},
+    "mh.bands_error": {"RO": "Orele burselor nu pot fi afișate: {e}", "EN": "Market hours cannot be shown: {e}"},
     "mh.day.0": {"RO": "lun", "EN": "Mon"},
     "mh.day.1": {"RO": "mar", "EN": "Tue"},
     "mh.day.2": {"RO": "mie", "EN": "Wed"},

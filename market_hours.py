@@ -118,7 +118,17 @@ def group_by_hours(groups, day_start, now):
         sessions = tuple(sessions_between(suffix, day_start, day_end))
         bar = bars.setdefault((region_of(suffix), sessions), {
             "region": region_of(suffix), "exchanges": [], "sessions": list(sessions), "positions": 0,
-            "open": any(a <= now < b for a, b in sessions)})
+            "open": any(a <= now < b for a, b in sessions), "suffixes": []})
         bar["exchanges"].append(EXCHANGES[suffix][1])
+        bar["suffixes"].append(suffix)
         bar["positions"] += len(names)
     return sorted(bars.values(), key=lambda b: (b["sessions"][0][0] if b["sessions"] else day_end, b["region"]))
+
+
+def reference_day(now):
+    """Inceputul zilei (ora locala) dupa care se grupeaza bursele: azi, iar in weekend lunea urmatoare
+    (sambata si duminica nicio bursa n-are sesiuni, deci toate s-ar contopi pe regiune)."""
+    day = datetime.combine(now.date(), time(0, 0), now.tzinfo)
+    while day.weekday() >= 5:
+        day += timedelta(days=1)
+    return day

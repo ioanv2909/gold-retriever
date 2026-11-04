@@ -20,7 +20,7 @@ def _history_dialog(fig):
 
 def _history_dialog_inner(fig):
     big = go.Figure(fig)
-    big.update_layout(height=560)
+    big.update_layout(height=560 + (fig.layout.height or 300) - 300)
     mobile.plotly_chart(big, width="stretch", key="portfolio_history_chart_big")
 
 
@@ -71,8 +71,9 @@ def profit_sparkline(x, y, ccy):
     return fig
 
 
-def render_history(sel_portfolios, display_ccy, native, compact, right_extra):
+def render_history(sel_portfolios, display_ccy, native, compact, right_extra, market_rows=None):
     """Graficul istoric cu alegerea perioadei; right_extra() se randeaza la final in coloana din dreapta.
+    market_rows: pozitiile afisate; sub axa X apar intervalele in care sunt deschise bursele lor.
     Intoarce True daca graficul a fost afisat (altfel istoricul abia se aduna)."""
     portfolio_history = multi_history_records(sel_portfolios, display_ccy)
     if native and len(portfolio_history) < 2:
@@ -199,6 +200,12 @@ def render_history(sel_portfolios, display_ccy, native, compact, right_extra):
         _x0 = _x1 - _deltas[range_choice]
     _x0 = min(_x0, history_df["x"].min())
     history_fig.update_xaxes(range=[_x0, _x1])
+    if market_rows is not None:
+        try:
+            from market_hours_ui import add_market_bands
+            history_fig.update_layout(height=add_market_bands(history_fig, market_rows, _x0, _x1, 300))
+        except Exception as _e:  # benzile sunt un plus: graficul ramane si fara ele
+            st.caption(t("mh.bands_error", e=_e))
     if len(history_df) <= 40:
         history_fig.update_traces(mode="lines+markers", marker=dict(size=5))
     with _hc_left:

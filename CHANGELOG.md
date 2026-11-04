@@ -1,3 +1,8 @@
+## 0.4.24 — 2026-11-04
+
+- Value chart on the main page: under the X axis, one thin band per group of exchanges with the same hours (in local time), aligned with the chart's time axis: grey = closed, green = trading hours, bright green = open right now. The right edge of the chart is "now", so a glance shows which exchanges are open. On periods longer than about a month (1Y, YTD, Max) the bands would be too dense; the chart then shows only the current state (🟢/⚪ per region) above it.
+- The market-hours strip added in 0.4.23 moved from the main page to the top of the 🕒 Markets tab, next to the detailed view.
+
 ## 0.4.23 — 2026-11-04
 
 - Main page: a compact market-hours strip between the summary and the open positions. One bar per group of exchanges with the same hours today in local time (for example Xetra, Euronext and London, all 10:00–18:30 in Romania), grey for closed and green for the trading interval (brighter while it is open), with a red "now" line and the number of positions. Hover a bar for the exchanges and hours. The 🕒 Markets tab stays for the full table.

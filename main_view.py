@@ -310,7 +310,8 @@ def render_main_view(me, api_key_id, api_secret):
         _render_metrics(native, vdf, cash, total_dividende, display_ccy)
         cash_done = render_history(
             sel_portfolios, display_ccy, native, compact,
-            lambda: render_cash(sel_portfolios, display_ccy, cash, api_key_id, api_secret, compact=True))
+            lambda: render_cash(sel_portfolios, display_ccy, cash, api_key_id, api_secret, compact=True),
+            market_rows=vdf)
     if not cash_done:
         render_cash(sel_portfolios, display_ccy, cash, api_key_id, api_secret)
 
@@ -322,10 +323,6 @@ def render_main_view(me, api_key_id, api_secret):
 
     mc = load_market_context_cache()
     df = finish_t212_frame(df, mc)
-
-    if not detail_loading:
-        from market_hours_ui import render_market_strip
-        render_market_strip(vdf)
 
     account_currency_note = t("main.fx_error", e="; ".join(fx_errors)) if fx_errors else ""
     if not detail_loading:

@@ -1,6 +1,7 @@
 """Tab-ul Burse din pagina principala: intervalele de tranzactionare ale burselor cu pozitii, in ora locala."""
 from datetime import datetime, timedelta
 
+import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
@@ -76,6 +77,7 @@ def render_market_hours_tab(vdf):
     table = [table[i] for i in order]
 
     st.caption(t("mh.caption", tz=str(zone), d=f"{now:%d.%m.%Y}"))
+    render_market_strip(vdf)
     mobile.plotly_chart(_chart(items, day_start, now), width="stretch", key="mh_chart")
     st.dataframe(table, hide_index=True, width="stretch")
     if unknown:
@@ -104,7 +106,7 @@ def _pct(dt, day_start):
 
 
 def render_market_strip(vdf):
-    """Banda compacta de pe pagina principala (intre indicatori si pozitii): o bara pe grup de burse cu acelasi
+    """Banda compacta din tabul Burse: o bara pe grup de burse cu acelasi
     program azi, gri = inchis, verde = deschis, linie rosie = acum."""
     import html
     rows = vdf.to_dict("records") if vdf is not None and not vdf.empty else []
@@ -133,3 +135,47 @@ def render_market_strip(vdf):
     ticks = "".join(f'<span style="left:{h / 24 * 100:.2f}%">{h:02d}</span>' for h in range(0, 25, 3))
     out.append(f'<div class="gr-mh-row"><div class="gr-mh-lbl"></div><div class="gr-mh-ticks">{ticks}</div></div></div>')
     st.markdown("".join(out), unsafe_allow_html=True)
+
+
+BAND_ROW_PX = 16
+BAND_GAP_PX = 4
+BAND_AXIS_PX = 26  # loc pentru etichetele axei X intre grafic si benzi
+BAND_MAX_DAYS = 35
+
+
+def add_market_bands(fig, vdf, x0, x1, height, margin_tb=70):
+    """Benzi sub axa X a unui grafic in timp (x in ora locala, fara fus): pe fiecare rand un grup de burse cu
+    acelasi program, gri = inchis, verde = deschis (aprins daca e deschis acum). Pe perioade mai lungi de
+    BAND_MAX_DAYS doar starea curenta, ca text deasupra graficului. Intoarce inaltimea noua a figurii."""
+    rows = vdf.to_dict("records") if vdf is not None and not vdf.empty else []
+    groups, _ = mh.group_positions(rows)
+    if not groups:
+        return height
+    zone = mh.local_zone()
+    now = datetime.now(zone)
+    bars = mh.group_by_hours(groups, mh.reference_day(now), now)
+    x0, x1 = pd.Timestamp(x0).to_pydatetime(), pd.Timestamp(x1).to_pydatetime()
+    if (x1 - x0).total_seconds() > BAND_MAX_DAYS * 86400:
+        chips = "   ".join(f"{'🟢' if b['open'] else '⚪'} {t('mh.region.' + b['region'])}" for b in bars)
+        fig.add_annotation(text=chips, xref="paper", yref="paper", x=1, y=1, xanchor="right", yanchor="bottom",
+                           showarrow=False, font={"size": 11})
+        return height
+    n = len(bars)
+    band_px = n * (BAND_ROW_PX + BAND_GAP_PX) + BAND_AXIS_PX
+    new_height = height + band_px
+    plot_px = new_height - margin_tb
+    fig.update_yaxes(domain=[band_px / plot_px, 1])
+    start, end = x0.replace(tzinfo=zone), x1.replace(tzinfo=zone)
+    for i, bar in enumerate(bars):
+        top = (n - i) * (BAND_ROW_PX + BAND_GAP_PX) / plot_px
+        bottom = top - BAND_ROW_PX / plot_px
+        common = {"xref": "x", "yref": "paper", "y0": bottom, "y1": top, "line": {"width": 0}, "layer": "below"}
+        fig.add_shape(type="rect", x0=x0, x1=x1, fillcolor="rgba(128,128,128,0.28)", **common)
+        for a, b in mh.sessions_between(bar["suffixes"][0], start, end):
+            fig.add_shape(type="rect", x0=a.replace(tzinfo=None), x1=b.replace(tzinfo=None), fillcolor=OPEN,
+                          opacity=1 if a <= now < b else 0.5, **common)
+        fig.add_annotation(
+            text=f"{'🟢' if bar['open'] else '⚪'} {t('mh.region.' + bar['region'])} · {', '.join(bar['exchanges'])}",
+            xref="paper", yref="paper", x=0.005, y=(top + bottom) / 2, xanchor="left", yanchor="middle",
+            showarrow=False, font={"size": 10}, bgcolor="rgba(128,128,128,0.35)", borderpad=1)
+    return new_height

@@ -99,3 +99,35 @@ def test_render_strip_smoke():
     assert not at.exception
     html_out = "".join(m.value for m in at.markdown)
     assert "Xetra, Euronext Paris" in html_out and "gr-mh-now" in html_out
+
+
+def _rows():
+    return pd.DataFrame([{"ticker": "SAP", "name": "SAP", "yahoo_symbol": "SAP.DE"},
+                         {"ticker": "AAPL_US_EQ", "name": "Apple", "yahoo_symbol": "AAPL"}])
+
+
+def test_market_bands_under_x_axis_on_short_range():
+    import plotly.graph_objects as go
+    from market_hours_ui import add_market_bands, BAND_ROW_PX, BAND_GAP_PX, BAND_AXIS_PX
+    fig = go.Figure()
+    x1 = pd.Timestamp.now()
+    h = add_market_bands(fig, _rows(), x1 - pd.Timedelta(weeks=1), x1, 300)
+    assert h == 300 + 2 * (BAND_ROW_PX + BAND_GAP_PX) + BAND_AXIS_PX
+    assert fig.layout.yaxis.domain[0] > 0
+    assert len(fig.layout.annotations) == 2
+    assert all(s.y1 <= fig.layout.yaxis.domain[0] for s in fig.layout.shapes)
+    assert len(fig.layout.shapes) >= 2 + 2 * 4  # 2 fundaluri + cel putin 4 sesiuni pe bursa intr-o saptamana
+
+
+def test_market_bands_long_range_only_status():
+    import plotly.graph_objects as go
+    from market_hours_ui import add_market_bands
+    fig = go.Figure()
+    x1 = pd.Timestamp.now()
+    assert add_market_bands(fig, _rows(), x1 - pd.Timedelta(days=365), x1, 300) == 300
+    assert not fig.layout.shapes and "Europ" in fig.layout.annotations[0].text
+
+
+def test_reference_day_skips_weekend():
+    assert mh.reference_day(datetime(2026, 11, 7, 15, 0, tzinfo=BUC)).date().isoformat() == "2026-11-09"
+    assert mh.reference_day(datetime(2026, 11, 4, 15, 0, tzinfo=BUC)).date().isoformat() == "2026-11-04"
