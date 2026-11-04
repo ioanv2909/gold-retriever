@@ -66,3 +66,36 @@ def test_render_tab_smoke(monkeypatch):
     assert not at.exception
     assert len(at.dataframe) == 1
     assert any("FX" in c.value for c in at.caption)
+
+
+def test_group_by_hours_merges_same_european_hours():
+    day = datetime(2026, 11, 4, tzinfo=BUC)
+    now = datetime(2026, 11, 4, 12, 0, tzinfo=BUC)
+    bars = mh.group_by_hours({".DE": ["SAP"], ".PA": ["LVMH", "Total"], ".L": ["VUSA"], ".SW": ["Nestle"],
+                               "": ["Apple"]}, day, now)
+    # Londra 08:00-16:30 = 10:00-18:30 ora Romaniei, ca Xetra; SIX se inchide la 17:20 (18:20 la noi)
+    assert [b["exchanges"] for b in bars] == [["Xetra", "Euronext Paris", "London"], ["SIX Swiss"], ["NYSE / Nasdaq"]]
+    assert bars[0]["positions"] == 4 and bars[0]["open"] and not bars[2]["open"]
+
+
+def test_group_by_hours_weekend_has_no_sessions():
+    day = datetime(2026, 11, 7, tzinfo=BUC)
+    bars = mh.group_by_hours({".DE": ["SAP"]}, day, datetime(2026, 11, 7, 12, 0, tzinfo=BUC))
+    assert bars[0]["sessions"] == [] and not bars[0]["open"]
+
+
+def test_render_strip_smoke():
+    from streamlit.testing.v1 import AppTest
+
+    def app():
+        import pandas as pd
+        from market_hours_ui import render_market_strip
+        render_market_strip(pd.DataFrame([
+            {"ticker": "SAP", "name": "SAP", "yahoo_symbol": "SAP.DE"},
+            {"ticker": "MC", "name": "LVMH", "yahoo_symbol": "MC.PA"},
+            {"ticker": "AAPL_US_EQ", "name": "Apple", "yahoo_symbol": "AAPL"}]))
+
+    at = AppTest.from_function(app).run()
+    assert not at.exception
+    html_out = "".join(m.value for m in at.markdown)
+    assert "Xetra, Euronext Paris" in html_out and "gr-mh-now" in html_out

@@ -80,3 +80,56 @@ def render_market_hours_tab(vdf):
     st.dataframe(table, hide_index=True, width="stretch")
     if unknown:
         st.caption(t("mh.unknown", tickers=", ".join(sorted(str(x) for x in unknown))))
+
+
+_STRIP_CSS = """<style>
+.gr-mh{margin:.4rem 0 1rem 0;font-size:.85rem}
+.gr-mh-row{display:flex;align-items:center;gap:.6rem;margin:.25rem 0}
+.gr-mh-lbl{flex:0 0 28%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gr-mh-lbl small{opacity:.65}
+.gr-mh-track,.gr-mh-ticks{position:relative;flex:1 1 auto;height:1.35rem}
+.gr-mh-track{background:rgba(128,128,128,.28);border-radius:5px;overflow:hidden}
+.gr-mh-seg{position:absolute;top:0;bottom:0;background:#2e9e5b;opacity:.55;color:#fff;font-size:.72rem;
+ display:flex;align-items:center;justify-content:center;white-space:nowrap;overflow:hidden}
+.gr-mh-seg.on{opacity:1}
+.gr-mh-now{position:absolute;top:-2px;bottom:-2px;width:2px;background:#d64545}
+.gr-mh-ticks{height:.9rem;font-size:.68rem;opacity:.6}
+.gr-mh-ticks span{position:absolute;transform:translateX(-50%)}
+@media (max-width:640px){.gr-mh-row{flex-wrap:wrap;gap:.1rem}.gr-mh-lbl{flex-basis:100%}}
+</style>"""
+
+
+def _pct(dt, day_start):
+    return max(0.0, min(100.0, (dt - day_start).total_seconds() / 864))
+
+
+def render_market_strip(vdf):
+    """Banda compacta de pe pagina principala (intre indicatori si pozitii): o bara pe grup de burse cu acelasi
+    program azi, gri = inchis, verde = deschis, linie rosie = acum."""
+    import html
+    rows = vdf.to_dict("records") if vdf is not None and not vdf.empty else []
+    groups, _ = mh.group_positions(rows)
+    if not groups:
+        return
+    zone = mh.local_zone()
+    now = datetime.now(zone)
+    day_start = datetime.combine(now.date(), datetime.min.time(), zone)
+    now_pct = _pct(now, day_start)
+    out = [_STRIP_CSS, '<div class="gr-mh">']
+    for bar in mh.group_by_hours(groups, day_start, now):
+        exch = ", ".join(bar["exchanges"])
+        hours = ", ".join(f"{a:%H:%M}–{b:%H:%M}" for a, b in bar["sessions"]) or t("mh.closed_today")
+        tip = html.escape(f"{exch} · {hours} · {t('mh.n_pos', n=bar['positions'])}")
+        segs = []
+        for a, b in bar["sessions"]:
+            left, width = _pct(a, day_start), _pct(b, day_start) - _pct(a, day_start)
+            text = f"{a:%H:%M}–{b:%H:%M}" if width >= 14 else ""
+            segs.append(f'<div class="gr-mh-seg{" on" if a <= now < b else ""}" '
+                        f'style="left:{left:.2f}%;width:{width:.2f}%">{text}</div>')
+        out.append(
+            f'<div class="gr-mh-row" title="{tip}"><div class="gr-mh-lbl">{"🟢" if bar["open"] else "⚪"} '
+            f'{html.escape(t("mh.region." + bar["region"]))} <small>{html.escape(exch)} · {bar["positions"]}</small></div>'
+            f'<div class="gr-mh-track">{"".join(segs)}<div class="gr-mh-now" style="left:{now_pct:.2f}%"></div></div></div>')
+    ticks = "".join(f'<span style="left:{h / 24 * 100:.2f}%">{h:02d}</span>' for h in range(0, 25, 3))
+    out.append(f'<div class="gr-mh-row"><div class="gr-mh-lbl"></div><div class="gr-mh-ticks">{ticks}</div></div></div>')
+    st.markdown("".join(out), unsafe_allow_html=True)

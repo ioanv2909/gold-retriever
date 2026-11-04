@@ -102,3 +102,23 @@ def group_positions(rows):
         else:
             groups.setdefault(suffix, []).append(label)
     return groups, unknown
+
+
+def region_of(suffix):
+    """Regiunea unei burse dupa fusul orar: europe, america, asia, oceania."""
+    return EXCHANGES[suffix][2].split("/")[0].lower().replace("australia", "oceania")
+
+
+def group_by_hours(groups, day_start, now):
+    """Bursele cu aceleasi sesiuni azi (ora locala) si din aceeasi regiune intr-o singura bara.
+    groups: {sufix: [pozitii]} -> [{region, exchanges, sessions, positions, open}], ordonate dupa prima deschidere."""
+    day_end = day_start + timedelta(days=1)
+    bars = {}
+    for suffix, names in groups.items():
+        sessions = tuple(sessions_between(suffix, day_start, day_end))
+        bar = bars.setdefault((region_of(suffix), sessions), {
+            "region": region_of(suffix), "exchanges": [], "sessions": list(sessions), "positions": 0,
+            "open": any(a <= now < b for a, b in sessions)})
+        bar["exchanges"].append(EXCHANGES[suffix][1])
+        bar["positions"] += len(names)
+    return sorted(bars.values(), key=lambda b: (b["sessions"][0][0] if b["sessions"] else day_end, b["region"]))

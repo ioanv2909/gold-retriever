@@ -323,6 +323,10 @@ def render_main_view(me, api_key_id, api_secret):
     mc = load_market_context_cache()
     df = finish_t212_frame(df, mc)
 
+    if not detail_loading:
+        from market_hours_ui import render_market_strip
+        render_market_strip(vdf)
+
     account_currency_note = t("main.fx_error", e="; ".join(fx_errors)) if fx_errors else ""
     if not detail_loading:
         st.subheader(t("main.open_positions"))
