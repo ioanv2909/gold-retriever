@@ -1,3 +1,7 @@
+## 0.4.27 — 2026-11-04
+
+- Exposure tab, country view: ETFs that Yahoo Finance lists as ordinary shares (often UCITS funds domiciled in Ireland or Luxembourg) were counted as "Ireland" instead of being split by country. Positions with an Irish or Luxembourg ISIN are now also checked on justETF; when justETF knows them as a fund, they are treated as ETFs and spread over the countries they hold. Real Irish companies (for example Accenture) keep "Ireland". Existing entries are corrected at the next exposure refresh.
+
 ## 0.4.26 — 2026-11-04
 
 - Main page: the display currency no longer jumps back to the Trading 212 account currency (for example RON) when the page is reloaded. The chosen currency is saved per user and kept across reloads, portfolio changes and the position page; without a saved choice the page opens in EUR.

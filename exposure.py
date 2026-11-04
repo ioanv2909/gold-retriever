@@ -32,6 +32,9 @@ ISIN_COUNTRIES = {
     "ZA": "South Africa", "BM": "Bermuda", "KY": "Cayman Islands", "JE": "Jersey", "GG": "Guernsey",
 }
 
+# domicilii tipice de fonduri UCITS: o "actiune" de aici poate fi un ETF pe care Yahoo il da ca EQUITY
+FUND_DOMICILES = ("IE", "LU")
+
 DIMENSIONS = ("sector", "country", "currency")
 # chei din funds_data.sector_weightings -> numele de sector folosite la actiuni
 ETF_SECTORS = {
@@ -108,6 +111,12 @@ def _justetf():
         etf_profile.requests = types.SimpleNamespace(Session=_TimeoutSession)
         etf_profile._gr_timeout = True
     return justetf_scraping
+
+
+def _maybe_fund(entry, isin):
+    """Se cauta pe justETF: ETF-uri, neclasificate si "actiuni" cu ISIN irlandez/luxemburghez."""
+    kind = entry.get("kind")
+    return kind in ("etf", "other") or (kind == "stock" and str(isin or "")[:2].upper() in FUND_DOMICILES)
 
 
 def country_from_isin(isin):
@@ -195,7 +204,7 @@ def _stale(entry, isin, now):
     # actiune fara tara la Yahoo sau instrument neclasificat: inca necompletat din ISIN / justETF
     if entry.get("kind") in ("stock", "other") and not entry.get("country") and not entry.get("isin_checked"):
         return True
-    if entry.get("kind") != "etf":
+    if not _maybe_fund(entry, isin):
         return False
     # intrari de dinainte de tarile din justETF (inca necautate) sau cu eroare mai veche de o zi
     if "countries" not in entry:
@@ -223,13 +232,14 @@ def fetch_and_cache(tickers, resolve=None, now=None, sleep=1.0, isins=None, coun
             if err:
                 entry["error"] = err
             isin = isins.get(ticker)
-            if isin and entry.get("kind") in ("etf", "other"):
+            if isin and _maybe_fund(entry, isin):
                 countries = countries_fn(isin)
                 entry["countries"] = countries or {}
                 if countries is None:
                     entry["countries_error"] = True
-                elif countries and entry["kind"] == "other":
-                    entry["kind"] = "etf"  # justETF il cunoaste ca fond
+                elif countries and entry["kind"] != "etf":
+                    entry["kind"] = "etf"  # justETF il cunoaste ca fond (Yahoo il dadea EQUITY sau neclasificat)
+                    entry["country"] = None
             if isin and entry.get("kind") == "stock" and not entry.get("country"):
                 entry["country"] = country_from_isin(isin)
             if isin:

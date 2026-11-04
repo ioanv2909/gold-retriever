@@ -170,3 +170,31 @@ def test_justetf_session_gets_a_timeout(monkeypatch):
     assert isinstance(ex._TimeoutSession().get("https://example.invalid"), Resp)
     assert seen["timeout"] == ex.JUSTETF_TIMEOUT
     assert ex.health.status("justetf")["level"] == "green"
+
+
+def test_irish_equity_checked_on_justetf(tmp_path, monkeypatch):
+    """ETF UCITS dat de Yahoo ca EQUITY (tara Ireland): se cauta pe justETF si primeste defalcarea pe tari."""
+    monkeypatch.setattr(ex, "EXPOSURE_CACHE_FILE", str(tmp_path / "c.json"))
+    monkeypatch.setattr(ex, "EXPOSURE_STATUS_FILE", str(tmp_path / "s.json"))
+    # intrare veche, clasificata gresit: se reia o data
+    (tmp_path / "c.json").write_text(json.dumps({
+        "VWCE": {"kind": "stock", "country": "Ireland", "fetched_at": 1000.0, "isin_checked": True}}))
+    monkeypatch.setattr(ex, "fetch_meta", lambda s: (ex.parse_meta({"quoteType": "EQUITY", "country": "Ireland"}), None))
+    found = {"IE00BK5BQT80": {"United States": 0.6, "Japan": 0.4}}
+    asked = []
+
+    def countries(isin):
+        asked.append(isin)
+        return found.get(isin, {})
+
+    isins = {"VWCE": "IE00BK5BQT80", "ACN": "IE00B4BNMY34", "AAPL": "US0378331005"}
+    cache = ex.fetch_and_cache(list(isins), resolve=str, now=2000.0, sleep=0, isins=isins, countries_fn=countries)
+    assert asked == ["IE00BK5BQT80", "IE00B4BNMY34"]  # actiunile americane nu se cauta
+    assert cache["VWCE"]["kind"] == "etf" and cache["VWCE"]["country"] is None
+    assert cache["ACN"]["kind"] == "stock" and cache["ACN"]["country"] == "Ireland"  # firma irlandeza reala
+    rows = [{"ticker": "VWCE", "value": 100}]
+    assert dict((k, v) for k, v, _ in ex.breakdown(rows, cache, "country")) == pytest.approx(
+        {"United States": 60, "Japan": 40})
+    asked.clear()
+    ex.fetch_and_cache(list(isins), resolve=str, now=2100.0, sleep=0, isins=isins, countries_fn=countries)
+    assert asked == []  # verificate deja, nu se reiau
