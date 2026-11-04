@@ -1,8 +1,13 @@
 """Programul de tranzactionare al burselor (fara UI): bursa unui simbol Yahoo, sesiunile unei zile in ora locala,
-starea curenta (deschisa/inchisa) si urmatoarea schimbare. Program obisnuit, fara sarbatori si zile scurte."""
+starea curenta (deschisa/inchisa) si urmatoarea schimbare. Sarbatorile, zilele scurte si pauzele de pranz vin din
+exchange_calendars; fara biblioteca (sau pentru o zi in afara calendarului) ramane programul obisnuit de mai jos."""
+import logging
 import os
 from datetime import datetime, time, timedelta
+from functools import lru_cache
 from zoneinfo import ZoneInfo
+
+log = logging.getLogger(__name__)
 
 # sufix Yahoo -> (cheie, nume, fus orar, sesiuni locale [(deschidere, inchidere)])
 _EU = [(time(9, 0), time(17, 30))]
@@ -37,6 +42,60 @@ EXCHANGES = {
 }
 
 
+# sufix Yahoo -> calendarul exchange_calendars (ISO 10383 MIC)
+CALENDARS = {
+    "": "XNYS", ".TO": "XTSE", ".L": "XLON", ".IR": "XDUB", ".DE": "XETR", ".F": "XFRA", ".PA": "XPAR",
+    ".AS": "XAMS", ".BR": "XBRU", ".LS": "XLIS", ".MI": "XMIL", ".MC": "XMAD", ".SW": "XSWX", ".VI": "XWBO",
+    ".WA": "XWAR", ".PR": "XPRA", ".BD": "XBUD", ".RO": "XBSE", ".CO": "XCSE", ".ST": "XSTO", ".OL": "XOSL",
+    ".HE": "XHEL", ".T": "XTKS", ".HK": "XHKG", ".AX": "XASX", ".NS": "XBOM", ".SA": "BVMF",
+}
+# burse la care calendarul da doar zilele: XFRA are orele salii (9:00-17:30), Yahoo .F e Boerse Frankfurt 8-22
+STATIC_HOURS = {".F"}
+
+
+@lru_cache(maxsize=128)
+def _schedule(code, year, month):
+    """Programul calendarului pe o luna (+/- o saptamana), indexat dupa zi; None fara biblioteca sau la eroare."""
+    try:
+        import exchange_calendars as xc
+        import pandas as pd
+        first = pd.Timestamp(year, month, 1)
+        cal = xc.get_calendar(code, start=first - pd.Timedelta(days=7), end=first + pd.Timedelta(days=38))
+        return cal.schedule
+    except Exception as e:  # biblioteca lipsa sau calendar fara date pentru perioada
+        log.warning("market_hours: calendar %s %s-%02d unavailable: %s", code, year, month, e)
+        return None
+
+
+def _calendar_day(suffix, exch_date):
+    """Randul din calendar pentru o zi: dict cu open/close/break_* (cu fus), {} = inchis, None = necunoscut."""
+    code = CALENDARS.get(suffix)
+    sched = _schedule(code, exch_date.year, exch_date.month) if code else None
+    if sched is None or sched.empty:
+        return None
+    import pandas as pd
+    key = pd.Timestamp(exch_date)
+    if key not in sched.index:
+        return {}
+    return {k: v for k, v in sched.loc[key].items() if not pd.isna(v)}
+
+
+def day_note(suffix, exch_date):
+    """"holiday" (zi lucratoare fara sesiune), "early" (se inchide mai devreme decat de obicei) sau None."""
+    if exch_date.weekday() >= 5:
+        return None
+    row = _calendar_day(suffix, exch_date)
+    if row is None:
+        return None
+    if not row:
+        return "holiday"
+    tz = ZoneInfo(EXCHANGES[suffix][2])
+    regular_close = EXCHANGES[suffix][3][-1][1]
+    if suffix not in STATIC_HOURS and row["close"].tz_convert(tz).time() < regular_close:
+        return "early"
+    return None
+
+
 def local_zone():
     try:
         return ZoneInfo(os.environ.get("TZ") or "Europe/Bucharest")
@@ -59,12 +118,21 @@ def exchange_of(yahoo_symbol):
 
 
 def _sessions_on(suffix, exch_date):
-    """Sesiunile (inceput, sfarsit, cu fus) dintr-o zi a bursei; nimic in weekend."""
+    """Sesiunile (inceput, sfarsit, cu fus) dintr-o zi a bursei; nimic in weekend si in sarbatori."""
     if exch_date.weekday() >= 5:
         return []
     _, _, tz, sessions = EXCHANGES[suffix]
     zone = ZoneInfo(tz)
-    return [(datetime.combine(exch_date, a, zone), datetime.combine(exch_date, b, zone)) for a, b in sessions]
+    row = _calendar_day(suffix, exch_date)
+    if row == {}:
+        return []
+    if row is None or suffix in STATIC_HOURS:
+        return [(datetime.combine(exch_date, a, zone), datetime.combine(exch_date, b, zone)) for a, b in sessions]
+    o, c = (row[k].tz_convert(zone).to_pydatetime() for k in ("open", "close"))
+    if "break_start" in row and "break_end" in row:
+        bs, be = (row[k].tz_convert(zone).to_pydatetime() for k in ("break_start", "break_end"))
+        return [(o, bs), (be, c)]
+    return [(o, c)]
 
 
 def sessions_between(suffix, start, end):
@@ -104,6 +172,11 @@ def group_positions(rows):
     return groups, unknown
 
 
+def _exchange_date(suffix, day_start):
+    """Ziua bursei care corespunde zilei locale (amiaza locala, in fusul bursei)."""
+    return (day_start + timedelta(hours=12)).astimezone(ZoneInfo(EXCHANGES[suffix][2])).date()
+
+
 def region_of(suffix):
     """Regiunea unei burse dupa fusul orar: europe, america, asia, oceania."""
     return EXCHANGES[suffix][2].split("/")[0].lower().replace("australia", "oceania")
@@ -118,9 +191,12 @@ def group_by_hours(groups, day_start, now):
         sessions = tuple(sessions_between(suffix, day_start, day_end))
         bar = bars.setdefault((region_of(suffix), sessions), {
             "region": region_of(suffix), "exchanges": [], "sessions": list(sessions), "positions": 0,
-            "open": any(a <= now < b for a, b in sessions), "suffixes": []})
+            "open": any(a <= now < b for a, b in sessions), "suffixes": [], "notes": set()})
         bar["exchanges"].append(EXCHANGES[suffix][1])
         bar["suffixes"].append(suffix)
+        note = day_note(suffix, _exchange_date(suffix, day_start))
+        if note:
+            bar["notes"].add(note)
         bar["positions"] += len(names)
     return sorted(bars.values(), key=lambda b: (b["sessions"][0][0] if b["sessions"] else day_end, b["region"]))
 

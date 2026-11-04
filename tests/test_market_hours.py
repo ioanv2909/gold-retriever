@@ -73,9 +73,9 @@ def test_group_by_hours_merges_same_european_hours():
     now = datetime(2026, 11, 4, 12, 0, tzinfo=BUC)
     bars = mh.group_by_hours({".DE": ["SAP"], ".PA": ["LVMH", "Total"], ".L": ["VUSA"], ".SW": ["Nestle"],
                                "": ["Apple"]}, day, now)
-    # Londra 08:00-16:30 = 10:00-18:30 ora Romaniei, ca Xetra; SIX se inchide la 17:20 (18:20 la noi)
-    assert [b["exchanges"] for b in bars] == [["Xetra", "Euronext Paris", "London"], ["SIX Swiss"], ["NYSE / Nasdaq"]]
-    assert bars[0]["positions"] == 4 and bars[0]["open"] and not bars[2]["open"]
+    # Londra 08:00-16:30 = 10:00-18:30 ora Romaniei, ca Xetra si SIX (calendarul: 09:00-17:30)
+    assert [b["exchanges"] for b in bars] == [["Xetra", "Euronext Paris", "London", "SIX Swiss"], ["NYSE / Nasdaq"]]
+    assert bars[0]["positions"] == 5 and bars[0]["open"] and not bars[1]["open"]
 
 
 def test_group_by_hours_weekend_has_no_sessions():
@@ -131,3 +131,36 @@ def test_market_bands_long_range_only_status():
 def test_reference_day_skips_weekend():
     assert mh.reference_day(datetime(2026, 11, 7, 15, 0, tzinfo=BUC)).date().isoformat() == "2026-11-09"
     assert mh.reference_day(datetime(2026, 11, 4, 15, 0, tzinfo=BUC)).date().isoformat() == "2026-11-04"
+
+
+def _day(y, m, d):
+    return datetime(y, m, d, tzinfo=BUC), datetime(y, m, d, tzinfo=BUC) + __import__("datetime").timedelta(days=1)
+
+
+def test_holidays_and_half_days_from_calendar():
+    from datetime import date
+    assert mh.sessions_between("", *_day(2026, 11, 26)) == []  # Thanksgiving
+    assert mh.day_note("", date(2026, 11, 26)) == "holiday"
+    (a, b), = mh.sessions_between("", *_day(2026, 11, 27))  # zi scurta: 9:30-13:00 la New York
+    assert (a.hour, a.minute, b.hour) == (16, 30, 20)
+    assert mh.day_note("", date(2026, 11, 27)) == "early"
+    assert mh.sessions_between(".RO", *_day(2026, 12, 1)) == []  # Ziua Nationala
+    assert mh.day_note(".DE", date(2026, 11, 4)) is None
+
+
+def test_holiday_exchange_gets_its_own_bar():
+    day = datetime(2026, 12, 1, tzinfo=BUC)
+    bars = mh.group_by_hours({".DE": ["SAP"], ".RO": ["TLV"]}, day, datetime(2026, 12, 1, 12, 0, tzinfo=BUC))
+    assert [b["exchanges"] for b in bars] == [["Xetra"], ["București"]]
+    assert bars[1]["sessions"] == [] and bars[1]["notes"] == {"holiday"}
+
+
+def test_static_fallback_without_calendar(monkeypatch):
+    monkeypatch.setattr(mh, "_calendar_day", lambda *a: None)
+    assert len(mh.sessions_between("", *_day(2026, 11, 26))) == 1
+    assert mh.day_note("", __import__("datetime").date(2026, 11, 26)) is None
+
+
+def test_frankfurt_keeps_its_own_hours():
+    (a, b), = mh.sessions_between(".F", *_day(2026, 11, 4))
+    assert (a.hour, b.hour) == (9, 23)

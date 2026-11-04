@@ -1,3 +1,7 @@
+## 0.4.25 — 2026-11-04
+
+- Market hours (value chart bands, 🕒 Markets tab) now know public holidays, half days and lunch breaks, from the `exchange_calendars` library: for example NYSE is closed on Thanksgiving (26.11) and closes at 20:00 Romanian time the day after, BVB is closed on 30.11 and 1.12. An exchange closed for a holiday gets its own grey bar marked "🎌 holiday", a half day is marked "⏱️ half day", also in the Status column of the tab. Frankfurt (.F) keeps its 08:00–22:00 hours and takes only the closed days from the calendar. If the calendar is not available, the regular hours are used as before.
+
 ## 0.4.24 — 2026-11-04
 
 - Value chart on the main page: under the X axis, one thin band per group of exchanges with the same hours (in local time), aligned with the chart's time axis: grey = closed, green = trading hours, bright green = open right now. The right edge of the chart is "now", so a glance shows which exchanges are open. On periods longer than about a month (1Y, YTD, Max) the bands would be too dense; the chart then shows only the current state (🟢/⚪ per region) above it.

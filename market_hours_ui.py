@@ -65,9 +65,11 @@ def render_market_hours_tab(vdf):
     for suffix, names in groups.items():
         key, name, _, _ = mh.EXCHANGES[suffix]
         is_open, change = mh.status(suffix, now)
+        note = mh.day_note(suffix, mh._exchange_date(suffix, day_start))
         items.append((f"{'🟢' if is_open else '⚪'} {name} · {len(names)}", suffix, is_open, sorted(names)))
         table.append({t("mh.col.exchange"): name, t("mh.col.positions"): len(names),
-                      t("mh.col.status"): t("mh.open") if is_open else t("mh.closed"),
+                      t("mh.col.status"): (t("mh.open") if is_open else t("mh.closed"))
+                      + (f" · {t('mh.note.' + note)}" if note else ""),
                       t("mh.col.next"): (t("mh.closes") if is_open else t("mh.opens")) + " " + _fmt_wait(now, change)})
     # ordinea: dupa ora de deschidere de azi (bursele fara sesiune azi la final)
     first = {s: (mh.sessions_between(s, day_start, day_start + timedelta(days=1)) or [(day_start + timedelta(days=2),)])[0][0]
@@ -101,6 +103,10 @@ _STRIP_CSS = """<style>
 </style>"""
 
 
+def _notes(bar):
+    return "".join(f" · {t('mh.note.' + n)}" for n in sorted(bar.get("notes") or ()))
+
+
 def _pct(dt, day_start):
     return max(0.0, min(100.0, (dt - day_start).total_seconds() / 864))
 
@@ -121,7 +127,7 @@ def render_market_strip(vdf):
     for bar in mh.group_by_hours(groups, day_start, now):
         exch = ", ".join(bar["exchanges"])
         hours = ", ".join(f"{a:%H:%M}–{b:%H:%M}" for a, b in bar["sessions"]) or t("mh.closed_today")
-        tip = html.escape(f"{exch} · {hours} · {t('mh.n_pos', n=bar['positions'])}")
+        tip = html.escape(f"{exch} · {hours} · {t('mh.n_pos', n=bar['positions'])}{_notes(bar)}")
         segs = []
         for a, b in bar["sessions"]:
             left, width = _pct(a, day_start), _pct(b, day_start) - _pct(a, day_start)
@@ -130,7 +136,7 @@ def render_market_strip(vdf):
                         f'style="left:{left:.2f}%;width:{width:.2f}%">{text}</div>')
         out.append(
             f'<div class="gr-mh-row" title="{tip}"><div class="gr-mh-lbl">{"🟢" if bar["open"] else "⚪"} '
-            f'{html.escape(t("mh.region." + bar["region"]))} <small>{html.escape(exch)} · {bar["positions"]}</small></div>'
+            f'{html.escape(t("mh.region." + bar["region"]))} <small>{html.escape(exch)} · {bar["positions"]}{html.escape(_notes(bar))}</small></div>'
             f'<div class="gr-mh-track">{"".join(segs)}<div class="gr-mh-now" style="left:{now_pct:.2f}%"></div></div></div>')
     ticks = "".join(f'<span style="left:{h / 24 * 100:.2f}%">{h:02d}</span>' for h in range(0, 25, 3))
     out.append(f'<div class="gr-mh-row"><div class="gr-mh-lbl"></div><div class="gr-mh-ticks">{ticks}</div></div></div>')
@@ -175,7 +181,7 @@ def add_market_bands(fig, vdf, x0, x1, height, margin_tb=70):
             fig.add_shape(type="rect", x0=a.replace(tzinfo=None), x1=b.replace(tzinfo=None), fillcolor=OPEN,
                           opacity=1 if a <= now < b else 0.5, **common)
         fig.add_annotation(
-            text=f"{'🟢' if bar['open'] else '⚪'} {t('mh.region.' + bar['region'])} · {', '.join(bar['exchanges'])}",
+            text=f"{'🟢' if bar['open'] else '⚪'} {t('mh.region.' + bar['region'])} · {', '.join(bar['exchanges'])}{_notes(bar)}",
             xref="paper", yref="paper", x=0.005, y=(top + bottom) / 2, xanchor="left", yanchor="middle",
             showarrow=False, font={"size": 10}, bgcolor="rgba(128,128,128,0.35)", borderpad=1)
     return new_height
