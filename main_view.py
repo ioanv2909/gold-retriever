@@ -188,10 +188,11 @@ def _render_tabs(df, df_display, vdf, display_ccy, total_portfolio_value, compac
     _tabs = url_tabs([e for e in [("positions", t("tab.positions")), ("strategies", t("tab.strategies")),
                                   ("exposure", t("tab.exposure")), ("compare", t("tab.compare")),
                                   ("calendar", t("tab.events")), ("journal", t("tab.journal")),
-                                  ("watchlist", t("tab.watchlist"))]
+                                  ("markets", t("tab.markets")), ("watchlist", t("tab.watchlist"))]
                       if not (compact and e[0] in ("strategies", "exposure", "compare"))], "main_tab")
-    tab_pos, tab_st, tab_ex, tab_cmp, tab_ev, tab_jr, tab_wl = (
-        _tabs.get(k) for k in ("positions", "strategies", "exposure", "compare", "calendar", "journal", "watchlist"))
+    tab_pos, tab_st, tab_ex, tab_cmp, tab_ev, tab_jr, tab_mh, tab_wl = (
+        _tabs.get(k) for k in ("positions", "strategies", "exposure", "compare", "calendar", "journal", "markets",
+                               "watchlist"))
     with tab_pos:
         render_positions_table(df, df_display, display_ccy, total_portfolio_value, compact)
 
@@ -220,6 +221,11 @@ def _render_tabs(df, df_display, vdf, display_ccy, total_portfolio_value, compac
         with tab_jr:
             from journal_ui import render_journal_tab
             render_journal_tab(dict(zip(df_display["ticker"], df_display["name"])))
+
+    if tab_mh.open is not False:
+        with tab_mh:
+            from market_hours_ui import render_market_hours_tab
+            render_market_hours_tab(vdf)
 
     if not detail_loading:
         with tab_wl:

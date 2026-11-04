@@ -1,3 +1,7 @@
+## 0.4.22 — 2026-11-04
+
+- Main page: new tab "🕒 Markets" with today's trading hours of the exchanges where you hold positions (selected portfolios), drawn as a timeline in local time with a "now" line. Open exchanges are green; the table below shows how many positions each exchange has and when it next opens or closes (weekends included, Tokyo/Hong Kong lunch breaks too). Regular hours only: public holidays and half days are not known. Positions on unknown exchanges are listed under the chart.
+
 ## 0.4.21 — 2026-11-03
 
 - Value chart: on short periods part of the data was missing (on 3H only the last hour, on 1D two hours less). Since 0.3.18 (27.10) the history points are written in local time, but the chart still treated them as UTC and moved them two more hours ahead, past "now". Points written before 0.3.18 (UTC) and after it (local time) are now both placed correctly; the saved history is not changed.
