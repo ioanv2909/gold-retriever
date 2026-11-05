@@ -165,3 +165,15 @@ def test_net_deposits():
            {"date": date(2024, 2, 1), "account": "A", "type": "buy", "amount": -60, "ccy": "EUR"}]
     assert journal.net_deposits(ops) == {"EUR": 70.0, "USD": 50.0}
     assert journal.net_deposits(ops, {"B"}) == {"USD": 50.0}
+
+
+def test_start_above_threshold():
+    from datetime import date
+    import journal
+    ops = [{"date": date(2023, 1, 1), "account": "A", "type": "deposit", "amount": 10, "ccy": "EUR"},
+           {"date": date(2023, 5, 1), "account": "A", "type": "deposit", "amount": 30, "ccy": "EUR"},
+           {"date": date(2024, 2, 1), "account": "A", "type": "deposit", "amount": 60, "ccy": "RON"},
+           {"date": date(2024, 3, 1), "account": "A", "type": "deposit", "amount": 500, "ccy": "EUR"}]
+    rate = {"EUR": 1.0, "RON": 0.2}.get
+    assert journal.start_above(ops, 50, rate) == date(2024, 2, 1)
+    assert journal.start_above(ops, 1000, rate) is None

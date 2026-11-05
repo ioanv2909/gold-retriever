@@ -137,6 +137,9 @@ def _pick_portfolios(has_t212, account_currency, detail_loading):
     return sel_portfolios, display_ccy
 
 
+PACE_MIN_EUR = 50.0
+
+
 def _deposit_stats(sel_portfolios, display_ccy):
     """(data primei depuneri/cumparari, depuneri nete in display_ccy) pentru portofoliile alese;
     operatiunile se citesc din jurnal cel mult o data pe ora."""
@@ -148,14 +151,14 @@ def _deposit_stats(sel_portfolios, display_ccy):
             ops = journal.load_all({})
         except Exception:
             ops = []
-        _c = (time.time(), {a: (journal.first_investment(ops, {a}), journal.net_deposits(ops, {a}))
-                            for a in {op["account"] for op in ops}})
+        _c = (time.time(), [op for op in ops if op["type"] in ("deposit", "withdrawal", "buy")])
         st.session_state["_first_inv_cache"] = _c
     from portfolio_model import fx
-    sel = [v for a, v in _c[1].items() if a in sel_portfolios]
-    days = [d for d, _ in sel if d]
-    net = sum(amount * float(fx(ccy, display_ccy) or 0) for _, dep in sel for ccy, amount in dep.items())
-    return (min(days) if days else None), net
+    ops, sel = _c[1], set(sel_portfolios)
+    net = sum(amount * float(fx(ccy, display_ccy) or 0) for ccy, amount in journal.net_deposits(ops, sel).items())
+    # lunile se numara de cand depunerile nete trec de 50 EUR (fara perioada de inceput cu sume de proba)
+    start = journal.start_above(ops, PACE_MIN_EUR, lambda c: fx(c, "EUR"), sel) or journal.first_investment(ops, sel)
+    return start, net
 
 
 def _invested_metric(col, label, invested, sel_portfolios, display_ccy):

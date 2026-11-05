@@ -851,8 +851,8 @@ _T = {
     },
     "main.monthly_pace": {"RO": "≈ {v} / lună · {n} luni", "EN": "≈ {v} / month · {n} months"},
     "main.monthly_pace_help": {
-        "RO": "Ritmul lunar: depunerile nete (depuneri minus retrageri: {v}) împărțite la numărul de luni de la prima depunere sau cumpărare din portofoliile alese ({d}). Sumele în alte monede sunt convertite la cursul de azi.",
-        "EN": "Monthly pace: the net deposits (deposits minus withdrawals: {v}) divided by the number of months since the first deposit or purchase in the selected portfolios ({d}). Amounts in other currencies are converted at today's rate.",
+        "RO": "Ritmul lunar: depunerile nete (depuneri minus retrageri: {v}) împărțite la numărul de luni de când depunerile nete din portofoliile alese au trecut de 50 EUR ({d}); perioada de la început, cu sume mai mici, nu se numără. Sumele în alte monede sunt convertite la cursul de azi.",
+        "EN": "Monthly pace: the net deposits (deposits minus withdrawals: {v}) divided by the number of months since the net deposits in the selected portfolios went above 50 EUR ({d}); the early period with smaller amounts is not counted. Amounts in other currencies are converted at today's rate.",
     },
     "dv.chart_title": {"RO": "📈 Grafic preț", "EN": "📈 Price chart"},
     "dv.period": {"RO": "Perioadă", "EN": "Period"},

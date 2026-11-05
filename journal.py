@@ -165,6 +165,21 @@ def net_deposits(ops, accounts=None):
     return out
 
 
+def start_above(ops, threshold, rate, accounts=None):
+    """Prima zi in care depunerile nete cumulate (convertite cu rate(moneda)) trec de threshold, sau None.
+    Asa perioada de la inceput, cu sume foarte mici (de proba), nu intra in numarul de luni."""
+    days = {}
+    for op in ops:
+        if op["type"] in ("deposit", "withdrawal") and (accounts is None or op["account"] in accounts):
+            days[op["date"]] = days.get(op["date"], 0.0) + float(op["amount"] or 0) * float(rate(op["ccy"]) or 0)
+    cum = 0.0
+    for d in sorted(days):
+        cum += days[d]
+        if cum > threshold:
+            return d
+    return None
+
+
 def months_since(start, today=None):
     """Numarul de luni de la start pana azi (cu zecimale, minim 1)."""
     today = today or date.today()

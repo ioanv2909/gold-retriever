@@ -1,3 +1,7 @@
+## 0.4.31 — 2026-11-05
+
+- Main page, monthly pace under "Total invested": the months are counted from the day the net deposits in the selected portfolios went above 50 EUR, so the early period with small test amounts no longer lowers the average. The tooltip shows that date.
+
 ## 0.4.30 — 2026-11-05
 
 - Main page, "Total invested": the monthly pace now uses the net deposits (deposits minus withdrawals in the selected portfolios, converted at today's rate) divided by the months since the first deposit or purchase. The tooltip shows the net deposits and the start date.
