@@ -1,3 +1,7 @@
+## 0.4.32 — 2026-11-05
+
+- Main page: the alert banners at the top (new SEC filings, rating changes, price, score and concentration alerts) are now blue (info style) instead of the yellow-brown warning style.
+
 ## 0.4.31 — 2026-11-05
 
 - Main page, monthly pace under "Total invested": the months are counted from the day the net deposits in the selected portfolios went above 50 EUR, so the early period with small test amounts no longer lowers the average. The tooltip shows that date.

@@ -26,7 +26,7 @@ def render_banner():
         return
     for e in reversed(unseen[-BANNER_MAX:]):
         c1, c2 = st.columns([8, 1], vertical_alignment="center")
-        c1.warning("🔔 " + pa.describe(e, lang()))
+        c1.info("🔔 " + pa.describe(e, lang()))
         if c2.button(t("pa.banner_seen"), key="pa_seen_%s_%s" % (e["ts"], e["ticker"])):
             pa.dismiss(e["ts"])
             st.rerun()
