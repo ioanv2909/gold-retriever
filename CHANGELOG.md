@@ -1,3 +1,7 @@
+## 0.4.36 — 2026-11-05
+
+- Event alerts (SEC filings, rating downgrades, insider purchases) now have a "Details ↗" link that opens in a new tab: the SEC filing itself for 8-K reports, the Yahoo Finance analyst page for rating changes, the insider transactions page for insider trades and the news page otherwise. The link is shown in the banner on the main page, in the alert log in Settings > Notifications > Alerts and under each event in the alert email.
+
 ## 0.4.35 — 2026-11-05
 
 - Main page: the "held for X days and now in profit" alert has the same colored card style as the other alerts, in green with a 📈 icon, instead of the yellow warning box.

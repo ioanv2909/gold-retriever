@@ -194,3 +194,18 @@ def test_banner_html_bold_and_profit_color():
     import position_alerts_ui
     out = position_alerts_ui._banner_html({"kind": "profit"}, "**A <x>** b", icon="")
     assert "<b>A &lt;x&gt;</b> b" in out and "rgba(27,175,122,0.28)" in out
+
+
+def test_details_link(monkeypatch):
+    import position_alerts as pa
+    import position_alerts_ui
+    monkeypatch.setattr(pa, "_yahoo_symbol", lambda t: "AAPL")
+    sec = "https://www.sec.gov/Archives/edgar/data/1/2/a.htm"
+    assert pa.details_link({"kind": "event", "event_kind": "guidance", "link": sec}) == sec
+    assert pa.details_link({"kind": "event", "event_kind": "downgrade", "ticker": "AAPL_US_EQ"}) \
+        == "https://finance.yahoo.com/quote/AAPL/analysis/"
+    assert pa.details_link({"kind": "event", "event_kind": "insider_buy", "ticker": "X"}).endswith("/insider-transactions/")
+    assert pa.details_link({"kind": "price", "ticker": "X"}) is None
+    out = position_alerts_ui._banner_html({"kind": "event"}, "x", link=sec, link_text="Detalii")
+    assert 'href="%s"' % sec in out and 'target="_blank"' in out
+    assert "href" not in position_alerts_ui._banner_html({"kind": "event"}, "x", link="javascript:alert(1)")

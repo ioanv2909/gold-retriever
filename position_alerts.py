@@ -347,6 +347,34 @@ def evaluate(user=None, now=None, holdings=None, quality=None, timelines=None):
     return fired
 
 
+def _yahoo_symbol(ticker):
+    """Simbolul Yahoo din maparea salvata sau ghicit din ticker (fara cautare pe retea)."""
+    try:
+        from core import load_ticker_map
+        from yahoo import guess_yahoo_symbol
+        return load_ticker_map().get(ticker) or guess_yahoo_symbol(ticker) or ticker
+    except Exception:
+        return ticker
+
+
+def details_link(e):
+    """Linkul spre detaliile unei alerte de eveniment: documentul SEC salvat, altfel pagina Yahoo potrivita
+    (analisti pentru ratinguri, tranzactii insideri, stiri). None pentru celelalte alerte."""
+    if e.get("kind") != "event":
+        return None
+    if e.get("link"):
+        return e["link"]
+    from urllib.parse import quote
+    page = {"upgrade": "analysis", "downgrade": "analysis", "insider_buy": "insider-transactions",
+            "insider_sale": "insider-transactions"}.get(e.get("event_kind"), "news")
+    return "https://finance.yahoo.com/quote/%s/%s/" % (quote(_yahoo_symbol(e.get("ticker") or ""), safe=""), page)
+
+
+def _mail_line(e, lang):
+    link = details_link(e)
+    return "- " + describe(e, lang) + ("\n  " + link if link else "")
+
+
 def _send(fired, user):
     import notify
     import users
@@ -356,6 +384,6 @@ def _send(fired, user):
     if not email:
         return False
     lang = _user_lang()
-    body = t("pa.mail_intro", _lang=lang) + "\n\n" + "\n".join("- " + describe(e, lang) for e in fired)
+    body = t("pa.mail_intro", _lang=lang) + "\n\n" + "\n".join(_mail_line(e, lang) for e in fired)
     return notify.notify("positions", t("pa.mail_subject", _lang=lang, n=len(fired)), body, to=[email],
                          key="positions:%s:%s" % (user, fired[0]["ts"]), min_hours=0, sync=True)

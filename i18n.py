@@ -187,6 +187,7 @@ _T = {
     "pa.mail_subject": {"RO": "Alerte poziții: {n}", "EN": "Position alerts: {n}"},
     "pa.mail_intro": {"RO": "Alerte noi pentru pozițiile tale:", "EN": "New alerts for your positions:"},
     "pa.banner_seen": {"RO": "Am văzut", "EN": "Seen"},
+    "pa.details": {"RO": "Detalii", "EN": "Details"},
     "pa.banner_all_seen": {"RO": "Am văzut toate", "EN": "Mark all seen"},
     "pa.log_title": {"RO": "Ultimele alerte", "EN": "Recent alerts"},
     "pa.quick_title": {"RO": "🔔 Alertă de preț", "EN": "🔔 Price alert"},

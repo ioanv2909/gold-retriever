@@ -24,21 +24,25 @@ _BANNER_ACCENT = {"event": "#8b7cf6", "price": "#4da3ff", "score": "#e87ba4", "c
                   "profit": "#1baf7a"}
 
 
-def _banner_html(e, text, icon="🔔 "):
-    """Textul alertei intr-un card colorat; **text** din traduceri devine bold, restul e escapat."""
+def _banner_html(e, text, icon="🔔 ", link=None, link_text=""):
+    """Textul alertei intr-un card colorat; **text** din traduceri devine bold, restul e escapat.
+    link: adresa detaliilor (deschisa in tab nou), pusa la finalul textului."""
     import html
     import re
     color = _BANNER_ACCENT.get(e.get("kind"), "#8b7cf6")
     r, g, b = (int(color[i:i + 2], 16) for i in (1, 3, 5))
     body = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", html.escape(text))
+    if link and str(link).startswith("https://"):
+        body += ' · <a href="%s" target="_blank" rel="noopener noreferrer">%s ↗</a>' % (
+            html.escape(link, quote=True), html.escape(link_text))
     return ('<div style="background:rgba(%d,%d,%d,0.28);border-left:4px solid %s;border-radius:0.5rem;'
             'padding:0.75rem 1rem;line-height:1.5">%s%s</div>' % (r, g, b, color, icon, body))
 
 
-def banner_row(kind, text, button, key, icon="🔔 "):
+def banner_row(kind, text, button, key, icon="🔔 ", link=None):
     """Un banner de alerta cu butonul pe acelasi rand, in dreapta; intoarce True la apasare."""
     c1, c2 = st.columns([6, 1], vertical_alignment="center")
-    c1.markdown(_banner_html({"kind": kind}, text, icon), unsafe_allow_html=True)
+    c1.markdown(_banner_html({"kind": kind}, text, icon, link, t("pa.details")), unsafe_allow_html=True)
     return c2.button(button, key=key, width="stretch")
 
 
@@ -49,7 +53,7 @@ def render_banner():
         return
     for e in reversed(unseen[-BANNER_MAX:]):
         if banner_row(e.get("kind"), pa.describe(e, lang()), t("pa.banner_seen"),
-                      "pa_seen_%s_%s" % (e["ts"], e["ticker"])):
+                      "pa_seen_%s_%s" % (e["ts"], e["ticker"]), link=pa.details_link(e)):
             pa.dismiss(e["ts"])
             st.rerun()
     if len(unseen) > 1 and st.button(t("pa.banner_all_seen"), key="pa_seen_all"):
@@ -142,7 +146,9 @@ def render_settings_section(me):
         st.divider()
         st.markdown("#### " + t("pa.log_title"))
         for e in reversed(log[-20:]):
-            st.caption("%s · %s" % (_when(e.get("ts")), pa.describe(e, lang())))
+            _link = pa.details_link(e)
+            st.caption("%s · %s" % (_when(e.get("ts")), pa.describe(e, lang()))
+                       + (" · [%s ↗](%s)" % (t("pa.details"), _link) if _link else ""))
 
 
 def render_quick_price_alert(ticker, name, price, ccy):
