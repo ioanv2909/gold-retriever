@@ -13,6 +13,11 @@ from i18n import t, x as _tx
 from portfolio_model import fx as _fx
 from privacy import mask as _mask
 
+# perioadele graficului de valoare; pe telefon doar o parte, cele lipsa trec la cea mai apropiata
+HIST_RANGES = ("3H", "1D", "1W", "1M", "3M", "6M", "YTD", "1Y", "3Y", "5Y", "Max")
+HIST_RANGES_COMPACT = ("1D", "1W", "1M", "3M", "YTD", "1Y", "Max")
+_HIST_NEAR_COMPACT = {"3H": "1D", "6M": "3M", "3Y": "1Y", "5Y": "Max"}
+
 
 def _history_dialog(fig):
     st.dialog(_tx("Valoare de piață în timp"), width="large")(_history_dialog_inner)(fig)
@@ -92,21 +97,30 @@ def render_history(sel_portfolios, display_ccy, native, compact, right_extra, ma
         if len(_f) >= 2:
             history_df = _f
     _first_all = history_df["x"].min()
-    if st.session_state.get("history_range") not in ("3H", "1D", "1W", "1M", "1Y", "YTD", "Max"):
+    _ranges = list(HIST_RANGES)
+    if mobile.compact():
+        # pe telefon mai putine butoane, ca sa incapa pe un rand; perioadele lipsa trec la cea mai apropiata
+        _ranges = list(HIST_RANGES_COMPACT)
+        _cur = st.session_state.get("history_range")
+        if _cur in _HIST_NEAR_COMPACT:
+            st.session_state["history_range"] = _HIST_NEAR_COMPACT[_cur]
+    if st.session_state.get("history_range") not in _ranges:
         _pref = st.session_state.get("_hist_range_pref")
-        st.session_state["history_range"] = _pref if _pref in ("3H", "1D", "1W", "1M", "1Y", "YTD", "Max") else "YTD"
+        _pref = _HIST_NEAR_COMPACT.get(_pref, _pref) if mobile.compact() else _pref
+        st.session_state["history_range"] = _pref if _pref in _ranges else "YTD"
     st.checkbox(t("hist.hide_small", thr=f"{_thr:,.0f} {display_ccy}"), value=True, key="hist_hide_small")
     _hc_left, _hc_right = st.columns(2)
     with _hc_left:
         range_choice = mobile.period_picker(
-            "Perioadă", ["3H", "1D", "1W", "1M", "1Y", "YTD", "Max"],
+            "Perioadă", _ranges,
             key="history_range", label_visibility="collapsed",
         )
     st.session_state["_hist_range_pref"] = range_choice
     _now = pd.Timestamp(datetime.now())
     _deltas = {
         "3H": pd.Timedelta(hours=3), "1D": pd.Timedelta(days=1), "1W": pd.Timedelta(weeks=1),
-        "1M": pd.Timedelta(days=30), "1Y": pd.Timedelta(days=365),
+        "1M": pd.Timedelta(days=30), "3M": pd.Timedelta(days=91), "6M": pd.Timedelta(days=182),
+        "1Y": pd.Timedelta(days=365), "3Y": pd.Timedelta(days=3 * 365), "5Y": pd.Timedelta(days=5 * 365),
     }
     if range_choice == "YTD":
         _start = pd.Timestamp(_now.year, 1, 1)
@@ -118,7 +132,7 @@ def render_history(sel_portfolios, display_ccy, native, compact, right_extra, ma
         _sel = history_df[history_df["x"] >= _start]
         history_df = _sel if len(_sel) >= 2 else history_df.tail(2)
     history_df = history_df.copy()
-    _show_inv = range_choice in ("1M", "1Y", "YTD", "Max")
+    _show_inv = range_choice not in ("3H", "1D", "1W")
     _nowl = pd.Timestamp(datetime.now())
     _first_local = pd.Timestamp(_first_all)
     if range_choice == "YTD":

@@ -329,5 +329,9 @@ BASE_URL = "https://live.trading212.com/api/v0"
 # ---------------------------------------------------------------------------
 CHART_PERIODS = {
     "1Z": ("1d", "15m"), "1S": ("5d", "60m"), "1L": ("1mo", "1d"),
-    "3L": ("3mo", "1d"), "YTD": ("ytd", "1d"), "1A": ("1y", "1d"), "5A": ("5y", "1wk"), "Max": ("max", "1mo"),
+    "3L": ("3mo", "1d"), "6L": ("6mo", "1d"), "YTD": ("ytd", "1d"), "1A": ("1y", "1d"), "3A": ("3y", "1wk"),
+    "5A": ("5y", "1wk"), "Max": ("max", "1mo"),
 }
+# perioadele graficului de valoare (history_ui) -> cea mai apropiata perioada din CHART_PERIODS
+HIST_TO_CHART = {"3H": "1Z", "1D": "1Z", "1W": "1S", "1M": "1L", "3M": "3L", "6M": "6L", "YTD": "YTD",
+                 "1Y": "1A", "3Y": "3A", "5Y": "5A", "Max": "Max"}

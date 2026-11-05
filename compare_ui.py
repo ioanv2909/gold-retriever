@@ -6,14 +6,13 @@ import streamlit as st
 import mobile
 
 import compare
-from core import CHART_PERIODS, load_json_file, QUALITY_CACHE_FILE
+from core import CHART_PERIODS, HIST_TO_CHART, load_json_file, QUALITY_CACHE_FILE
 from i18n import t
 from yf_compat import yf, YFINANCE_AVAILABLE
 
 # paleta categoriala, in ordine fixa; culoarea urmeaza simbolul, nu pozitia lui in lista
 COLORS = ("#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4")
 LABEL_GAP = 0.055  # distanta minima intre etichete, ca fractie din intervalul vertical (~un rand de text)
-_G2D = {"3H": "1Z", "1D": "1Z", "1W": "1S", "1M": "1L", "1Y": "1A", "YTD": "YTD", "Max": "Max"}
 
 
 @st.cache_data(ttl=21600, show_spinner=False)
@@ -155,7 +154,7 @@ def render_compare_tab(vdf):
         placeholder=t("cmp.placeholder"), bind="query-params")
     period = c2.segmented_control(
         t("dv.period"), list(CHART_PERIODS), key="cmp_period", bind="query-params",
-        default=_G2D.get(st.session_state.get("_hist_range_pref", "YTD"), "YTD"),
+        default=HIST_TO_CHART.get(st.session_state.get("_hist_range_pref", "YTD"), "YTD"),
         format_func=lambda k: t("dv.per." + k)) or "YTD"
     st.session_state["_saved_cmp"], st.session_state["_saved_cmp_period"] = list(chosen), period
     symbols = list(dict.fromkeys(compare.parse_symbols(" ".join(chosen))))

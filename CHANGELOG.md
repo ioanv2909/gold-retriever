@@ -1,3 +1,7 @@
+## 0.4.28 — 2026-11-05
+
+- Charts: new periods 3M, 6M, 3Y and 5Y. The value chart on the main page now offers 3H, 1D, 1W, 1M, 3M, 6M, YTD, 1Y, 3Y, 5Y and Max (on the phone 1D, 1W, 1M, 3M, YTD, 1Y and Max, so the buttons fit on one row). The price chart on the position page and the ticker comparison get 6M (6L) and 3Y (3A) next to the existing 3M and 5Y. The period chosen on the main page is carried over to the other charts.
+
 ## 0.4.27 — 2026-11-04
 
 - Exposure tab, country view: ETFs that Yahoo Finance lists as ordinary shares (often UCITS funds domiciled in Ireland or Luxembourg) were counted as "Ireland" instead of being split by country. Positions with an Irish or Luxembourg ISIN are now also checked on justETF; when justETF knows them as a fund, they are treated as ETFs and spread over the countries they hold. Real Irish companies (for example Accenture) keep "Ireland". Existing entries are corrected at the next exposure refresh.

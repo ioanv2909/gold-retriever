@@ -17,7 +17,7 @@ import plotly.express as px
 
 from checklist import build_checklist
 from descriptions import TABLE_HELP, checklist_tooltip, indicator_tooltip, score_tooltip
-from core import CHART_PERIODS, RECOMMENDATION_LABELS, SECTOR_TYPICAL_RANGES, load_config, load_notes, load_ticker_map, save_note, save_ticker_map
+from core import CHART_PERIODS, HIST_TO_CHART, RECOMMENDATION_LABELS, SECTOR_TYPICAL_RANGES, load_config, load_notes, load_ticker_map, save_note, save_ticker_map
 from etf import ETF_INDICATORS, compute_etf_score, extract_etf_metrics, get_instrument
 from gauges import make_gauge
 from holdings_ui import render_holdings_section, target_portfolios
@@ -143,13 +143,12 @@ def _render_price_chart_inner(ticker, yahoo_symbol, fill_date, avg_price_t212):
     st.subheader(tr("dv.chart_title"))
     _pkey = f"chart_period_{ticker}"
     if _pkey not in st.session_state:
-        _g2d = {"3H": "1Z", "1D": "1Z", "1W": "1S", "1M": "1L", "1Y": "1A", "YTD": "YTD", "Max": "Max"}
-        st.session_state[_pkey] = _g2d.get(st.session_state.get("_hist_range_pref", "YTD"), "YTD")
+        st.session_state[_pkey] = HIST_TO_CHART.get(st.session_state.get("_hist_range_pref", "YTD"), "YTD")
     _periods = list(CHART_PERIODS.keys())
     if mobile.compact():
         # pe telefon doar 5 butoane, ca sa incapa pe un rand
         _periods = ["1L", "3L", "1A", "5A", "Max"]
-        _near = {"1Z": "1L", "1S": "1L", "YTD": "1A"}
+        _near = {"1Z": "1L", "1S": "1L", "6L": "3L", "YTD": "1A", "3A": "5A"}
         st.session_state[_pkey] = _near.get(st.session_state[_pkey], st.session_state[_pkey])
     period_choice = mobile.period_picker(
         tr("dv.period"), _periods, key=_pkey,
