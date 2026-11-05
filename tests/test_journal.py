@@ -141,3 +141,16 @@ def test_forced_t212_downloads_start_even_when_fresh(monkeypatch, tmp_path):
     assert returns_summary.start_refresh() is False
     time.sleep(0.2)
     assert sorted(started) == ["flows", "rebuild"]
+
+
+def test_first_investment_and_months():
+    from datetime import date
+    import journal
+    ops = [{"date": date(2024, 3, 1), "account": "XTB EUR", "type": "deposit"},
+           {"date": date(2023, 1, 1), "account": "Trading 212", "type": "dividend"},
+           {"date": date(2023, 6, 1), "account": "Trading 212", "type": "buy"}]
+    assert journal.first_investment(ops) == date(2023, 6, 1)
+    assert journal.first_investment(ops, {"XTB EUR"}) == date(2024, 3, 1)
+    assert journal.first_investment(ops, {"Nimic"}) is None
+    assert round(journal.months_since(date(2024, 1, 1), date(2025, 1, 1))) == 12
+    assert journal.months_since(date(2025, 1, 1), date(2025, 1, 5)) == 1.0

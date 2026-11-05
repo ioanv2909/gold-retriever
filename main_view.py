@@ -137,7 +137,35 @@ def _pick_portfolios(has_t212, account_currency, detail_loading):
     return sel_portfolios, display_ccy
 
 
-def _render_metrics(native, vdf, cash, total_dividende, display_ccy):
+def _first_investment(sel_portfolios):
+    """Data primei depuneri/cumparari in portofoliile alese; citita din jurnal cel mult o data pe ora."""
+    import time
+    import journal
+    _c = st.session_state.get("_first_inv_cache")
+    if not _c or time.time() - _c[0] > 3600:
+        try:
+            ops = journal.load_all({})
+        except Exception:
+            ops = []
+        _c = (time.time(), {a: journal.first_investment(ops, {a}) for a in {op["account"] for op in ops}})
+        st.session_state["_first_inv_cache"] = _c
+    days = [d for a, d in _c[1].items() if a in sel_portfolios and d]
+    return min(days) if days else None
+
+
+def _invested_metric(col, label, invested, sel_portfolios):
+    """Total investit, cu ritmul lunar (total / luni de la prima investitie) ca delta."""
+    import journal
+    start = _first_investment(sel_portfolios)
+    delta, help_ = None, None
+    if start and invested > 0:
+        months = journal.months_since(start)
+        delta = t("main.monthly_pace", v=_mask(f"{invested / months:,.2f}"), n=f"{months:.0f}")
+        help_ = t("main.monthly_pace_help", d=f"{start:%d.%m.%Y}")
+    col.metric(label, _mask(f"{invested:,.2f}"), delta, delta_color="off", delta_arrow="off", help=help_)
+
+
+def _render_metrics(native, vdf, cash, total_dividende, display_ccy, sel_portfolios=()):
     col1, col2, col3, col4 = st.container(key="summary_metrics").columns(4)
     # in modul de confidentialitate delta valorii de piata e randamentul %, nu P/L-ul in bani
     if native:
@@ -145,7 +173,7 @@ def _render_metrics(native, vdf, cash, total_dividende, display_ccy):
         ppl = cash.get("ppl", 0.0)
         market_value = invested + ppl
         yield_pct = (ppl / invested * 100.0) if invested else 0.0
-        col1.metric("💰 Total Investit", _mask(f"{invested:,.2f}"))
+        _invested_metric(col1, "💰 Total Investit", invested, sel_portfolios)
         col2.metric("📊 Valoare de Piață (Nerealizat)", _mask(f"{market_value:,.2f}"),
                     f"{yield_pct:+.2f}%" if privacy.hidden() else f"{ppl:,.2f}")
         col3.metric("📈 Randament", f"{yield_pct:.2f}%")
@@ -156,7 +184,7 @@ def _render_metrics(native, vdf, cash, total_dividende, display_ccy):
         _m_pl = float(vdf["pl_disp"].sum())
         _m_div = float(vdf["div_disp"].sum())
         _m_yield = (_m_pl / _m_inv * 100.0) if _m_inv else 0.0
-        col1.metric(f"💰 Total Investit ({display_ccy})", _mask(f"{_m_inv:,.2f}"))
+        _invested_metric(col1, f"💰 Total Investit ({display_ccy})", _m_inv, sel_portfolios)
         col2.metric(f"📊 Valoare de Piață ({display_ccy})", _mask(f"{_m_val:,.2f}"),
                     f"{_m_yield:+.2f}%" if privacy.hidden() else f"{_m_pl:,.2f}")
         col3.metric("📈 Randament", f"{_m_yield:.2f}%")
@@ -308,7 +336,7 @@ def render_main_view(me, api_key_id, api_secret):
 
     cash_done = False
     if not detail_loading:
-        _render_metrics(native, vdf, cash, total_dividende, display_ccy)
+        _render_metrics(native, vdf, cash, total_dividende, display_ccy, sel_portfolios)
         cash_done = render_history(
             sel_portfolios, display_ccy, native, compact,
             lambda: render_cash(sel_portfolios, display_ccy, cash, api_key_id, api_secret, compact=True),

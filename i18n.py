@@ -840,6 +840,11 @@ _T = {
         "RO": "Cât din valoarea pozițiilor din acest portofoliu reprezintă poziția asta. Reper: sub 5-10% per poziție e considerat rezonabil diversificat; peste 20% înseamnă că performanța ei îți afectează puternic tot portofoliul.",
         "EN": "How much of this portfolio's positions value this position represents. Rule of thumb: under 5–10% per position is considered reasonably diversified; above 20% means its performance strongly affects your whole portfolio.",
     },
+    "main.monthly_pace": {"RO": "≈ {v} / lună · {n} luni", "EN": "≈ {v} / month · {n} months"},
+    "main.monthly_pace_help": {
+        "RO": "Ritmul lunar: totalul investit împărțit la numărul de luni de la prima depunere sau cumpărare din portofoliile alese ({d}).",
+        "EN": "Monthly pace: the total invested divided by the number of months since the first deposit or purchase in the selected portfolios ({d}).",
+    },
     "dv.chart_title": {"RO": "📈 Grafic preț", "EN": "📈 Price chart"},
     "dv.period": {"RO": "Perioadă", "EN": "Period"},
     "dv.per.1Z": {"RO": "1Z", "EN": "1D"},

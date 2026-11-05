@@ -149,6 +149,19 @@ def period_start(period, today=None):
     return None
 
 
+def first_investment(ops, accounts=None):
+    """Data primei depuneri sau cumparari in conturile date (toate daca accounts e None), sau None."""
+    days = [op["date"] for op in ops
+            if op["type"] in ("deposit", "buy") and (accounts is None or op["account"] in accounts)]
+    return min(days) if days else None
+
+
+def months_since(start, today=None):
+    """Numarul de luni de la start pana azi (cu zecimale, minim 1)."""
+    today = today or date.today()
+    return max(1.0, (today - start).days / 30.4375)
+
+
 def load_all(names=None):
     """Toate operatiunile utilizatorului curent, din fisierele salvate (doar moneda T212 poate cere API-ul,
     cand cache-ul ei a expirat)."""

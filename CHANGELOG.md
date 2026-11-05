@@ -1,3 +1,7 @@
+## 0.4.29 — 2026-11-05
+
+- Main page, "Total invested": the monthly pace is shown under the amount, the total invested divided by the number of months since the first deposit or purchase in the selected portfolios (for example "≈ 512.30 / month · 18 months"). The tooltip shows the start date. The first date is read from the Journal operations (T212 and XTB), at most once an hour.
+
 ## 0.4.28 — 2026-11-05
 
 - Charts: new periods 3M, 6M, 3Y and 5Y. The value chart on the main page now offers 3H, 1D, 1W, 1M, 3M, 6M, YTD, 1Y, 3Y, 5Y and Max (on the phone 1D, 1W, 1M, 3M, YTD, 1Y and Max, so the buttons fit on one row). The price chart on the position page and the ticker comparison get 6M (6L) and 3Y (3A) next to the existing 3M and 5Y. The period chosen on the main page is carried over to the other charts.
