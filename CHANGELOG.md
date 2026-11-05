@@ -1,3 +1,7 @@
+## 0.4.34 — 2026-11-05
+
+- Main page: the alert banners now have their whole background in the alert type's color (violet for filings and rating changes, blue for price, pink for score, orange for concentration), slightly transparent so the text stays readable in both themes, with the solid bar on the left kept.
+
 ## 0.4.33 — 2026-11-05
 
 - Main page: the alert banners at the top are now neutral cards (grey, following the theme) with a colored bar on the left by alert type: violet for filings and rating changes, blue for price, pink for score and orange for concentration.

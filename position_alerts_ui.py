@@ -19,15 +19,16 @@ def _when(ts):
     return time.strftime("%Y-%m-%d %H:%M", time.localtime(ts)) if ts else ""
 
 
-# bannerul: card neutru (dupa tema) cu o bara colorata in stanga, dupa tipul alertei
+# bannerul: fond in culoarea tipului de alerta (transparent, merge pe ambele teme) si bara plina in stanga
 _BANNER_ACCENT = {"event": "#8b7cf6", "price": "#4da3ff", "score": "#e87ba4", "concentration": "#eb6834"}
 
 
 def _banner_html(e, text):
     import html
     color = _BANNER_ACCENT.get(e.get("kind"), "#8b7cf6")
-    return ('<div style="background:rgba(128,128,128,0.12);border-left:4px solid %s;border-radius:0.5rem;'
-            'padding:0.75rem 1rem;line-height:1.5">🔔 %s</div>' % (color, html.escape(text)))
+    r, g, b = (int(color[i:i + 2], 16) for i in (1, 3, 5))
+    return ('<div style="background:rgba(%d,%d,%d,0.28);border-left:4px solid %s;border-radius:0.5rem;'
+            'padding:0.75rem 1rem;line-height:1.5">🔔 %s</div>' % (r, g, b, color, html.escape(text)))
 
 
 def render_banner():
