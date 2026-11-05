@@ -1,3 +1,7 @@
+## 0.4.33 — 2026-11-05
+
+- Main page: the alert banners at the top are now neutral cards (grey, following the theme) with a colored bar on the left by alert type: violet for filings and rating changes, blue for price, pink for score and orange for concentration.
+
 ## 0.4.32 — 2026-11-05
 
 - Main page: the alert banners at the top (new SEC filings, rating changes, price, score and concentration alerts) are now blue (info style) instead of the yellow-brown warning style.

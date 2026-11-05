@@ -19,6 +19,17 @@ def _when(ts):
     return time.strftime("%Y-%m-%d %H:%M", time.localtime(ts)) if ts else ""
 
 
+# bannerul: card neutru (dupa tema) cu o bara colorata in stanga, dupa tipul alertei
+_BANNER_ACCENT = {"event": "#8b7cf6", "price": "#4da3ff", "score": "#e87ba4", "concentration": "#eb6834"}
+
+
+def _banner_html(e, text):
+    import html
+    color = _BANNER_ACCENT.get(e.get("kind"), "#8b7cf6")
+    return ('<div style="background:rgba(128,128,128,0.12);border-left:4px solid %s;border-radius:0.5rem;'
+            'padding:0.75rem 1rem;line-height:1.5">🔔 %s</div>' % (color, html.escape(text)))
+
+
 def render_banner():
     cutoff = time.time() - BANNER_DAYS * 86400
     unseen = [e for e in pa.load_log() if not e.get("seen") and e.get("ts", 0) >= cutoff]
@@ -26,7 +37,7 @@ def render_banner():
         return
     for e in reversed(unseen[-BANNER_MAX:]):
         c1, c2 = st.columns([8, 1], vertical_alignment="center")
-        c1.info("🔔 " + pa.describe(e, lang()))
+        c1.markdown(_banner_html(e, pa.describe(e, lang())), unsafe_allow_html=True)
         if c2.button(t("pa.banner_seen"), key="pa_seen_%s_%s" % (e["ts"], e["ticker"])):
             pa.dismiss(e["ts"])
             st.rerun()

@@ -181,3 +181,10 @@ def test_evaluate_event_alert_message(env):
     assert len(fired) == 1
     (_, _, body), _ = env[0]
     assert "Coca-Cola: Management (2026-10-02) — 8-K 5.02" in body
+
+
+def test_banner_html_escapes_and_colors():
+    import position_alerts_ui
+    out = position_alerts_ui._banner_html({"kind": "event"}, "A <b>&</b>")
+    assert "&lt;b&gt;&amp;&lt;/b&gt;" in out and "#8b7cf6" in out
+    assert "#eb6834" in position_alerts_ui._banner_html({"kind": "concentration"}, "x")
