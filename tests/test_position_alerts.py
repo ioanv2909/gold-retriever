@@ -188,3 +188,9 @@ def test_banner_html_escapes_and_colors():
     out = position_alerts_ui._banner_html({"kind": "event"}, "A <b>&</b>")
     assert "&lt;b&gt;&amp;&lt;/b&gt;" in out and "#8b7cf6" in out
     assert "rgba(235,104,52,0.28)" in position_alerts_ui._banner_html({"kind": "concentration"}, "x")
+
+
+def test_banner_html_bold_and_profit_color():
+    import position_alerts_ui
+    out = position_alerts_ui._banner_html({"kind": "profit"}, "**A <x>** b", icon="")
+    assert "<b>A &lt;x&gt;</b> b" in out and "rgba(27,175,122,0.28)" in out

@@ -85,12 +85,12 @@ def _render_header(me, compact, detail_loading):
             instruments_by_ticker = {i.get("ticker"): i.get("name", i.get("ticker")) for i in snapshot["instruments"]}
         active_alerts = [a for a in check_loss_to_profit_alerts(snapshot["positions"], instruments_by_ticker) if not a.get("dismissed")]
         for a in active_alerts:
-            st.warning(t("alert.loss_to_profit", name=a["name"], ticker=a["ticker"], days=a["zile_detinut"], pct=f"{a['randament_%']:.2f}"))
-            ac1, ac2 = st.columns([1, 6])
-            with ac1:
-                if st.button(t("alert.seen"), key=f"dismiss_{a['ticker']}_{a['triggered_at']}"):
-                    dismiss_alert(a["ticker"], a["triggered_at"])
-                    st.rerun()
+            from position_alerts_ui import banner_row
+            _txt = t("alert.loss_to_profit", name=a["name"], ticker=a["ticker"], days=a["zile_detinut"], pct=f"{a['randament_%']:.2f}")
+            if banner_row("profit", _txt.removeprefix("⚠️ "), t("alert.seen"),
+                          f"dismiss_{a['ticker']}_{a['triggered_at']}", icon="📈 "):
+                dismiss_alert(a["ticker"], a["triggered_at"])
+                st.rerun()
 
     if not detail_loading:
         _sum_t, _sum_eye = st.columns([5, 2], vertical_alignment="bottom")

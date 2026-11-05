@@ -1,3 +1,8 @@
+## 0.4.35 — 2026-11-05
+
+- Main page: the "held for X days and now in profit" alert has the same colored card style as the other alerts, in green with a 📈 icon, instead of the yellow warning box.
+- Main page: all alert banners are a bit narrower, with the "Seen" button on the same row, on the right.
+
 ## 0.4.34 — 2026-11-05
 
 - Main page: the alert banners now have their whole background in the alert type's color (violet for filings and rating changes, blue for price, pink for score, orange for concentration), slightly transparent so the text stays readable in both themes, with the solid bar on the left kept.

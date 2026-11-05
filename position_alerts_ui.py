@@ -20,15 +20,26 @@ def _when(ts):
 
 
 # bannerul: fond in culoarea tipului de alerta (transparent, merge pe ambele teme) si bara plina in stanga
-_BANNER_ACCENT = {"event": "#8b7cf6", "price": "#4da3ff", "score": "#e87ba4", "concentration": "#eb6834"}
+_BANNER_ACCENT = {"event": "#8b7cf6", "price": "#4da3ff", "score": "#e87ba4", "concentration": "#eb6834",
+                  "profit": "#1baf7a"}
 
 
-def _banner_html(e, text):
+def _banner_html(e, text, icon="🔔 "):
+    """Textul alertei intr-un card colorat; **text** din traduceri devine bold, restul e escapat."""
     import html
+    import re
     color = _BANNER_ACCENT.get(e.get("kind"), "#8b7cf6")
     r, g, b = (int(color[i:i + 2], 16) for i in (1, 3, 5))
+    body = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", html.escape(text))
     return ('<div style="background:rgba(%d,%d,%d,0.28);border-left:4px solid %s;border-radius:0.5rem;'
-            'padding:0.75rem 1rem;line-height:1.5">🔔 %s</div>' % (r, g, b, color, html.escape(text)))
+            'padding:0.75rem 1rem;line-height:1.5">%s%s</div>' % (r, g, b, color, icon, body))
+
+
+def banner_row(kind, text, button, key, icon="🔔 "):
+    """Un banner de alerta cu butonul pe acelasi rand, in dreapta; intoarce True la apasare."""
+    c1, c2 = st.columns([6, 1], vertical_alignment="center")
+    c1.markdown(_banner_html({"kind": kind}, text, icon), unsafe_allow_html=True)
+    return c2.button(button, key=key, width="stretch")
 
 
 def render_banner():
@@ -37,9 +48,8 @@ def render_banner():
     if not unseen:
         return
     for e in reversed(unseen[-BANNER_MAX:]):
-        c1, c2 = st.columns([8, 1], vertical_alignment="center")
-        c1.markdown(_banner_html(e, pa.describe(e, lang())), unsafe_allow_html=True)
-        if c2.button(t("pa.banner_seen"), key="pa_seen_%s_%s" % (e["ts"], e["ticker"])):
+        if banner_row(e.get("kind"), pa.describe(e, lang()), t("pa.banner_seen"),
+                      "pa_seen_%s_%s" % (e["ts"], e["ticker"])):
             pa.dismiss(e["ts"])
             st.rerun()
     if len(unseen) > 1 and st.button(t("pa.banner_all_seen"), key="pa_seen_all"):
