@@ -154,3 +154,14 @@ def test_first_investment_and_months():
     assert journal.first_investment(ops, {"Nimic"}) is None
     assert round(journal.months_since(date(2024, 1, 1), date(2025, 1, 1))) == 12
     assert journal.months_since(date(2025, 1, 1), date(2025, 1, 5)) == 1.0
+
+
+def test_net_deposits():
+    from datetime import date
+    import journal
+    ops = [{"date": date(2024, 1, 1), "account": "A", "type": "deposit", "amount": 100, "ccy": "EUR"},
+           {"date": date(2024, 2, 1), "account": "A", "type": "withdrawal", "amount": -30, "ccy": "EUR"},
+           {"date": date(2024, 2, 1), "account": "B", "type": "deposit", "amount": 50, "ccy": "USD"},
+           {"date": date(2024, 2, 1), "account": "A", "type": "buy", "amount": -60, "ccy": "EUR"}]
+    assert journal.net_deposits(ops) == {"EUR": 70.0, "USD": 50.0}
+    assert journal.net_deposits(ops, {"B"}) == {"USD": 50.0}

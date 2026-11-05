@@ -137,8 +137,9 @@ def _pick_portfolios(has_t212, account_currency, detail_loading):
     return sel_portfolios, display_ccy
 
 
-def _first_investment(sel_portfolios):
-    """Data primei depuneri/cumparari in portofoliile alese; citita din jurnal cel mult o data pe ora."""
+def _deposit_stats(sel_portfolios, display_ccy):
+    """(data primei depuneri/cumparari, depuneri nete in display_ccy) pentru portofoliile alese;
+    operatiunile se citesc din jurnal cel mult o data pe ora."""
     import time
     import journal
     _c = st.session_state.get("_first_inv_cache")
@@ -147,21 +148,25 @@ def _first_investment(sel_portfolios):
             ops = journal.load_all({})
         except Exception:
             ops = []
-        _c = (time.time(), {a: journal.first_investment(ops, {a}) for a in {op["account"] for op in ops}})
+        _c = (time.time(), {a: (journal.first_investment(ops, {a}), journal.net_deposits(ops, {a}))
+                            for a in {op["account"] for op in ops}})
         st.session_state["_first_inv_cache"] = _c
-    days = [d for a, d in _c[1].items() if a in sel_portfolios and d]
-    return min(days) if days else None
+    from portfolio_model import fx
+    sel = [v for a, v in _c[1].items() if a in sel_portfolios]
+    days = [d for d, _ in sel if d]
+    net = sum(amount * float(fx(ccy, display_ccy) or 0) for _, dep in sel for ccy, amount in dep.items())
+    return (min(days) if days else None), net
 
 
-def _invested_metric(col, label, invested, sel_portfolios):
-    """Total investit, cu ritmul lunar (total / luni de la prima investitie) ca delta."""
+def _invested_metric(col, label, invested, sel_portfolios, display_ccy):
+    """Total investit, cu ritmul lunar (depuneri nete / luni de la prima investitie) ca delta."""
     import journal
-    start = _first_investment(sel_portfolios)
+    start, net = _deposit_stats(sel_portfolios, display_ccy)
     delta, help_ = None, None
-    if start and invested > 0:
+    if start and net > 0:
         months = journal.months_since(start)
-        delta = t("main.monthly_pace", v=_mask(f"{invested / months:,.2f}"), n=f"{months:.0f}")
-        help_ = t("main.monthly_pace_help", d=f"{start:%d.%m.%Y}")
+        delta = t("main.monthly_pace", v=_mask(f"{net / months:,.2f}"), n=f"{months:.0f}")
+        help_ = t("main.monthly_pace_help", d=f"{start:%d.%m.%Y}", v=_mask(f"{net:,.2f} {display_ccy}"))
     col.metric(label, _mask(f"{invested:,.2f}"), delta, delta_color="off", delta_arrow="off", help=help_)
 
 
@@ -173,7 +178,7 @@ def _render_metrics(native, vdf, cash, total_dividende, display_ccy, sel_portfol
         ppl = cash.get("ppl", 0.0)
         market_value = invested + ppl
         yield_pct = (ppl / invested * 100.0) if invested else 0.0
-        _invested_metric(col1, "💰 Total Investit", invested, sel_portfolios)
+        _invested_metric(col1, "💰 Total Investit", invested, sel_portfolios, display_ccy)
         col2.metric("📊 Valoare de Piață (Nerealizat)", _mask(f"{market_value:,.2f}"),
                     f"{yield_pct:+.2f}%" if privacy.hidden() else f"{ppl:,.2f}")
         col3.metric("📈 Randament", f"{yield_pct:.2f}%")
@@ -184,7 +189,7 @@ def _render_metrics(native, vdf, cash, total_dividende, display_ccy, sel_portfol
         _m_pl = float(vdf["pl_disp"].sum())
         _m_div = float(vdf["div_disp"].sum())
         _m_yield = (_m_pl / _m_inv * 100.0) if _m_inv else 0.0
-        _invested_metric(col1, f"💰 Total Investit ({display_ccy})", _m_inv, sel_portfolios)
+        _invested_metric(col1, f"💰 Total Investit ({display_ccy})", _m_inv, sel_portfolios, display_ccy)
         col2.metric(f"📊 Valoare de Piață ({display_ccy})", _mask(f"{_m_val:,.2f}"),
                     f"{_m_yield:+.2f}%" if privacy.hidden() else f"{_m_pl:,.2f}")
         col3.metric("📈 Randament", f"{_m_yield:.2f}%")

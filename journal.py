@@ -156,6 +156,15 @@ def first_investment(ops, accounts=None):
     return min(days) if days else None
 
 
+def net_deposits(ops, accounts=None):
+    """{moneda: depuneri - retrageri} in conturile date (toate daca accounts e None)."""
+    out = {}
+    for op in ops:
+        if op["type"] in ("deposit", "withdrawal") and (accounts is None or op["account"] in accounts):
+            out[op["ccy"]] = out.get(op["ccy"], 0.0) + float(op["amount"] or 0)
+    return out
+
+
 def months_since(start, today=None):
     """Numarul de luni de la start pana azi (cu zecimale, minim 1)."""
     today = today or date.today()

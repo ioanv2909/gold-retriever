@@ -1,3 +1,9 @@
+## 0.4.30 — 2026-11-05
+
+- Main page, "Total invested": the monthly pace now uses the net deposits (deposits minus withdrawals in the selected portfolios, converted at today's rate) divided by the months since the first deposit or purchase. The tooltip shows the net deposits and the start date.
+- Value chart: new S&P 500 line, what the portfolio would be worth if the same amounts had gone into the S&P 500 (it starts at the market value at the beginning of the period; each change of the invested amount buys or sells the index at that moment's price, in the display currency, without dividends).
+- Value chart: buttons above the chart turn the Market value, S&P 500 and Invested lines on and off; the choice is saved per user. The Invested line is no longer hidden on the 3H, 1D and 1W periods, and the Y axis fits the visible lines.
+
 ## 0.4.29 — 2026-11-05
 
 - Main page, "Total invested": the monthly pace is shown under the amount, the total invested divided by the number of months since the first deposit or purchase in the selected portfolios (for example "≈ 512.30 / month · 18 months"). The tooltip shows the start date. The first date is read from the Journal operations (T212 and XTB), at most once an hour.

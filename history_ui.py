@@ -12,11 +12,52 @@ from core import load_portfolio_history
 from i18n import t, x as _tx
 from portfolio_model import fx as _fx
 from privacy import mask as _mask
+import benchmark
+from lang_prefs import load_pref, save_pref
+from yf_compat import yf, YFINANCE_AVAILABLE
 
 # perioadele graficului de valoare; pe telefon doar o parte, cele lipsa trec la cea mai apropiata
 HIST_RANGES = ("3H", "1D", "1W", "1M", "3M", "6M", "YTD", "1Y", "3Y", "5Y", "Max")
 HIST_RANGES_COMPACT = ("1D", "1W", "1M", "3M", "YTD", "1Y", "Max")
 _HIST_NEAR_COMPACT = {"3H": "1D", "6M": "3M", "3Y": "1Y", "5Y": "Max"}
+
+
+LINES = ("value", "sp500", "invested")
+_LINE_COLORS = {"value": "#4da3ff", "sp500": "#1baf7a", "invested": "#ff9f43"}
+
+
+@st.cache_data(ttl=900, show_spinner=False)
+def sp500_prices(range_choice, ccy):
+    """Pretul S&P 500 in moneda ccy (ora locala, fara fus orar), sau None daca Yahoo nu raspunde."""
+    if not YFINANCE_AVAILABLE:
+        return None
+    period, interval = benchmark.YF_RANGE.get(range_choice, ("max", "1d"))
+    try:
+        px = benchmark.to_local_naive(
+            yf.Ticker(benchmark.SYMBOL).history(period=period, interval=interval, timeout=10)["Close"])
+        if px.empty:
+            return None
+        if ccy != "USD":
+            fx = None
+            try:
+                fx = benchmark.to_local_naive(
+                    yf.Ticker(f"USD{ccy}=X").history(period=period, interval=interval, timeout=10)["Close"])
+            except Exception:
+                pass
+            if fx is not None and not fx.empty:
+                px = px * benchmark.align(px.index, fx).to_numpy()
+            else:
+                px = px * float(_fx("USD", ccy) or 1.0)
+        if interval == "1d":
+            # pretul zilnic e datat la miezul noptii la New York; il punem la ora inchiderii (22:00 la noi)
+            px.index = px.index.normalize() + pd.Timedelta(hours=22)
+        return px
+    except Exception:
+        return None
+
+
+def _line_label(k):
+    return {"value": "🔵 ", "sp500": "🟢 ", "invested": "🟠 "}[k] + t("hist.line." + k)
 
 
 def _history_dialog(fig):
@@ -132,7 +173,9 @@ def render_history(sel_portfolios, display_ccy, native, compact, right_extra, ma
         _sel = history_df[history_df["x"] >= _start]
         history_df = _sel if len(_sel) >= 2 else history_df.tail(2)
     history_df = history_df.copy()
-    _show_inv = range_choice not in ("3H", "1D", "1W")
+    if "hist_lines" not in st.session_state:
+        _saved = load_pref("hist_lines")
+        st.session_state["hist_lines"] = [k for k in _saved if k in LINES] if isinstance(_saved, list) else list(LINES)
     _nowl = pd.Timestamp(datetime.now())
     _first_local = pd.Timestamp(_first_all)
     if range_choice == "YTD":
@@ -161,26 +204,31 @@ def render_history(sel_portfolios, display_ccy, native, compact, right_extra, ma
         if not compact and _ps is not None and _first_local > _ps + pd.Timedelta(minutes=30):
             st.caption(t("hist.incomplete", d=f"{_first_local:%d.%m.%Y %H:%M}"))
         right_extra()
+    with _hc_left:
+        _lines = st.pills(t("hist.lines"), LINES, selection_mode="multi", key="hist_lines",
+                          format_func=_line_label, label_visibility="collapsed")
+    save_pref("hist_lines", list(_lines or []))
+    _ys = {}
+    if "value" in (_lines or []):
+        _ys["value"] = history_df["market_value"].tolist()
+    if "sp500" in (_lines or []):
+        _sp = None
+        _px = sp500_prices(range_choice, display_ccy)
+        if _px is not None:
+            _sp = benchmark.simulate(history_df["market_value"], history_df["invested"],
+                                     benchmark.align(history_df["x"], _px))
+        if _sp:
+            _ys["sp500"] = _sp
+        else:
+            st.caption(t("hist.sp500_missing"))
+    if "invested" in (_lines or []):
+        _ys["invested"] = history_df["invested"].tolist()
     history_fig = go.Figure()
-    history_fig.add_trace(
-        go.Scatter(
-            x=history_df["x"],
-            y=history_df["market_value"],
-            name=_tx("Valoare de piață"),
-            mode="lines",
-            line=dict(color="#4da3ff", width=2.5),
-        )
-    )
-    if _show_inv:
-        history_fig.add_trace(
-            go.Scatter(
-                x=history_df["x"],
-                y=history_df["invested"],
-                name=_tx("Investit"),
-                mode="lines",
-                line=dict(dash="dot", color="#ff9f43", width=2.5),
-            )
-        )
+    for _k, _y in _ys.items():
+        history_fig.add_trace(go.Scatter(
+            x=history_df["x"], y=_y, name=t("hist.line." + _k), mode="lines",
+            line=dict(color=_LINE_COLORS[_k], width=2.5, dash="dot" if _k == "invested" else None),
+        ))
     history_fig.update_layout(
         title=f"{_tx('Valoare de piață în timp')} ({display_ccy})",
         height=300,
@@ -188,17 +236,14 @@ def render_history(sel_portfolios, display_ccy, native, compact, right_extra, ma
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
     )
-    if _show_inv:
-        _lo = float(min(history_df["market_value"].min(), history_df["invested"].min()))
-        _hi = float(max(history_df["market_value"].max(), history_df["invested"].max()))
-        _pad = max((_hi - _lo) * 0.15, _hi * 0.01)
-        history_fig.update_yaxes(range=[_lo - _pad, _hi + _pad])
-    else:
-        _lo = float(history_df["market_value"].min())
-        _hi = float(history_df["market_value"].max())
-        _pad = max((_hi - _lo) * 0.25, _hi * 0.0005)
+    if _ys:
+        _all = [float(v) for _y in _ys.values() for v in _y]
+        _lo, _hi = min(_all), max(_all)
+        _pad = max((_hi - _lo) * 0.15, abs(_hi) * 0.0005)
         history_fig.update_yaxes(range=[_lo - _pad, _hi + _pad], tickformat=",.0f")
-    history_fig.update_layout(legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0))
+    # liniile se aleg din butoanele de deasupra (alegerea ramane salvata); legenda doar le numeste
+    history_fig.update_layout(legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0, itemclick=False,
+                                          itemdoubleclick=False), showlegend=bool(_ys))
     history_fig.update_layout(hovermode="x unified")
     history_fig.update_traces(hovertemplate="%{y:,.2f}")
     if privacy.hidden():
@@ -224,6 +269,8 @@ def render_history(sel_portfolios, display_ccy, native, compact, right_extra, ma
         history_fig.update_traces(mode="lines+markers", marker=dict(size=5))
     with _hc_left:
         mobile.plotly_chart(history_fig, width="stretch", key="portfolio_history_chart")
+        if not compact and "sp500" in _ys:
+            st.caption(t("hist.sp500_help", ccy=display_ccy))
         _enlarge = not compact and st.button(t("hist.enlarge"), key="history_enlarge")
     if _enlarge:
         _history_dialog(history_fig)
