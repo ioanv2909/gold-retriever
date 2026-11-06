@@ -1,3 +1,7 @@
+## 0.4.42 — 2026-11-06
+
+- Monthly pace email: sent only when the pace falls below 95% of the target, so a pace that dips just under the target right before each deposit no longer sends an email every month; it is re-armed when the pace is back at 100%.
+
 ## 0.4.41 — 2026-11-06
 
 - Settings > Goals: new switch "Email me when the pace drops below the target". Checked once an hour across all accounts; one email when the monthly pace falls below the target (with the amount to deposit to get back to it), the next one only after the pace is back at the target and falls again.

@@ -865,8 +865,8 @@ _T = {
     "pace.ccy": {"RO": "Monedă", "EN": "Currency"},
     "pace.email": {"RO": "Anunță-mă pe email când ritmul scade sub țintă", "EN": "Email me when the pace drops below the target"},
     "pace.email_help": {
-        "RO": "Verificat o dată pe oră, pe toate conturile. Un singur email când ritmul trece sub țintă; următorul abia după ce revine la țintă (după o alimentare) și scade din nou. Trimis la adresa contului tău; adminul trebuie să aibă pornit evenimentul „Ritm lunar sub țintă” în setările de email.",
-        "EN": "Checked once an hour, across all accounts. One email when the pace falls below the target; the next one only after it is back at the target (after a deposit) and falls again. Sent to your account's address; the admin must have the “Monthly pace below target” event on in the email settings.",
+        "RO": "Verificat o dată pe oră, pe toate conturile. Un singur email când ritmul scade sub 95% din țintă (nu în fiecare lună, chiar înainte de alimentare); următorul abia după ce revine la țintă (după o alimentare) și scade din nou. Trimis la adresa contului tău; adminul trebuie să aibă pornit evenimentul „Ritm lunar sub țintă” în setările de email.",
+        "EN": "Checked once an hour, across all accounts. One email when the pace falls below 95% of the target (not every month, right before a deposit); the next one only after it is back at the target (after a deposit) and falls again. Sent to your account's address; the admin must have the “Monthly pace below target” event on in the email settings.",
     },
     "pace.event": {"RO": "Ritm lunar sub țintă (fiecărui utilizator)", "EN": "Monthly pace below target (to each user)"},
     "pace.mail_subject": {"RO": "GoldRetriever: ritmul lunar a scăzut sub țintă", "EN": "GoldRetriever: monthly pace fell below the target"},

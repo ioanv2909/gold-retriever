@@ -47,7 +47,8 @@ def test_email_once_until_back_at_target(monkeypatch):
     assert pt.check_and_notify("bob", _ops(1000.0), day) is True       # 100/luna < 200
     assert pt.check_and_notify("bob", _ops(1000.0), day) is False      # deja anuntat
     assert pt.check_and_notify("bob", _ops(3000.0), day) is False      # inapoi peste tinta: rearmat
-    assert pt.check_and_notify("bob", _ops(1500.0), day) is True       # sub tinta din nou
+    assert pt.check_and_notify("bob", _ops(1950.0), day) is False      # 195 = 97.5%: in marja, fara email
+    assert pt.check_and_notify("bob", _ops(1500.0), day) is True       # sub 95% din nou
     assert sent == [100, 150]
 
 

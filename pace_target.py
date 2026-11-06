@@ -12,6 +12,8 @@ PREF_KEY = "pace_target"
 LEVELS = ((1.0, "#21c354"), (0.9, "#e8c547"), (0.75, "#eb8c34"), (0.0, "#ff4b4b"))
 PACE_MIN_EUR = 50.0
 CHECK_INTERVAL = 3600
+# emailul pleaca doar sub 95% din tinta (nu in fiecare luna, chiar inainte de alimentare); se rearmeaza la 100%
+EMAIL_MARGIN = 0.95
 STATE_FILE = UPath("pace_alert_state.json")
 
 
@@ -59,12 +61,11 @@ def check_and_notify(user, ops=None, today=None):
     _, _, months, pace = pace_of(ops, tg[1], None, today)
     if pace is None:
         return False
-    below = pace < tg[0]
-    if not below:
+    if pace >= tg[0]:
         if state.get("below"):
             save_json_file(STATE_FILE, {"below": False})
         return False
-    if state.get("below"):
+    if state.get("below") or pace >= tg[0] * EMAIL_MARGIN:
         return False
     sent = _send(user, pace, tg, months)
     if sent:
