@@ -1,3 +1,7 @@
+## 0.4.37 — 2026-11-06
+
+- Position page, price chart: hovering shows a vertical line with the date (and time on the 1 day / 1 week periods) and the share price at that point, also for the "Bought here" star, so its exact date is visible.
+
 ## 0.4.36 — 2026-11-05
 
 - Event alerts (SEC filings, rating downgrades, insider purchases) now have a "Details ↗" link that opens in a new tab: the SEC filing itself for 8-K reports, the Yahoo Finance analyst page for rating changes, the insider transactions page for insider trades and the news page otherwise. The link is shown in the banner on the main page, in the alert log in Settings > Notifications > Alerts and under each event in the alert email.

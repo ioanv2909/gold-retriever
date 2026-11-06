@@ -160,12 +160,18 @@ def _render_price_chart_inner(ticker, yahoo_symbol, fill_date, avg_price_t212):
         st.warning(err)
         return
 
-    if fetch_yahoo_currency_hint(yahoo_symbol) == "GBp":
+    _ccy = fetch_yahoo_currency_hint(yahoo_symbol) or ""
+    if _ccy == "GBp":
         hist = hist.copy()
         hist["Close"] = hist["Close"] / 100  # Yahoo dă LSE în pence — normalizăm la GBP
+        _ccy = "GBP"
+    _ccy_sfx = f" {_ccy}" if _ccy else ""
 
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=hist.index, y=hist["Close"], mode="lines", name=yahoo_symbol, line=dict(width=2)))
+    fig.add_trace(go.Scatter(
+        x=hist.index, y=hist["Close"], mode="lines", name=yahoo_symbol, line=dict(width=2),
+        hovertemplate="%{y:,.2f}" + _ccy_sfx + "<extra></extra>",
+    ))
 
     if fill_date is not None:
         try:
@@ -180,6 +186,7 @@ def _render_price_chart_inner(ticker, yahoo_symbol, fill_date, avg_price_t212):
                     x=[marker_x], y=[marker_y], mode="markers+text", name=tr("dv.bought"),
                     marker=dict(size=12, color="orange", symbol="star"),
                     text=[tr("dv.bought_here")], textposition="top center",
+                    hovertemplate=tr("dv.bought_here") + ": %{y:,.2f}" + _ccy_sfx + "<extra></extra>",
                 ))
         except Exception:
             pass
@@ -187,8 +194,13 @@ def _render_price_chart_inner(ticker, yahoo_symbol, fill_date, avg_price_t212):
     fig.update_layout(
         height=400, margin=dict(l=10, r=10, t=10, b=10),
         showlegend=False, xaxis_title=None, yaxis_title=None,
-        template="plotly_dark",
+        template="plotly_dark", hovermode="x unified",
     )
+    # linie verticala la hover, cu data (si ora, la intervalele intraday) si pretul punctului
+    _intraday = yf_interval.endswith(("m", "h")) and not yf_interval.endswith("mo")
+    fig.update_xaxes(hoverformat="%d.%m.%Y %H:%M" if _intraday else "%d.%m.%Y",
+                     showspikes=True, spikemode="across", spikesnap="cursor",
+                     spikethickness=1, spikedash="dot", spikecolor="rgba(200,200,200,0.6)")
     mobile.plotly_chart(fig, width="stretch", key=f"price_chart_{ticker}")
     if mobile.compact():
         return
