@@ -268,6 +268,10 @@ def render_history(sel_portfolios, display_ccy, native, compact, right_extra, ma
     if len(history_df) <= 40:
         history_fig.update_traces(mode="lines+markers", marker=dict(size=5))
     with _hc_left:
+        if not _ys:
+            # fara nicio linie graficul ar fi gol, cu axe fara sens: cerem alegerea unei linii
+            st.warning(t("hist.no_lines"))
+            return True
         mobile.plotly_chart(history_fig, width="stretch", key="portfolio_history_chart")
         if not compact and "sp500" in _ys:
             st.caption(t("hist.sp500_help", ccy=display_ccy))

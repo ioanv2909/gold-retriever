@@ -85,6 +85,7 @@ _T = {
     "hist.line.value": {"RO": "Valoare de piață", "EN": "Market value"},
     "hist.line.sp500": {"RO": "S&P 500", "EN": "S&P 500"},
     "hist.line.invested": {"RO": "Investit", "EN": "Invested"},
+    "hist.no_lines": {"RO": "Nicio linie selectată: alege cel puțin una dintre Valoare de piață, S&P 500 și Investit ca să apară graficul.", "EN": "No line selected: pick at least one of Market value, S&P 500 and Invested to show the chart."},
     "hist.sp500_missing": {"RO": "Datele S&P 500 nu sunt disponibile acum (Yahoo).", "EN": "S&P 500 data is not available right now (Yahoo)."},
     "hist.sp500_help": {
         "RO": "S&P 500 = cât ar valora portofoliul dacă aceleași sume ar fi fost puse în S&P 500: pornește de la valoarea de piață de la începutul perioadei, iar fiecare sumă investită sau retrasă cumpără sau vinde indice la prețul din acel moment (în {ccy}, fără dividende).",

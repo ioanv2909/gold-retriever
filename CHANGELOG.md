@@ -1,3 +1,7 @@
+## 0.4.43 — 2026-11-06
+
+- Value chart: with no line selected (Market value, S&P 500, Invested) a warning asks to pick one, instead of an empty chart with a meaningless axis.
+
 ## 0.4.42 — 2026-11-06
 
 - Monthly pace email: sent only when the pace falls below 95% of the target, so a pace that dips just under the target right before each deposit no longer sends an email every month; it is re-armed when the pace is back at 100%.
