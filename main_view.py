@@ -169,8 +169,21 @@ def _invested_metric(col, label, invested, sel_portfolios, display_ccy):
     delta, help_ = None, None
     if start and net > 0:
         months = journal.months_since(start)
-        delta = t("main.monthly_pace", v=_mask(f"{net / months:,.2f}"), n=f"{months:.0f}")
+        pace = net / months
+        delta = t("main.monthly_pace", v=_mask(f"{pace:,.2f}"), n=f"{months:.0f}")
         help_ = t("main.monthly_pace_help", d=f"{start:%d.%m.%Y}", v=_mask(f"{net:,.2f} {display_ccy}"))
+        # badge-ul colorat dupa tinta lunara din Setari > Obiective (convertita in moneda afisata)
+        import pace_target
+        from portfolio_model import fx
+        _tg = pace_target.load()
+        _rate = float(fx(_tg[1], display_ccy) or 0) if _tg else 0.0
+        if _rate > 0:
+            target = _tg[0] * _rate
+            col.markdown(pace_target.badge_css("pace_metric", pace_target.color_for(pace, target)),
+                         unsafe_allow_html=True)
+            help_ += "\n\n" + t("main.monthly_pace_target", v=_mask(f"{target:,.2f} {display_ccy}"),
+                                  p=f"{pace / target * 100:.0f}")
+        col = col.container(key="pace_metric")
     col.metric(label, _mask(f"{invested:,.2f}"), delta, delta_color="off", delta_arrow="off", help=help_)
 
 

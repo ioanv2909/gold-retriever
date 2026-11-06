@@ -71,11 +71,18 @@ else:
         from updates_ui import render_updates_section
         from weekly_report_ui import render_settings_section as _weekly_settings
         from xtb_import_ui import render_xtb_import
+
+        def _goals_settings():
+            import pace_target
+            from lang_prefs import load_pref
+            from main_view import _CCY_OPTIONS, DEFAULT_DISPLAY_CCY
+            pace_target.render_settings_section(_CCY_OPTIONS, load_pref("display_ccy") or DEFAULT_DISPLAY_CCY)
         render_settings(_me, [("updates", t("side.updates"), lambda: render_updates_section(api_key_id, api_secret, interval_minutes)),
                               ("xtb", t("side.xtb_import"), lambda: render_xtb_import(_me)),
                               ("calendar", t("set.events"), lambda: _events_settings(_me)),
                               ("alerts", t("set.alerts"), lambda: _alerts_settings(_me)),
                               ("weekly", t("wr.tab"), lambda: _weekly_settings(_me)),
+                              ("goals", t("pace.tab"), _goals_settings),
                               ("privacy", t("priv.tab"), privacy.render_settings_section),
                               ("appearance", t("app.tab"), appearance.render_settings_section)])
         st.stop()

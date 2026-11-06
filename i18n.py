@@ -851,6 +851,19 @@ _T = {
         "EN": "How much of this portfolio's positions value this position represents. Rule of thumb: under 5–10% per position is considered reasonably diversified; above 20% means its performance strongly affects your whole portfolio.",
     },
     "main.monthly_pace": {"RO": "≈ {v} / lună · {n} luni", "EN": "≈ {v} / month · {n} months"},
+    "main.monthly_pace_target": {
+        "RO": "Ținta ta: {v} / lună (Setări > Obiective) — atins {p}%. Verde de la 100%, galben 90–100%, portocaliu 75–90%, roșu sub 75%.",
+        "EN": "Your target: {v} / month (Settings > Goals) — {p}% reached. Green from 100%, yellow 90–100%, orange 75–90%, red under 75%.",
+    },
+    "pace.tab": {"RO": "🎯 Obiective", "EN": "🎯 Goals"},
+    "pace.title": {"RO": "Ritm lunar dorit", "EN": "Target monthly pace"},
+    "pace.help": {
+        "RO": "Cât vrei să depui net pe lună. Badge-ul de ritm de sub Total investit se colorează după cât din țintă atingi: verde de la 100%, galben 90–100%, portocaliu 75–90%, roșu sub 75%. 0 = fără țintă (badge neutru).",
+        "EN": "How much you want to deposit net each month. The pace badge under Total invested is colored by how much of the target you reach: green from 100%, yellow 90–100%, orange 75–90%, red under 75%. 0 = no target (neutral badge).",
+    },
+    "pace.amount": {"RO": "Sumă pe lună", "EN": "Amount per month"},
+    "pace.ccy": {"RO": "Monedă", "EN": "Currency"},
+    "pace.saved": {"RO": "Ținta lunară a fost salvată.", "EN": "Monthly target saved."},
     "main.monthly_pace_help": {
         "RO": "Ritmul lunar: depunerile nete (depuneri minus retrageri: {v}) împărțite la numărul de luni de când depunerile nete din portofoliile alese au trecut de 50 EUR ({d}); perioada de la început, cu sume mai mici, nu se numără. Sumele în alte monede sunt convertite la cursul de azi.",
         "EN": "Monthly pace: the net deposits (deposits minus withdrawals: {v}) divided by the number of months since the net deposits in the selected portfolios went above 50 EUR ({d}); the early period with smaller amounts is not counted. Amounts in other currencies are converted at today's rate.",

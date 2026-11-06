@@ -1,3 +1,8 @@
+## 0.4.40 — 2026-11-06
+
+- Settings > Goals (new tab): a target monthly pace (amount and currency, per user).
+- Main page: the monthly pace badge under Total invested is colored by how much of the target it reaches: green from 100%, yellow 90–100%, orange 75–90%, red under 75%; its tooltip shows the target in the display currency and the percentage reached. Without a target the badge stays neutral.
+
 ## 0.4.39 — 2026-11-06
 
 - Main page: in every alert banner the position's name is a link that opens its detail page.
