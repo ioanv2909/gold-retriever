@@ -89,7 +89,7 @@ def _render_header(me, compact, detail_loading):
             _txt = t("alert.loss_to_profit", name=a["name"], ticker=a["ticker"], days=a["zile_detinut"], pct=f"{a['randament_%']:.2f}")
             if banner_row("profit", _txt.removeprefix("⚠️ "), t("alert.seen"),
                           f"dismiss_{a['ticker']}_{a['triggered_at']}", icon="📈 ",
-                          ts=a.get("triggered_at")):
+                          ts=a.get("triggered_at"), detail=(a["ticker"], a["name"])):
                 dismiss_alert(a["ticker"], a["triggered_at"])
                 st.rerun()
 

@@ -156,6 +156,13 @@ def test_dismiss_one_keeps_others_from_same_check(env):
     assert [e["seen"] for e in pa.load_log()] == [True, False]
 
 
+def test_banner_name_links_to_detail_page():
+    from position_alerts_ui import _banner_html
+    out = _banner_html({"kind": "price"}, "Coca-Cola & Co: price fell", detail=("KO_US_EQ", "Coca-Cola & Co"))
+    assert '<a href="?detail=KO_US_EQ" target="_self">Coca-Cola &amp; Co</a>: price fell' in out
+    assert "href" not in _banner_html({"kind": "price"}, "Other text", detail=("KO_US_EQ", "Coca-Cola"))
+
+
 def test_banner_when_format():
     import time
     from position_alerts_ui import banner_when

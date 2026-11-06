@@ -1,3 +1,7 @@
+## 0.4.39 — 2026-11-06
+
+- Main page: in every alert banner the position's name is a link that opens its detail page.
+
 ## 0.4.38 — 2026-11-06
 
 - Main page: every alert banner now starts with the date and time it was generated (YYYY.MM.DD HH.MM).

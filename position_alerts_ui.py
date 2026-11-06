@@ -29,7 +29,20 @@ def banner_when(ts):
     return time.strftime("%Y.%m.%d %H.%M", time.localtime(ts)) if ts else ""
 
 
-def _banner_html(e, text, icon="🔔 ", link=None, link_text="", when=""):
+def _detail_link(body, ticker, name):
+    """Prima aparitie a numelui pozitiei (deja escapat in body) devine link catre pagina ei (?detail=)."""
+    import html
+    from urllib.parse import quote
+    if not ticker or not name:
+        return body
+    esc = html.escape(name)
+    if esc not in body:
+        return body
+    a = '<a href="?detail=%s" target="_self">%s</a>' % (html.escape(quote(ticker, safe=""), quote=True), esc)
+    return body.replace(esc, a, 1)
+
+
+def _banner_html(e, text, icon="🔔 ", link=None, link_text="", when="", detail=None):
     """Textul alertei intr-un card colorat; **text** din traduceri devine bold, restul e escapat.
     link: adresa detaliilor (deschisa in tab nou), pusa la finalul textului."""
     import html
@@ -37,6 +50,8 @@ def _banner_html(e, text, icon="🔔 ", link=None, link_text="", when=""):
     color = _BANNER_ACCENT.get(e.get("kind"), "#8b7cf6")
     r, g, b = (int(color[i:i + 2], 16) for i in (1, 3, 5))
     body = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", html.escape(text))
+    if detail:
+        body = _detail_link(body, *detail)
     if when:
         body = '<span style="opacity:0.75">%s</span> · %s' % (html.escape(when), body)
     if link and str(link).startswith("https://"):
@@ -46,11 +61,12 @@ def _banner_html(e, text, icon="🔔 ", link=None, link_text="", when=""):
             'padding:0.75rem 1rem;line-height:1.5">%s%s</div>' % (r, g, b, color, icon, body))
 
 
-def banner_row(kind, text, button, key, icon="🔔 ", link=None, ts=None):
+def banner_row(kind, text, button, key, icon="🔔 ", link=None, ts=None, detail=None):
     """Un banner de alerta cu butonul pe acelasi rand, in dreapta; intoarce True la apasare.
-    ts: momentul generarii alertei, afisat la inceputul textului."""
+    ts: momentul generarii alertei, afisat la inceputul textului; detail: (ticker, nume) -> numele e link
+    catre pagina pozitiei."""
     c1, c2 = st.columns([6, 1], vertical_alignment="center")
-    c1.markdown(_banner_html({"kind": kind}, text, icon, link, t("pa.details"), banner_when(ts)),
+    c1.markdown(_banner_html({"kind": kind}, text, icon, link, t("pa.details"), banner_when(ts), detail),
                 unsafe_allow_html=True)
     return c2.button(button, key=key, width="stretch")
 
@@ -62,7 +78,8 @@ def render_banner():
         return
     for i, e in enumerate(reversed(unseen[-BANNER_MAX:])):
         if banner_row(e.get("kind"), pa.describe(e, lang()), t("pa.banner_seen"),
-                      "pa_seen_%s_%s_%d" % (e["ts"], e["ticker"], i), link=pa.details_link(e), ts=e.get("ts")):
+                      "pa_seen_%s_%s_%d" % (e["ts"], e["ticker"], i), link=pa.details_link(e), ts=e.get("ts"),
+                      detail=(e.get("ticker"), e.get("name") or e.get("ticker"))):
             pa.dismiss(e)
             st.rerun()
     if len(unseen) > 1 and st.button(t("pa.banner_all_seen"), key="pa_seen_all"):
