@@ -88,7 +88,8 @@ def _render_header(me, compact, detail_loading):
             from position_alerts_ui import banner_row
             _txt = t("alert.loss_to_profit", name=a["name"], ticker=a["ticker"], days=a["zile_detinut"], pct=f"{a['randament_%']:.2f}")
             if banner_row("profit", _txt.removeprefix("⚠️ "), t("alert.seen"),
-                          f"dismiss_{a['ticker']}_{a['triggered_at']}", icon="📈 "):
+                          f"dismiss_{a['ticker']}_{a['triggered_at']}", icon="📈 ",
+                          ts=a.get("triggered_at")):
                 dismiss_alert(a["ticker"], a["triggered_at"])
                 st.rerun()
 

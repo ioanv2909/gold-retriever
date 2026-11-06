@@ -147,6 +147,22 @@ def test_evaluate_logs_emails_and_disarms(env):
     assert all(e["seen"] for e in pa.load_log())
 
 
+def test_dismiss_one_keeps_others_from_same_check(env):
+    pa.save_concentration_rule(True, 50)
+    pa.add_price_alert("KO", "below", 65.0)
+    fired = pa.evaluate("bob", now=1000.0, holdings=HOLD, quality={})
+    assert len(fired) == 2 and fired[0]["ts"] == fired[1]["ts"]
+    pa.dismiss(pa.load_log()[0])
+    assert [e["seen"] for e in pa.load_log()] == [True, False]
+
+
+def test_banner_when_format():
+    import time
+    from position_alerts_ui import banner_when
+    ts = time.mktime((2026, 11, 6, 9, 5, 0, 0, 0, -1))
+    assert banner_when(ts) == "2026.11.06 09.05" and banner_when(None) == ""
+
+
 def test_evaluate_without_email_still_logs(env):
     pa.save_concentration_rule(True, 50)
     assert len(pa.evaluate("nomail", now=1.0, holdings=HOLD, quality={})) == 1

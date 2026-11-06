@@ -24,7 +24,12 @@ _BANNER_ACCENT = {"event": "#8b7cf6", "price": "#4da3ff", "score": "#e87ba4", "c
                   "profit": "#1baf7a"}
 
 
-def _banner_html(e, text, icon="🔔 ", link=None, link_text=""):
+def banner_when(ts):
+    """Momentul alertei pe banner: YYYY.MM.DD HH.MM (ora locala)."""
+    return time.strftime("%Y.%m.%d %H.%M", time.localtime(ts)) if ts else ""
+
+
+def _banner_html(e, text, icon="🔔 ", link=None, link_text="", when=""):
     """Textul alertei intr-un card colorat; **text** din traduceri devine bold, restul e escapat.
     link: adresa detaliilor (deschisa in tab nou), pusa la finalul textului."""
     import html
@@ -32,6 +37,8 @@ def _banner_html(e, text, icon="🔔 ", link=None, link_text=""):
     color = _BANNER_ACCENT.get(e.get("kind"), "#8b7cf6")
     r, g, b = (int(color[i:i + 2], 16) for i in (1, 3, 5))
     body = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", html.escape(text))
+    if when:
+        body = '<span style="opacity:0.75">%s</span> · %s' % (html.escape(when), body)
     if link and str(link).startswith("https://"):
         body += ' · <a href="%s" target="_blank" rel="noopener noreferrer">%s ↗</a>' % (
             html.escape(link, quote=True), html.escape(link_text))
@@ -39,10 +46,12 @@ def _banner_html(e, text, icon="🔔 ", link=None, link_text=""):
             'padding:0.75rem 1rem;line-height:1.5">%s%s</div>' % (r, g, b, color, icon, body))
 
 
-def banner_row(kind, text, button, key, icon="🔔 ", link=None):
-    """Un banner de alerta cu butonul pe acelasi rand, in dreapta; intoarce True la apasare."""
+def banner_row(kind, text, button, key, icon="🔔 ", link=None, ts=None):
+    """Un banner de alerta cu butonul pe acelasi rand, in dreapta; intoarce True la apasare.
+    ts: momentul generarii alertei, afisat la inceputul textului."""
     c1, c2 = st.columns([6, 1], vertical_alignment="center")
-    c1.markdown(_banner_html({"kind": kind}, text, icon, link, t("pa.details")), unsafe_allow_html=True)
+    c1.markdown(_banner_html({"kind": kind}, text, icon, link, t("pa.details"), banner_when(ts)),
+                unsafe_allow_html=True)
     return c2.button(button, key=key, width="stretch")
 
 
@@ -51,10 +60,10 @@ def render_banner():
     unseen = [e for e in pa.load_log() if not e.get("seen") and e.get("ts", 0) >= cutoff]
     if not unseen:
         return
-    for e in reversed(unseen[-BANNER_MAX:]):
+    for i, e in enumerate(reversed(unseen[-BANNER_MAX:])):
         if banner_row(e.get("kind"), pa.describe(e, lang()), t("pa.banner_seen"),
-                      "pa_seen_%s_%s" % (e["ts"], e["ticker"]), link=pa.details_link(e)):
-            pa.dismiss(e["ts"])
+                      "pa_seen_%s_%s_%d" % (e["ts"], e["ticker"], i), link=pa.details_link(e), ts=e.get("ts")):
+            pa.dismiss(e)
             st.rerun()
     if len(unseen) > 1 and st.button(t("pa.banner_all_seen"), key="pa_seen_all"):
         pa.dismiss()

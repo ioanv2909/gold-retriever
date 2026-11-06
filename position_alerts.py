@@ -275,11 +275,17 @@ def load_log():
     return load_json_file(LOG_FILE, [])
 
 
-def dismiss(ts=None):
-    """Marcheaza ca vazute alertele din jurnal (toate, sau doar cea cu ts dat)."""
+def _same_alert(a, b):
+    """Aceeasi intrare din jurnal: alertele din aceeasi verificare au acelasi ts, deci comparam tot (fara seen/name)."""
+    skip = ("seen", "name")
+    return {k: v for k, v in a.items() if k not in skip} == {k: v for k, v in b.items() if k not in skip}
+
+
+def dismiss(entry=None):
+    """Marcheaza ca vazute alertele din jurnal (toate, sau doar intrarea data)."""
     def updater(log):
         for e in log:
-            if ts is None or e.get("ts") == ts:
+            if entry is None or _same_alert(e, entry):
                 e["seen"] = True
         return log
     update_json_file(LOG_FILE, [], updater)

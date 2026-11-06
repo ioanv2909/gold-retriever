@@ -1,3 +1,8 @@
+## 0.4.38 — 2026-11-06
+
+- Main page: every alert banner now starts with the date and time it was generated (YYYY.MM.DD HH.MM).
+- Fix: "Seen" on one alert also marked as seen the other alerts generated in the same check (same timestamp); now only that alert is closed.
+
 ## 0.4.37 — 2026-11-06
 
 - Position page, price chart: hovering shows a vertical line with the date (and time on the 1 day / 1 week periods) and the share price at that point, also for the "Bought here" star, so its exact date is visible.
