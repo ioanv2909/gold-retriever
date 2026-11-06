@@ -1,3 +1,7 @@
+## 0.4.44 — 2026-11-06
+
+- Value chart: the "no line selected" notice is now a turquoise card in the style of the alert banners instead of the yellow warning box.
+
 ## 0.4.43 — 2026-11-06
 
 - Value chart: with no line selected (Market value, S&P 500, Invested) a warning asks to pick one, instead of an empty chart with a meaningless axis.
