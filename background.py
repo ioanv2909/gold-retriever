@@ -19,6 +19,7 @@ import json
 import time
 import threading
 import joblog
+import pace_target
 import users as users_mod
 import tempfile
 from datetime import datetime
@@ -445,6 +446,7 @@ def _start_scheduler(user=None):
     def run_loop():
         last_core = last_div = last_rat = last_q = last_m = last_w = last_j = last_x = last_h = 0.0
         last_hc = last_ev = last_evn = last_pa = last_ex = last_st = last_sym = last_wp = last_wr = 0.0
+        last_pace = 0.0
         while True:
             if user and not users_mod.exists(user):
                 # contul a fost sters sau redenumit: fara ciclu orfan care sa scrie in data/users/<vechiul nume>/
@@ -545,6 +547,13 @@ def _start_scheduler(user=None):
                     weekly_report.maybe_send(user)
                 except Exception as e:
                     print(f"[weekly] {e}", flush=True)
+
+            if (time.time() - last_pace) >= pace_target.CHECK_INTERVAL:
+                last_pace = time.time()
+                try:
+                    pace_target.check_and_notify(user)
+                except Exception as e:
+                    print(f"[pace] {e}", flush=True)
 
             if (time.time() - last_pa) >= position_alerts.EVAL_INTERVAL:
                 last_pa = time.time()

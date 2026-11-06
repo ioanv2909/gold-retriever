@@ -196,3 +196,10 @@ def _isolated_tsauth(tmp_path, monkeypatch):
     import tsauth
     monkeypatch.setattr(tsauth, "SECRET_FILE", str(tmp_path / "ts_secret"))
     monkeypatch.setattr(tsauth, "_cache", {"secret": None, "checked": 0.0})
+
+
+@pytest.fixture(autouse=True)
+def _isolated_pace_target(tmp_path, monkeypatch):
+    """Starea alertei de ritm lunar se scrie in data/users/<nume>/; in teste merge intr-un director temporar."""
+    import pace_target
+    monkeypatch.setattr(pace_target, "STATE_FILE", str(tmp_path / "pace_alert_state.json"))

@@ -1,3 +1,8 @@
+## 0.4.41 — 2026-11-06
+
+- Settings > Goals: new switch "Email me when the pace drops below the target". Checked once an hour across all accounts; one email when the monthly pace falls below the target (with the amount to deposit to get back to it), the next one only after the pace is back at the target and falls again.
+- Email settings (admin): new event "Monthly pace below target", on by default.
+
 ## 0.4.40 — 2026-11-06
 
 - Settings > Goals (new tab): a target monthly pace (amount and currency, per user).

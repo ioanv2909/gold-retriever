@@ -104,7 +104,7 @@ def test_new_notification_types_are_on_for_saved_settings(monkeypatch, tmp_path)
     path = tmp_path / "mail.json"
     monkeypatch.setattr(notify, "MAIL_FILE", str(path))
     path.write_text(json.dumps({"events": ["backup", "security"]}))  # salvat inainte de "weekly"
-    assert notify.load_settings()["events"] == ["backup", "security", "weekly"]
+    assert notify.load_settings()["events"] == ["backup", "security", "weekly", "pace"]
     cfg = notify.save_settings({"events": ["backup"]})  # adminul l-a oprit explicit
     assert cfg["events"] == ["backup"] and notify.load_settings()["events"] == ["backup"]
 

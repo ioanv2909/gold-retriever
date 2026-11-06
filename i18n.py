@@ -863,6 +863,17 @@ _T = {
     },
     "pace.amount": {"RO": "Sumă pe lună", "EN": "Amount per month"},
     "pace.ccy": {"RO": "Monedă", "EN": "Currency"},
+    "pace.email": {"RO": "Anunță-mă pe email când ritmul scade sub țintă", "EN": "Email me when the pace drops below the target"},
+    "pace.email_help": {
+        "RO": "Verificat o dată pe oră, pe toate conturile. Un singur email când ritmul trece sub țintă; următorul abia după ce revine la țintă (după o alimentare) și scade din nou. Trimis la adresa contului tău; adminul trebuie să aibă pornit evenimentul „Ritm lunar sub țintă” în setările de email.",
+        "EN": "Checked once an hour, across all accounts. One email when the pace falls below the target; the next one only after it is back at the target (after a deposit) and falls again. Sent to your account's address; the admin must have the “Monthly pace below target” event on in the email settings.",
+    },
+    "pace.event": {"RO": "Ritm lunar sub țintă (fiecărui utilizator)", "EN": "Monthly pace below target (to each user)"},
+    "pace.mail_subject": {"RO": "GoldRetriever: ritmul lunar a scăzut sub țintă", "EN": "GoldRetriever: monthly pace fell below the target"},
+    "pace.mail_body": {
+        "RO": "Ritmul lunar al depunerilor nete (toate conturile) este acum {pace}, sub ținta ta de {target} ({p}%).\n\nCa să revii la țintă acum ar trebui depus aproximativ {missing}.\n\nȚinta se schimbă în Setări > Obiective.",
+        "EN": "The monthly pace of your net deposits (all accounts) is now {pace}, below your target of {target} ({p}%).\n\nTo get back to the target now you would need to deposit about {missing}.\n\nThe target can be changed in Settings > Goals.",
+    },
     "pace.saved": {"RO": "Ținta lunară a fost salvată.", "EN": "Monthly target saved."},
     "main.monthly_pace_help": {
         "RO": "Ritmul lunar: depunerile nete (depuneri minus retrageri: {v}) împărțite la numărul de luni de când depunerile nete din portofoliile alese au trecut de 50 EUR ({d}); perioada de la început, cu sume mai mici, nu se numără. Sumele în alte monede sunt convertite la cursul de azi.",

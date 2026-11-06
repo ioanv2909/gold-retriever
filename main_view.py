@@ -138,14 +138,12 @@ def _pick_portfolios(has_t212, account_currency, detail_loading):
     return sel_portfolios, display_ccy
 
 
-PACE_MIN_EUR = 50.0
-
-
 def _deposit_stats(sel_portfolios, display_ccy):
-    """(data primei depuneri/cumparari, depuneri nete in display_ccy) pentru portofoliile alese;
+    """(data de start, depuneri nete, luni, ritm lunar) in display_ccy pentru portofoliile alese;
     operatiunile se citesc din jurnal cel mult o data pe ora."""
     import time
     import journal
+    import pace_target
     _c = st.session_state.get("_first_inv_cache")
     if not _c or time.time() - _c[0] > 3600:
         try:
@@ -154,22 +152,14 @@ def _deposit_stats(sel_portfolios, display_ccy):
             ops = []
         _c = (time.time(), [op for op in ops if op["type"] in ("deposit", "withdrawal", "buy")])
         st.session_state["_first_inv_cache"] = _c
-    from portfolio_model import fx
-    ops, sel = _c[1], set(sel_portfolios)
-    net = sum(amount * float(fx(ccy, display_ccy) or 0) for ccy, amount in journal.net_deposits(ops, sel).items())
-    # lunile se numara de cand depunerile nete trec de 50 EUR (fara perioada de inceput cu sume de proba)
-    start = journal.start_above(ops, PACE_MIN_EUR, lambda c: fx(c, "EUR"), sel) or journal.first_investment(ops, sel)
-    return start, net
+    return pace_target.pace_of(_c[1], display_ccy, set(sel_portfolios))
 
 
 def _invested_metric(col, label, invested, sel_portfolios, display_ccy):
     """Total investit, cu ritmul lunar (depuneri nete / luni de la prima investitie) ca delta."""
-    import journal
-    start, net = _deposit_stats(sel_portfolios, display_ccy)
+    start, net, months, pace = _deposit_stats(sel_portfolios, display_ccy)
     delta, help_ = None, None
-    if start and net > 0:
-        months = journal.months_since(start)
-        pace = net / months
+    if pace is not None:
         delta = t("main.monthly_pace", v=_mask(f"{pace:,.2f}"), n=f"{months:.0f}")
         help_ = t("main.monthly_pace_help", d=f"{start:%d.%m.%Y}", v=_mask(f"{net:,.2f} {display_ccy}"))
         # badge-ul colorat dupa tinta lunara din Setari > Obiective (convertita in moneda afisata)

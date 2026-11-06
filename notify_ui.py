@@ -62,6 +62,7 @@ def render_notifications(me):
         "logs": t("lw.event"),
         "uptime": t("up.event"),
         "weekly": t("wr.event"),
+        "pace": t("pace.event"),
     }
     chosen = st.multiselect(
         _L("Evenimente", "Events"), list(labels),
