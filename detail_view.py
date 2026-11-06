@@ -35,6 +35,7 @@ from mobile import desktop_only
 from t212_api import fetch_account_currency, fetch_order_history_for_ticker
 from yahoo import fetch_benchmark_return, fetch_price_chart_history, fetch_sector_etf_reference, fetch_yahoo_analysis, fetch_yahoo_currency_hint, guess_yahoo_symbol
 from xtb_positions import xtb_holdings
+import notice
 
 
 
@@ -157,7 +158,7 @@ def _render_price_chart_inner(ticker, yahoo_symbol, fill_date, avg_price_t212):
     yf_period, yf_interval = CHART_PERIODS[period_choice]
     hist, err = fetch_price_chart_history(yahoo_symbol, yf_period, yf_interval)
     if err:
-        st.warning(err)
+        notice.card(err)
         return
 
     _ccy = fetch_yahoo_currency_hint(yahoo_symbol) or ""
@@ -350,7 +351,7 @@ def render_detail_view(position_row, total_portfolio_value, api_key_id, api_secr
         _meta = [x for x in (data.get("long_name"), " / ".join(y for y in (data.get("sector"), data.get("industry")) if y)) if x]
         st.caption(" · ".join(_meta))
     elif err:
-        st.warning(err)
+        notice.card(err)
 
     is_watch = bool(position_row.get("watchlist"))
     account_currency = None
@@ -514,15 +515,15 @@ def render_detail_view(position_row, total_portfolio_value, api_key_id, api_secr
                 row_by_key = {r["key"]: r for r in rows}
                 replication_value = row_by_key.get("replication", {}).get("value")
                 if replication_value == 0:
-                    st.warning(tr("dv.etf_swap"))
+                    notice.card(tr("dv.etf_swap"))
 
                 domicile = etf_labels.get("domiciliu")
                 if domicile and str(domicile).strip().lower() not in {"ireland", "luxembourg"}:
-                    st.warning(tr("dv.etf_domicile", d=domicile))
+                    notice.card(tr("dv.etf_domicile", d=domicile))
 
                 ter_value = row_by_key.get("ter", {}).get("value")
                 if ter_value is not None and not pd.isna(ter_value) and ter_value > 0.60:
-                    st.warning(tr("dv.etf_ter", v=f"{ter_value:.2f}"))
+                    notice.card(tr("dv.etf_ter", v=f"{ter_value:.2f}"))
     else:
         st.subheader(tr("dv.quality_title"))
         if not YFINANCE_AVAILABLE:
@@ -667,7 +668,7 @@ def render_detail_view(position_row, total_portfolio_value, api_key_id, api_secr
             disk_cfg = load_config()
             orders, orders_err = fetch_order_history_for_ticker(disk_cfg.get("api_key_id"), disk_cfg.get("api_secret"), ticker)
             if orders_err:
-                st.warning(orders_err)
+                notice.card(orders_err)
             elif not orders:
                 st.info(tr("dv.no_orders"))
             else:
@@ -688,7 +689,7 @@ def render_detail_view(position_row, total_portfolio_value, api_key_id, api_secr
                 if qty_col in orders_df.columns:
                     orders_df.insert(1, "Tip", orders_df[qty_col].apply(lambda q: "Cumpărare" if (q or 0) > 0 else "Vânzare"))
                 if orders_df.drop(columns=["Tip"], errors="ignore").isna().all(axis=None):
-                    st.warning("Am primit date de la T212, dar niciun câmp cunoscut nu s-a potrivit — structura răspunsului "
+                    notice.card("Am primit date de la T212, dar niciun câmp cunoscut nu s-a potrivit — structura răspunsului "
                                "diferă de ce am prevăzut. Iată datele brute:")
                     st.json(orders[:5])
                 else:
@@ -730,7 +731,7 @@ def render_detail_view(position_row, total_portfolio_value, api_key_id, api_secr
             position_total = position_row.get("randament_total_%", 0.0)
 
             if bench_err:
-                st.warning(bench_err)
+                notice.card(bench_err)
             else:
                 delta = position_total - bench_total
                 b1, b2, b3 = st.columns(3)
@@ -745,7 +746,7 @@ def render_detail_view(position_row, total_portfolio_value, api_key_id, api_secr
     st.markdown("---")
 
     if not YFINANCE_AVAILABLE:
-        st.warning(tr("dv.no_yf_installed"))
+        notice.card(tr("dv.no_yf_installed"))
         _render_orders()
         return
     if err or not data:

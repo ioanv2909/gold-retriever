@@ -5,6 +5,7 @@ import alerts
 import twofa
 import users
 from i18n import t
+import notice
 
 
 def _event(action, actor, target, detail=""):
@@ -101,7 +102,7 @@ def render_security(me):
     st.caption(t("tfa.help"))
     if not users.has_2fa(me):
         if twofa.required(me, users.role(me)):
-            st.warning(t("tfa.forced"))
+            notice.card(t("tfa.forced"))
         render_enroll(me)
         return
     if _show_codes(me):

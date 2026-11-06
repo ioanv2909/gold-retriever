@@ -7,6 +7,7 @@ import logwatch
 import notify
 import users
 from i18n import t
+import notice
 
 
 def _L(ro, en):
@@ -96,7 +97,7 @@ def render_notifications(me):
     state = notify.last_state()
     if state.get("last_error"):
         when = time.strftime("%Y-%m-%d %H:%M", time.localtime(state.get("last_ts", 0)))
-        st.warning(_L("Ultima eroare de trimitere (", "Last send error (") + when + "): " + state["last_error"])
+        notice.card(_L("Ultima eroare de trimitere (", "Last send error (") + when + "): " + state["last_error"])
 
     _render_log_problems()
 

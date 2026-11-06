@@ -5,6 +5,7 @@ import streamlit as st
 import strategies
 from i18n import t
 from yf_compat import yf, YFINANCE_AVAILABLE
+import notice
 
 DOTS = {"strong": "🟢", "mixed": "🟡", "weak": "🔴", "trap": "🔴", "insufficient": "⚪", "na": "⚪"}
 FMT = {
@@ -248,7 +249,7 @@ def render_strategy_section(ticker, yahoo_symbol, position_row):
                 if x.get("sma200_dist") is not None:
                     st.caption(t("st.trend_sma", d="%+.1f" % x["sma200_dist"]))
                 if x.get("overextended"):
-                    st.warning(t("st.overextended"))
+                    notice.card(t("st.overextended"))
             if lens == "div_growth":
                 x = r["extra"]
                 avg, cur = position_row.get("averagePrice"), position_row.get("currentPrice")

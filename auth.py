@@ -17,6 +17,7 @@ import session_policy
 import tsauth
 import twofa
 import users
+import notice
 
 _COOKIE = "pt_auth"
 # blocari dupa esecuri (parola, cod 2FA, parola curenta la schimbari); in memorie, se golesc la restart
@@ -366,7 +367,7 @@ def _forced_change(me):
     _, mid, _ = st.columns([1, 1, 1])
     with mid:
         st.markdown("### " + t("pwd.title"))
-        st.warning(t("pwd.forced"))
+        notice.card(t("pwd.forced"))
         if render_change_password(me):
             st.button(t("pwd.continue"), key="pwd_forced_continue")
         elif st.button(_tr("logout"), key="pwd_forced_logout"):
@@ -392,7 +393,7 @@ def _forced_2fa(me):
     _, mid, _ = st.columns([1, 1, 1])
     with mid:
         st.markdown("### " + t("tfa.title"))
-        st.warning(t("tfa.forced"))
+        notice.card(t("tfa.forced"))
         if render_enroll(me):
             st.button(t("pwd.continue"), key="tfa_forced_continue")
         elif st.button(_tr("logout"), key="tfa_forced_logout"):
@@ -512,15 +513,15 @@ def _authenticate():
             st.markdown("### " + _tr("title_setup" if setup else "title_login"))
             if st.session_state.get("_auth_expired"):
                 import i18n
-                st.warning(i18n.t("sess.expired"))
+                notice.card(i18n.t("sess.expired"))
             if st.session_state.pop("_2fa_expired", False):
                 import i18n
-                st.warning(i18n.t("tfa.step_expired"))
+                notice.card(i18n.t("tfa.step_expired"))
             if setup:
                 st.info(_tr("setup_info"))
-            notice = st.session_state.pop("_auth_notice", None)
-            if notice:
-                st.success(notice)
+            _auth_msg = st.session_state.pop("_auth_notice", None)
+            if _auth_msg:
+                st.success(_auth_msg)
             _ts_login_hint()
             with st.form("login_form"):
                 uname = st.text_input(_tr("user"))

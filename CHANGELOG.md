@@ -1,3 +1,7 @@
+## 0.4.45 — 2026-11-06
+
+- All yellow warning boxes (2FA/password prompts, expired session, ETF notes, chart/data errors, backup, notifications, XTB import, comparison, strategies, weekly report) are now turquoise cards in the style of the alert banners (new `notice.py`).
+
 ## 0.4.44 — 2026-11-06
 
 - Value chart: the "no line selected" notice is now a turquoise card in the style of the alert banners instead of the yellow warning box.

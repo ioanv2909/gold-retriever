@@ -14,6 +14,7 @@ import notify
 import users
 from core import save_json_file
 from i18n import t
+import notice
 
 REQUEST_FILE = os.path.join(notify.DATA_ROOT, "backup_request.json")
 STALE_S = 180       # cererea nepreluata dupa 3 minute: cron-ul --if-requested lipseste
@@ -76,7 +77,7 @@ def _last_backup():
     c2.metric(t("bk.encrypted"), t("bk.yes") if data.get("encrypted") is True else t("bk.no"))
     st.caption(t("bk.file", file=data.get("file") or "—"))
     if data.get("encrypted") is not True:
-        st.warning(t("hs.backup_plain"))
+        notice.card(t("hs.backup_plain"))
     if (time.time() - ts) / 3600 > alerts.BACKUP_MAX_AGE_H:
         st.error(t("bk.too_old", h=alerts.BACKUP_MAX_AGE_H))
 
@@ -88,7 +89,7 @@ def _live(me):
     state, age = req.get("state"), time.time() - float(req.get("ts") or 0)
     if state == "requested":
         if age > STALE_S:
-            st.warning(t("bk.stale", m=int(age // 60)))
+            notice.card(t("bk.stale", m=int(age // 60)))
             st.code(CRON_LINE, language=None)
         else:
             st.info(t("bk.waiting"))

@@ -1,10 +1,11 @@
 """Graficul valorii portofoliului in timp si mini-graficul variatiei profitului (pagina principala)."""
 from datetime import datetime
 
-import html
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+
+import notice
 
 import mobile
 import privacy
@@ -271,10 +272,7 @@ def render_history(sel_portfolios, display_ccy, native, compact, right_extra, ma
     with _hc_left:
         if not _ys:
             # fara nicio linie graficul ar fi gol, cu axe fara sens: cerem alegerea unei linii
-            # card turcoaz in stilul alertelor (fara galbenul st.warning, la cererea utilizatorului)
-            st.markdown('<div style="background:rgba(34,184,207,0.22);border-left:4px solid #22b8cf;'
-                        'border-radius:0.5rem;padding:0.75rem 1rem;line-height:1.5">💡 %s</div>'
-                        % html.escape(t("hist.no_lines")), unsafe_allow_html=True)
+            notice.card(t("hist.no_lines"), icon="💡")
             return True
         mobile.plotly_chart(history_fig, width="stretch", key="portfolio_history_chart")
         if not compact and "sp500" in _ys:

@@ -7,6 +7,7 @@ import notify
 import users
 import weekly_report
 from i18n import t
+import notice
 
 
 def render_settings_section(me):
@@ -19,7 +20,7 @@ def render_settings_section(me):
     hour = c3.number_input(t("wr.hour"), min_value=0, max_value=23, value=int(prefs["hour"]), key="wr_hour")
     email = users.email(me)
     if not email:
-        st.warning(t("wr.no_email"))
+        notice.card(t("wr.no_email"))
     if not notify.configured():
         st.caption(t("wr.no_smtp"))
     state = weekly_report._load_state()

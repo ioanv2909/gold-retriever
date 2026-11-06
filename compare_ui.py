@@ -9,6 +9,7 @@ import compare
 from core import CHART_PERIODS, HIST_TO_CHART, load_json_file, QUALITY_CACHE_FILE
 from i18n import t
 from yf_compat import yf, YFINANCE_AVAILABLE
+import notice
 
 # paleta categoriala, in ordine fixa; culoarea urmeaza simbolul, nu pozitia lui in lista
 COLORS = ("#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4")
@@ -168,7 +169,7 @@ def render_compare_tab(vdf):
         infos = {s: get_info(s) for s in symbols}
     missing = [s for s in symbols if s not in closes.columns or closes[s].dropna().empty]
     if missing:
-        st.warning(t("cmp.missing", s=", ".join(missing)))
+        notice.card(t("cmp.missing", s=", ".join(missing)))
     norm = compare.normalize(closes)
     labels = {s: (opts[s][0] if s in opts else (infos[s].get("name") or s)) for s in symbols}
     colors = {s: COLORS[slot] for s, slot in _color_slots(symbols).items()}

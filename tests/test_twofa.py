@@ -198,7 +198,7 @@ def test_second_step_expires(login_env, monkeypatch):
     at.session_state["_pending_2fa"] = (key, started - twofa.PENDING_SECONDS - 1)
     at.run()
     assert not _signed_in(at) and len(at.text_input) == 2  # din nou utilizator + parola
-    assert any("expirat" in w.value or "expired" in w.value for w in at.warning)
+    assert any("expirat" in w.value or "expired" in w.value for w in at.markdown)
 
 
 def test_back_returns_to_password(login_env):

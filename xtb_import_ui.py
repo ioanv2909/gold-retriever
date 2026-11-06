@@ -13,6 +13,7 @@ from isin_tools import isin_issues, resolve_isin, suggest_isin
 from upload_guard import MAX_UPLOAD_MB, check_xlsx
 from xtb import accounts_summary, import_xtb, instruments as xtb_instruments, parse_xtb_file, remove_account, save_isin
 from xtb_prices import load_xtb_prices, save_symbol_override, start_xtb_prices_refresh_background
+import notice
 
 
 def render_xtb_import(me):
@@ -188,7 +189,7 @@ def render_xtb_import(me):
             if start_xtb_prices_refresh_background():
                 st.info(t("xtb.prices_started"))
             else:
-                st.warning(t("xtb.prices_busy"))
+                notice.card(t("xtb.prices_busy"))
 
     fetched_at = xtb_prices_cache.get("fetched_at")
     if fetched_at:
@@ -307,7 +308,7 @@ def render_xtb_import(me):
 
                 for ticker, level, message in post_save_messages:
                     if level == "warning":
-                        st.warning(f"{ticker}: {message}")
+                        notice.card(f"{ticker}: {message}")
                     else:
                         st.info(f"{ticker}: {message}")
 
