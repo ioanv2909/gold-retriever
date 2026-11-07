@@ -129,7 +129,7 @@ def test_forced_t212_downloads_start_even_when_fresh(monkeypatch, tmp_path):
     import t212_history_rebuild as rb
     started = []
     monkeypatch.setattr(rb, "FILE", str(tmp_path / "rebuilt.json"))
-    (tmp_path / "rebuilt.json").write_text('{"updated": %f}' % time.time())
+    (tmp_path / "rebuilt.json").write_text('{"updated": %f, "peaks": {}}' % time.time())
     monkeypatch.setattr(rb, "_run", lambda: started.append("rebuild"))
     monkeypatch.setattr(rb, "_running", False)
     assert rb.ensure_async() is False

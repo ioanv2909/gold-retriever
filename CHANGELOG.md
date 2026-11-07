@@ -1,3 +1,7 @@
+## 0.4.46 — 2026-11-07
+
+- Peak value: under the market value on the main page, the highest value of the selected portfolios with its date (and how far below it the current value is); on the position page, the highest value of the position in each account, with its date (from the daily history rebuild, new `peaks.py`).
+
 ## 0.4.45 — 2026-11-06
 
 - All yellow warning boxes (2FA/password prompts, expired session, ETF notes, chart/data errors, backup, notifications, XTB import, comparison, strategies, weekly report) are now turquoise cards in the style of the alert banners (new `notice.py`).

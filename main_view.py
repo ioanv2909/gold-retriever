@@ -177,6 +177,29 @@ def _invested_metric(col, label, invested, sel_portfolios, display_ccy):
     col.metric(label, _mask(f"{invested:,.2f}"), delta, delta_color="off", delta_arrow="off", help=help_)
 
 
+def _peak_caption(col, sel_portfolios, display_ccy, native, current):
+    """Sub valoarea de piata: maximul atins de portofoliile alese, cu data, si cat de departe e valoarea de acum."""
+    import peaks
+    from core import load_portfolio_history
+    from history_multi import multi_history_records
+    try:
+        records = multi_history_records(sel_portfolios, display_ccy)
+        if native and len(records) < 2:
+            records = load_portfolio_history()
+        pk = peaks.portfolio_peak(records, current)
+    except Exception:
+        pk = None
+    if not pk:
+        return
+    if pk["now"]:
+        text = t("peak.portfolio_now")
+    else:
+        text = t("peak.portfolio", v=_mask(f"{pk['value']:,.2f}"), d=peaks.peak_label(pk["ts"]))
+        if current and current > 0:
+            text += " · " + t("peak.below", p=f"{(1 - current / pk['value']) * 100:.1f}")
+    col.caption(text, help=t("peak.portfolio_help"))
+
+
 def _render_metrics(native, vdf, cash, total_dividende, display_ccy, sel_portfolios=()):
     col1, col2, col3, col4 = st.container(key="summary_metrics").columns(4)
     # in modul de confidentialitate delta valorii de piata e randamentul %, nu P/L-ul in bani
@@ -188,6 +211,7 @@ def _render_metrics(native, vdf, cash, total_dividende, display_ccy, sel_portfol
         _invested_metric(col1, "💰 Total Investit", invested, sel_portfolios, display_ccy)
         col2.metric("📊 Valoare de Piață (Nerealizat)", _mask(f"{market_value:,.2f}"),
                     f"{yield_pct:+.2f}%" if privacy.hidden() else f"{ppl:,.2f}")
+        _peak_caption(col2, sel_portfolios, display_ccy, native, market_value)
         col3.metric("📈 Randament", f"{yield_pct:.2f}%")
         col4.metric("💵 Total Dividende Încasate", _mask(f"{total_dividende:,.2f}"))
     else:
@@ -199,6 +223,7 @@ def _render_metrics(native, vdf, cash, total_dividende, display_ccy, sel_portfol
         _invested_metric(col1, f"💰 Total Investit ({display_ccy})", _m_inv, sel_portfolios, display_ccy)
         col2.metric(f"📊 Valoare de Piață ({display_ccy})", _mask(f"{_m_val:,.2f}"),
                     f"{_m_yield:+.2f}%" if privacy.hidden() else f"{_m_pl:,.2f}")
+        _peak_caption(col2, sel_portfolios, display_ccy, native, _m_val)
         col3.metric("📈 Randament", f"{_m_yield:.2f}%")
         col4.metric(f"💵 Total Dividende Încasate ({display_ccy})", _mask(f"{_m_div:,.2f}"))
 

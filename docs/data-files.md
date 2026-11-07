@@ -51,10 +51,10 @@ Everything is JSON except `auth_secret`. Do not commit this folder:
 | `t212_fills.json` | Executed orders with their fees (history rebuild, Journal tab) |
 | `t212_first_dates.json` | First purchase dates |
 | `t212_flows.json` | All account transactions: deposits, withdrawals, fees, interest, transfers (XIRR uses deposits/withdrawals; all shown in the Journal tab) |
-| `t212_history_reconstructed.json` | Rebuilt daily history, Trading 212 |
+| `t212_history_reconstructed.json` | Rebuilt daily history, Trading 212 (also the peak value and date of each position, `peaks`) |
 | `xtb.json` | Imported XTB accounts, positions, cash operations |
 | `xtb_prices.json`, `xtb_prices_status.json` | Yahoo prices for XTB positions and progress |
-| `xtb_history_reconstructed.json` | Rebuilt daily history, XTB |
+| `xtb_history_reconstructed.json` | Rebuilt daily history, XTB (also the peak value and date of each position per account, `peaks`) |
 | `portfolio_history.json` | Recorded value points |
 | `portfolio_history_multi.json` | Value points per portfolio |
 | `ticker_map.json` | Manual mapping to Yahoo symbols (wins over `yahoo_auto_map.json`) |

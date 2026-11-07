@@ -8,6 +8,7 @@ import time
 import pandas as pd
 
 from core import load_json_file, update_json_file
+from peaks import series_peak
 from xtb import load_xtb
 
 from userctx import UPath
@@ -125,7 +126,7 @@ def rebuild():
     if len(idx) == 0:
         return
 
-    per_account = {}
+    per_account, peaks = {}, {}
     for r, buys in items:
         try:
             close = _yahoo_close(r["yahoo_symbol"], idx)
@@ -150,6 +151,10 @@ def rebuild():
             qty[m] += vol
             cost[m] += amt
         value = (qty * close * scale * _fx_series(c, a, idx)).fillna(0.0)
+        pk = series_peak(value)
+        if pk:
+            peaks.setdefault(r["ticker"], []).append({"label": r["account"], "ccy": a, "sym": r["yahoo_symbol"],
+                                                      "value": pk[0], "date": pk[1]})
         acc = per_account.setdefault(r["account"], {"ccy": a, "value": pd.Series(0.0, index=idx), "cost": pd.Series(0.0, index=idx)})
         acc["value"] = acc["value"] + value
         acc["cost"] = acc["cost"] + cost
@@ -169,7 +174,7 @@ def rebuild():
                 "entries": entries,
                 "rates": {"RON": 1.0, "EUR": round(float(eur[d]), 4), "USD": round(float(usd[d]), 4)},
             })
-    out = {"updated": time.time(), "sig": _sig(), "skipped": skipped, "points": points}
+    out = {"updated": time.time(), "sig": _sig(), "skipped": skipped, "peaks": peaks, "points": points}
     update_json_file(FILE, {}, lambda _: out)
 
 
@@ -188,7 +193,7 @@ def ensure_async():
     """Porneste reconstructia in fundal daca lipseste, e veche (24h) sau s-au importat fisiere noi."""
     global _running
     data = load_json_file(FILE, {})
-    if isinstance(data, dict) and data.get("sig") == _sig() and time.time() - data.get("updated", 0) < MAX_AGE_S:
+    if isinstance(data, dict) and "peaks" in data and data.get("sig") == _sig() and time.time() - data.get("updated", 0) < MAX_AGE_S:
         return
     with _lock:
         if _running:
@@ -200,3 +205,9 @@ def ensure_async():
 def load_points():
     data = load_json_file(FILE, {})
     return (data.get("points") or []) if isinstance(data, dict) else []
+
+
+def load_peaks():
+    """{ticker: [{"label" (contul), "ccy", "sym", "value", "date"}]}: valoarea maxima zilnica a pozitiei."""
+    data = load_json_file(FILE, {})
+    return (data.get("peaks") or {}) if isinstance(data, dict) else {}

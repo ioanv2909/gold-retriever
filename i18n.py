@@ -851,6 +851,19 @@ _T = {
         "RO": "Cât din valoarea pozițiilor din acest portofoliu reprezintă poziția asta. Reper: sub 5-10% per poziție e considerat rezonabil diversificat; peste 20% înseamnă că performanța ei îți afectează puternic tot portofoliul.",
         "EN": "How much of this portfolio's positions value this position represents. Rule of thumb: under 5–10% per position is considered reasonably diversified; above 20% means its performance strongly affects your whole portfolio.",
     },
+    "peak.portfolio": {"RO": "🏔️ Maxim: {v} pe {d}", "EN": "🏔️ Peak: {v} on {d}"},
+    "peak.portfolio_now": {"RO": "🏔️ Maxim atins acum", "EN": "🏔️ Peak reached now"},
+    "peak.below": {"RO": "{p}% sub maxim", "EN": "{p}% below peak"},
+    "peak.portfolio_help": {
+        "RO": "Cea mai mare valoare de piață a portofoliilor alese, din istoricul valorii (în ultimele 30 de zile la ~15 minute, mai vechi o valoare pe zi). Include efectul depunerilor, deci nu e doar câștig.",
+        "EN": "The highest market value of the selected portfolios, from the value history (every ~15 minutes in the last 30 days, older one value per day). Includes the effect of deposits, so it is not only gains.",
+    },
+    "peak.position": {"RO": "🏔️ Valoarea maximă a poziției: {v} pe {d}", "EN": "🏔️ Position peak value: {v} on {d}"},
+    "peak.position_now": {"RO": "🏔️ Valoarea maximă a poziției: acum ({v})", "EN": "🏔️ Position peak value: now ({v})"},
+    "peak.position_help": {
+        "RO": "Din închiderile zilnice Yahoo × numărul de unități deținute în ziua respectivă, în moneda contului (reconstrucția istoricului, refăcută o dată pe zi). Valoarea de acum o înlocuiește dacă e mai mare.",
+        "EN": "From Yahoo daily closes × the units held on that day, in the account currency (history rebuild, redone once a day). The current value replaces it when higher.",
+    },
     "main.monthly_pace": {"RO": "≈ {v} / lună · {n} luni", "EN": "≈ {v} / month · {n} months"},
     "main.monthly_pace_target": {
         "RO": "Ținta ta: {v} / lună (Setări > Obiective) — atins {p}%. Verde de la 100%, galben 90–100%, portocaliu 75–90%, roșu sub 75%.",

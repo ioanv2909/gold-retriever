@@ -241,6 +241,28 @@ def _xtb_positive_amount(value):
         return None
 
 
+def _render_position_peak(ticker, yahoo_symbol, position_row, is_watch):
+    """Valoarea maxima atinsa de pozitie (pe fiecare cont care o detine), cu data."""
+    import peaks
+    from privacy import mask
+    current = {}
+    if not is_watch and position_row.get("valoare_curenta") is not None:
+        current["Trading 212"] = float(position_row["valoare_curenta"]) * float(position_row.get("fx_rate") or 1.0)
+    try:
+        for r in xtb_rows():
+            if r.get("ticker") == ticker or (yahoo_symbol and r.get("yahoo_symbol") == yahoo_symbol):
+                current[r.get("account")] = float(r.get("value_account") or 0.0)
+        found = peaks.position_peaks(ticker, yahoo_symbol, current)
+    except Exception:
+        found = []
+    many = len(found) > 1
+    for p in found:
+        v = mask(f"{p['value']:,.2f} {p['ccy'] or ''}".strip())
+        text = (tr("peak.position_now", v=v) if p["now"]
+                else tr("peak.position", v=v, d=peaks.peak_label(p["date"])))
+        st.caption(f"{text} · {p['label']}" if many else text, help=tr("peak.position_help"))
+
+
 def render_detail_view(position_row, total_portfolio_value, api_key_id, api_secret):
     ticker = position_row["ticker"]
     name = position_row.get("name", ticker)
@@ -370,6 +392,7 @@ def render_detail_view(position_row, total_portfolio_value, api_key_id, api_secr
         with st.container(key="holdings_panel"):
             st.markdown(_PANEL_CSS, unsafe_allow_html=True)
             render_holdings_section(ticker, position_row, yahoo_symbol, total_portfolio_value, zile_detinut, account_currency, is_watch)
+            _render_position_peak(ticker, yahoo_symbol, position_row, is_watch)
             if data and (data.get("next_dividend_date") or data.get("ex_dividend_date")):
                 st.caption(
                     f"💰 Următorul dividend estimat: **{data.get('next_dividend_date') or 'n/a'}** "
