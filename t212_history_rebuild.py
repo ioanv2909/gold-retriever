@@ -9,7 +9,7 @@ from collections import Counter
 import pandas as pd
 
 from core import load_config, load_json_file, update_json_file
-from peaks import series_peak
+from peaks import PEAKS_V, series_peak
 from xtb_history_rebuild import _daily, _day, _fx_cache, _fx_series
 
 from userctx import UPath
@@ -226,7 +226,10 @@ def rebuild():
         value = (qty * close * scale * _fx_series(ccy, acct, idx)).fillna(0.0)
         pk = series_peak(value)
         if pk:
-            peaks[ticker] = [{"label": "Trading 212", "ccy": acct, "sym": sym, "value": pk[0], "date": pk[1]}]
+            d = pd.Timestamp(pk[1])
+            peaks[ticker] = [{"label": "Trading 212", "ccy": acct, "sym": sym, "value": pk[0], "date": pk[1],
+                              "qty": round(float(qty[d]), 6), "price": round(float(close[d] * scale), 4),
+                              "price_ccy": ccy}]
         value_tot = value_tot + value
         cost_tot = cost_tot + cost
 
@@ -241,7 +244,7 @@ def rebuild():
                 "entries": {"Trading 212": {"ccy": acct, "value": round(v, 2), "cost": round(c_, 2)}},
                 "rates": {"RON": 1.0, "EUR": round(float(eur[d]), 4), "USD": round(float(usd[d]), 4)},
             })
-    out = {"updated": time.time(), "skipped": skipped, "notes": notes, "qty_end": qty_end, "peaks": peaks,
+    out = {"updated": time.time(), "skipped": skipped, "notes": notes, "qty_end": qty_end, "peaks": peaks, "peaks_v": PEAKS_V,
            "points": points}
     update_json_file(FILE, {}, lambda _: out)
 
@@ -265,7 +268,7 @@ def ensure_async(force=False):
     """Reconstructie in fundal, cel mult o data la 24h (force: acum). True daca a pornit acum."""
     global _running
     data = load_json_file(FILE, {})
-    fresh = isinstance(data, dict) and "peaks" in data and time.time() - data.get("updated", 0) < MAX_AGE_S
+    fresh = isinstance(data, dict) and data.get("peaks_v") == PEAKS_V and time.time() - data.get("updated", 0) < MAX_AGE_S
     if not force and fresh:
         return False
     with _lock:

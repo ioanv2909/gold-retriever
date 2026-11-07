@@ -1,3 +1,7 @@
+## 0.4.47 — 2026-11-07
+
+- Position peak value: shows the calculation (units held that day × price), so it is not mistaken for the price of one unit in the chart.
+
 ## 0.4.46 — 2026-11-07
 
 - Peak value: under the market value on the main page, the highest value of the selected portfolios with its date (and how far below it the current value is); on the position page, the highest value of the position in each account, with its date (from the daily history rebuild, new `peaks.py`).

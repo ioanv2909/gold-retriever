@@ -260,6 +260,9 @@ def _render_position_peak(ticker, yahoo_symbol, position_row, is_watch):
         v = mask(f"{p['value']:,.2f} {p['ccy'] or ''}".strip())
         text = (tr("peak.position_now", v=v) if p["now"]
                 else tr("peak.position", v=v, d=peaks.peak_label(p["date"])))
+        if p.get("qty") and p.get("price"):
+            text += " " + tr("peak.position_calc", q=mask(f"{p['qty']:,.4f}".rstrip("0").rstrip(".")),
+                             p=f"{p['price']:,.2f} {p.get('price_ccy') or ''}".strip())
         st.caption(f"{text} · {p['label']}" if many else text, help=tr("peak.position_help"))
 
 

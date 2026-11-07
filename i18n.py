@@ -859,10 +859,11 @@ _T = {
         "EN": "The highest market value of the selected portfolios, from the value history (every ~15 minutes in the last 30 days, older one value per day). Includes the effect of deposits, so it is not only gains.",
     },
     "peak.position": {"RO": "🏔️ Valoarea maximă a poziției: {v} pe {d}", "EN": "🏔️ Position peak value: {v} on {d}"},
+    "peak.position_calc": {"RO": "({q} unități × {p})", "EN": "({q} units × {p})"},
     "peak.position_now": {"RO": "🏔️ Valoarea maximă a poziției: acum ({v})", "EN": "🏔️ Position peak value: now ({v})"},
     "peak.position_help": {
-        "RO": "Din închiderile zilnice Yahoo × numărul de unități deținute în ziua respectivă, în moneda contului (reconstrucția istoricului, refăcută o dată pe zi). Valoarea de acum o înlocuiește dacă e mai mare.",
-        "EN": "From Yahoo daily closes × the units held on that day, in the account currency (history rebuild, redone once a day). The current value replaces it when higher.",
+        "RO": "Valoarea poziției (nu prețul unei unități din grafic): închiderea zilnică Yahoo × numărul de unități deținute în ziua respectivă, în moneda contului (reconstrucția istoricului, refăcută o dată pe zi). Valoarea de acum o înlocuiește dacă e mai mare.",
+        "EN": "The position value (not the price of one unit shown in the chart): Yahoo daily close × the units held on that day, in the account currency (history rebuild, redone once a day). The current value replaces it when higher.",
     },
     "main.monthly_pace": {"RO": "≈ {v} / lună · {n} luni", "EN": "≈ {v} / month · {n} months"},
     "main.monthly_pace_target": {

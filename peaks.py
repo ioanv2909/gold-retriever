@@ -6,6 +6,8 @@ in moneda contului; valoarea de acum o inlocuieste daca e mai mare (reconstructi
 """
 import pandas as pd
 
+PEAKS_V = 2  # 2: cu unitatile si pretul din ziua maximului (fisierele mai vechi se reconstruiesc)
+
 
 def series_peak(values):
     """(valoare, 'YYYY-MM-DD') pentru maximul unei serii zilnice cu index de date; None daca nu e > 0."""
@@ -70,9 +72,11 @@ def position_peaks(ticker, yahoo_symbol=None, current=None):
                 if tk != ticker and not (yahoo_symbol and e.get("sym") == yahoo_symbol):
                     continue
                 out.append({"label": e.get("label"), "ccy": e.get("ccy"), "value": float(e["value"]),
-                            "date": e["date"], "now": False})
+                            "date": e["date"], "now": False, "qty": e.get("qty"), "price": e.get("price"),
+                            "price_ccy": e.get("price_ccy")})
     for p in out:
         cur = current.get(p["label"])
         if cur is not None and cur >= p["value"]:
-            p.update(value=float(cur), date=pd.Timestamp.now().strftime("%Y-%m-%d"), now=True)
+            p.update(value=float(cur), date=pd.Timestamp.now().strftime("%Y-%m-%d"), now=True,
+                     qty=None, price=None)
     return sorted(out, key=lambda p: p["label"] or "")
