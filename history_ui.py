@@ -171,6 +171,7 @@ def render_history(sel_portfolios, display_ccy, native, compact, right_extra, ma
         _start = None
     else:
         _start = _now - _deltas[range_choice]
+    _full_df = history_df  # pe calculator graficul se poate trage in timp: arata si punctele dinainte
     if _start is not None:
         _sel = history_df[history_df["x"] >= _start]
         history_df = _sel if len(_sel) >= 2 else history_df.tail(2)
@@ -210,9 +211,14 @@ def render_history(sel_portfolios, display_ccy, native, compact, right_extra, ma
         _lines = st.pills(t("hist.lines"), LINES, selection_mode="multi", key="hist_lines",
                           format_func=_line_label, label_visibility="collapsed")
     save_pref("hist_lines", list(_lines or []))
+    _plot_df = history_df
+    if _start is not None and not compact and not mobile.compact():
+        import chart_window
+        _from = _start - (_now - _start) * chart_window.EXTRA_WINDOWS
+        _plot_df = _full_df[_full_df["x"] >= _from]
     _ys = {}
     if "value" in (_lines or []):
-        _ys["value"] = history_df["market_value"].tolist()
+        _ys["value"] = (_plot_df["x"], _plot_df["market_value"].tolist())
     if "sp500" in (_lines or []):
         _sp = None
         _px = sp500_prices(range_choice, display_ccy)
@@ -220,15 +226,15 @@ def render_history(sel_portfolios, display_ccy, native, compact, right_extra, ma
             _sp = benchmark.simulate(history_df["market_value"], history_df["invested"],
                                      benchmark.align(history_df["x"], _px))
         if _sp:
-            _ys["sp500"] = _sp
+            _ys["sp500"] = (history_df["x"], _sp)  # simularea porneste de la inceputul perioadei alese
         else:
             st.caption(t("hist.sp500_missing"))
     if "invested" in (_lines or []):
-        _ys["invested"] = history_df["invested"].tolist()
+        _ys["invested"] = (_plot_df["x"], _plot_df["invested"].tolist())
     history_fig = go.Figure()
-    for _k, _y in _ys.items():
+    for _k, (_xs, _y) in _ys.items():
         history_fig.add_trace(go.Scatter(
-            x=history_df["x"], y=_y, name=t("hist.line." + _k), mode="lines",
+            x=_xs, y=_y, name=t("hist.line." + _k), mode="lines",
             line=dict(color=_LINE_COLORS[_k], width=2.5, dash="dot" if _k == "invested" else None),
         ))
     history_fig.update_layout(
@@ -239,7 +245,7 @@ def render_history(sel_portfolios, display_ccy, native, compact, right_extra, ma
         plot_bgcolor="rgba(0,0,0,0)",
     )
     if _ys:
-        _all = [float(v) for _y in _ys.values() for v in _y]
+        _all = [float(v) for _xs, _y in _ys.values() for v in _y]
         _lo, _hi = min(_all), max(_all)
         _pad = max((_hi - _lo) * 0.15, abs(_hi) * 0.0005)
         history_fig.update_yaxes(range=[_lo - _pad, _hi + _pad], tickformat=",.0f")

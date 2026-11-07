@@ -156,7 +156,13 @@ def _render_price_chart_inner(ticker, yahoo_symbol, fill_date, avg_price_t212):
         format_func=lambda _k: tr("dv.per." + _k),
     )
     yf_period, yf_interval = CHART_PERIODS[period_choice]
-    hist, err = fetch_price_chart_history(yahoo_symbol, yf_period, yf_interval)
+    import chart_window
+    # pe calculator graficul se poate trage in timp: se incarca mai mult, se deschide pe perioada aleasa
+    _load = yf_period if mobile.compact() else chart_window.CHART_LOAD.get(period_choice, yf_period)
+    hist, err = fetch_price_chart_history(yahoo_symbol, _load, yf_interval)
+    if err and _load != yf_period:
+        hist, err = fetch_price_chart_history(yahoo_symbol, yf_period, yf_interval)
+        _load = yf_period
     if err:
         notice.card(err)
         return
@@ -202,6 +208,12 @@ def _render_price_chart_inner(ticker, yahoo_symbol, fill_date, avg_price_t212):
     fig.update_xaxes(hoverformat="%d.%m.%Y %H:%M" if _intraday else "%d.%m.%Y",
                      showspikes=True, spikemode="across", spikesnap="cursor",
                      spikethickness=1, spikedash="dot", spikecolor="rgba(200,200,200,0.6)")
+    _vs = chart_window.view_start(hist.index, yf_period) if _load != yf_period else None
+    if _vs is not None:
+        fig.update_xaxes(range=[_vs, hist.index.max()])
+    _yr = chart_window.padded_range(hist["Close"])  # axa Y fixa: cuprinde tot ce se poate trage in fereastra
+    if _yr:
+        fig.update_yaxes(range=_yr)
     mobile.plotly_chart(fig, pan=True, width="stretch", key=f"price_chart_{ticker}")
     if mobile.compact():
         return
