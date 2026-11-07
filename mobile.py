@@ -59,9 +59,11 @@ def desktop_only(key):
 
 def plotly_chart(fig, pan=False, **kwargs):
     """st.plotly_chart; pe telefon graficul nu mai prinde drag-ul (zoom pe regiune), ca pagina sa se poata derula.
-    pan (calculator): tragerea muta graficul in timp, rotita face zoom, dublu-clic revine la perioada aleasa."""
+    pan (calculator): tragerea muta graficul in timp, rotita face zoom doar pe orizontala (axa Y fixa),
+    dublu-clic revine la perioada aleasa."""
     if pan and not compact():
         fig.update_layout(dragmode="pan")
+        fig.update_yaxes(fixedrange=True)
         kwargs.setdefault("config", {"scrollZoom": True, "displaylogo": False})
     if compact():
         fig.update_layout(dragmode=False)

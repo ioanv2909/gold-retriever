@@ -1,3 +1,7 @@
+## 0.4.49 — 2026-11-07
+
+- Price and value charts: drag and zoom only horizontally (time axis); the price axis stays fixed.
+
 ## 0.4.48 — 2026-11-07
 
 - Price chart (position page) and value chart (main page), on desktop: drag the chart to move it in time, the mouse wheel zooms, double-click returns to the chosen period. Phone unchanged (fixed charts, so the page scrolls).
