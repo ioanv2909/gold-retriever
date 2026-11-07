@@ -1,3 +1,7 @@
+## 0.4.48 — 2026-11-07
+
+- Price chart (position page) and value chart (main page), on desktop: drag the chart to move it in time, the mouse wheel zooms, double-click returns to the chosen period. Phone unchanged (fixed charts, so the page scrolls).
+
 ## 0.4.47 — 2026-11-07
 
 - Position peak value: shows the calculation (units held that day × price), so it is not mistaken for the price of one unit in the chart.

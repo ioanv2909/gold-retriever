@@ -57,8 +57,12 @@ def desktop_only(key):
     return st.container(key=("mobhide_" if compact() else "desk_") + key)
 
 
-def plotly_chart(fig, **kwargs):
-    """st.plotly_chart; pe telefon graficul nu mai prinde drag-ul (zoom pe regiune), ca pagina sa se poata derula."""
+def plotly_chart(fig, pan=False, **kwargs):
+    """st.plotly_chart; pe telefon graficul nu mai prinde drag-ul (zoom pe regiune), ca pagina sa se poata derula.
+    pan (calculator): tragerea muta graficul in timp, rotita face zoom, dublu-clic revine la perioada aleasa."""
+    if pan and not compact():
+        fig.update_layout(dragmode="pan")
+        kwargs.setdefault("config", {"scrollZoom": True, "displaylogo": False})
     if compact():
         fig.update_layout(dragmode=False)
         fig.update_xaxes(fixedrange=True)

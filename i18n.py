@@ -91,6 +91,10 @@ _T = {
         "RO": "S&P 500 = cât ar valora portofoliul dacă aceleași sume ar fi fost puse în S&P 500: pornește de la valoarea de piață de la începutul perioadei, iar fiecare sumă investită sau retrasă cumpără sau vinde indice la prețul din acel moment (în {ccy}, fără dividende).",
         "EN": "S&P 500 = what the portfolio would be worth if the same amounts had gone into the S&P 500: it starts at the market value at the beginning of the period, and each amount invested or withdrawn buys or sells the index at that moment's price (in {ccy}, without dividends).",
     },
+    "chart.pan_help": {
+        "RO": "Trage de grafic ca să-l muți în timp; rotița mouse-ului face zoom; dublu-clic revine la perioada aleasă.",
+        "EN": "Drag the chart to move it in time; the mouse wheel zooms; double-click returns to the chosen period.",
+    },
     "hist.enlarge": {"RO": "⤢ Mărește graficul", "EN": "⤢ Enlarge chart"},
     "main.cash_xtb": {"RO": "Cash XTB: {items} · total {total} {ccy}", "EN": "XTB cash: {items} · total {total} {ccy}"},
     "main.cash_t212": {"RO": "Cash T212", "EN": "T212 cash"},

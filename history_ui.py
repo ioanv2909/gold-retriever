@@ -69,7 +69,7 @@ def _history_dialog(fig):
 def _history_dialog_inner(fig):
     big = go.Figure(fig)
     big.update_layout(height=560 + (fig.layout.height or 300) - 300)
-    mobile.plotly_chart(big, width="stretch", key="portfolio_history_chart_big")
+    mobile.plotly_chart(big, pan=True, width="stretch", key="portfolio_history_chart_big")
 
 
 def profit_sparkline(x, y, ccy):
@@ -274,7 +274,9 @@ def render_history(sel_portfolios, display_ccy, native, compact, right_extra, ma
             # fara nicio linie graficul ar fi gol, cu axe fara sens: cerem alegerea unei linii
             notice.card(t("hist.no_lines"), icon="💡")
             return True
-        mobile.plotly_chart(history_fig, width="stretch", key="portfolio_history_chart")
+        mobile.plotly_chart(history_fig, pan=True, width="stretch", key="portfolio_history_chart")
+        if not compact:
+            st.caption(t("chart.pan_help"))
         if not compact and "sp500" in _ys:
             st.caption(t("hist.sp500_help", ccy=display_ccy))
         _enlarge = not compact and st.button(t("hist.enlarge"), key="history_enlarge")

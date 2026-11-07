@@ -202,15 +202,13 @@ def _render_price_chart_inner(ticker, yahoo_symbol, fill_date, avg_price_t212):
     fig.update_xaxes(hoverformat="%d.%m.%Y %H:%M" if _intraday else "%d.%m.%Y",
                      showspikes=True, spikemode="across", spikesnap="cursor",
                      spikethickness=1, spikedash="dot", spikecolor="rgba(200,200,200,0.6)")
-    mobile.plotly_chart(fig, width="stretch", key=f"price_chart_{ticker}")
+    mobile.plotly_chart(fig, pan=True, width="stretch", key=f"price_chart_{ticker}")
     if mobile.compact():
         return
     _pc_big = st.button(tr("hist.enlarge"), key=f"price_enlarge_{ticker}")
     if _pc_big:
         _show_big_price(fig, ticker)
-    st.caption(
-        tr("dv.buy_marker_note")
-    )
+    st.caption(tr("dv.buy_marker_note") + " " + tr("chart.pan_help"))
 
 
 def render_price_chart(ticker, yahoo_symbol, fill_date, avg_price_t212, right_renderer=None):
@@ -227,7 +225,7 @@ def _show_big_price(fig, ticker):
     def _dlg():
         big = go.Figure(fig)
         big.update_layout(height=560)
-        mobile.plotly_chart(big, width="stretch", key=f"price_chart_big_{ticker}")
+        mobile.plotly_chart(big, pan=True, width="stretch", key=f"price_chart_big_{ticker}")
     _dlg()
 
 
