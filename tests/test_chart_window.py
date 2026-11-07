@@ -26,3 +26,9 @@ def test_padded_range():
 def test_every_chart_period_has_a_load_period():
     from core import CHART_PERIODS
     assert set(CHART_PERIODS) <= set(cw.CHART_LOAD)
+
+
+def test_y_auto_script_runs_once_per_page():
+    import appearance
+    js = appearance.page_js()
+    assert "--gr-bg" in js and "plotly_afterplot" in js and "w.__grYAuto" in js

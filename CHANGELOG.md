@@ -1,3 +1,7 @@
+## 0.4.51 — 2026-11-07
+
+- Price and value charts (desktop): the vertical axis fits the visible data after each drag or zoom (script in the page, `chart_window.Y_AUTO_JS`); if it cannot run, the axis stays fixed over all loaded data.
+
 ## 0.4.50 — 2026-11-07
 
 - Price and value charts (desktop): about three times the chosen period is loaded and the chart opens on the chosen period, so dragging shows the earlier data too (new `chart_window.py`); the vertical axis covers all loaded data.

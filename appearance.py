@@ -56,7 +56,13 @@ d.documentElement.style.setProperty('--gr-fg', cs.color);
 def sticky_header(key):
     """Containerul cu cheia `key` devine bara de sus fixa, cu fundalul temei (deschisa sau inchisa)."""
     st.markdown(_STICKY_CSS % {"k": key}, unsafe_allow_html=True)
-    _run_js(_THEME_VARS_JS)
+    _run_js(page_js())
+
+
+def page_js():
+    """Scriptul rulat o data pe pagina: culorile temei pentru bara fixa + axa Y automata la graficele trase."""
+    import chart_window
+    return _THEME_VARS_JS + chart_window.Y_AUTO_JS
 
 
 def print_page():

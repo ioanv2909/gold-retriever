@@ -312,7 +312,7 @@ def render_detail_view(position_row, total_portfolio_value, api_key_id, api_secr
 </style>"""
 
     import appearance
-    appearance._run_js(appearance._THEME_VARS_JS)  # fundalul temei curente pentru bara fixa
+    appearance._run_js(appearance.page_js())  # tema pentru bara fixa + axa Y automata la grafice
     with st.container(key="detail_header"):
         st.markdown(_HEADER_CSS, unsafe_allow_html=True)
         mapping = load_ticker_map()
