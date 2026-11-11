@@ -343,6 +343,8 @@ def render_main_view(me, api_key_id, api_secret):
     elif t212_err:
         st.error(t212_err)
     if not has_t212 and not has_xtb:
+        from value_quality_ui import render_value_quality
+        render_value_quality(None)
         return
 
     cash = snapshot["cash"] if has_t212 else {}
@@ -354,6 +356,8 @@ def render_main_view(me, api_key_id, api_secret):
     positions = (snapshot.get("positions") or []) if has_t212 else []
     if not positions and not has_xtb:
         st.info(t("main.no_positions"))
+        from value_quality_ui import render_value_quality
+        render_value_quality(None)
         return
 
     account_currency, _ = fetch_account_currency(api_key_id, api_secret)

@@ -295,6 +295,8 @@ def _matrix(vdf, cache, plenses=strategies.LENSES):
 
 def render_strategies_tab(vdf):
     """vdf: randurile pozitiilor din portofoliile selectate (ticker, name)."""
+    from value_quality_ui import render_value_quality
+    render_value_quality(vdf)
     if vdf is None or vdf.empty:
         st.info(t("ex.empty"))
         return
