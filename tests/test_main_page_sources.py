@@ -62,6 +62,7 @@ def test_t212_only_is_unchanged(tmp_path):
 def test_no_source_keeps_the_no_data_message(tmp_path):
     out = _run(tmp_path, "none")
     assert out["metrics"] == [] and out["rows"] == [] and len(out["info"]) == 1
+    assert "wl_symbol" in out["keys"] and "vq_run" not in out["keys"]
 
 
 def test_xtb_detail_link_opens_without_t212(tmp_path):

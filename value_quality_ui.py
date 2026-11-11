@@ -32,6 +32,30 @@ def status_label(key):
             'excluded': tr('— Exclusă', '— Excluded')}[key]
 
 
+def retain_controls():
+    """Keep screening controls when Streamlit removes the hidden view's widgets."""
+    for key in ('vq_portfolio','vq_watchlist','vq_manual','vq_ev','vq_roa','vq_growth',
+                'vq_growth_period','vq_excluded','vq_countries','vq_history','vq_spike',
+                'vq_reload','vq_filter','vq_detail'):
+        if key in st.session_state:
+            st.session_state[key] = st.session_state[key]
+
+
+def _result_key():
+    return 'vq_watchlist_results_' + str(current_user() or '_legacy')
+
+
+def _rules_key():
+    return 'vq_watchlist_rules_' + str(current_user() or '_legacy')
+
+
+def watchlist_results():
+    """Evaluate the user's last public-data snapshot without provider requests."""
+    rules = st.session_state.get(_rules_key()) or vq.Rules()
+    return {row['metrics']['symbol']: vq.evaluate(row['metrics'], rules)
+            for row in st.session_state.get(_result_key(), [])}
+
+
 def _details(metrics, outcome, rules):
     names = {'stock': tr('Companie listată', 'Listed company'), 'sector': tr('Sector permis', 'Allowed sector'),
              'country': tr('Țara sediului permisă', 'Allowed domicile'), 'positive_ebit': 'EBIT TTM > 0',
@@ -70,14 +94,21 @@ def _details(metrics, outcome, rules):
 
 
 def render_value_quality(vdf):
+    retain_controls()
+    if not st.session_state.get('vq_watchlist_defaults_applied'):
+        st.session_state['vq_portfolio'] = False
+        st.session_state['vq_watchlist'] = True
+        st.session_state['vq_watchlist_defaults_applied'] = True
+    if vdf is None or vdf.empty:
+        st.session_state['vq_portfolio'] = False
     with st.expander('Value + Quality', expanded=True):
         st.caption(tr('Filtru pentru cercetare: EV/EBIT TTM ≤ 15, ROA ≥ 10%, venituri în creștere și verificarea istoricului EBIT. Pragurile sunt configurabile.',
                       'Research screen: EV/EBIT TTM ≤ 15, ROA ≥ 10%, growing revenue and an EBIT history check. Thresholds are configurable.'))
         st.caption(tr('Nu este un screener global. Țara reprezintă sediul companiei; disponibilitatea instrumentului se verifică la broker. Datele lipsă nu sunt considerate criterii trecute.',
                       'This is not a global screener. Country means company domicile; check tradability with your broker. Missing data never counts as a passed criterion.'))
         left, right = st.columns(2)
-        use_portfolio = left.checkbox(tr('Include portofoliul selectat', 'Include selected portfolio'), value=True, key='vq_portfolio')
-        use_watchlist = right.checkbox(tr('Include watchlist', 'Include watchlist'), value=True, key='vq_watchlist')
+        use_portfolio = left.checkbox(tr('Include portofoliul selectat · opțional', 'Include selected portfolio · optional'), value=False, key='vq_portfolio', disabled=vdf is None or vdf.empty)
+        use_watchlist = right.checkbox(tr('Analizează watchlist-ul', 'Analyze watchlist'), value=True, key='vq_watchlist')
         manual = st.text_area(tr('Simboluri Yahoo suplimentare', 'Additional Yahoo symbols'), placeholder='AAPL, MSFT, AJIS.T', key='vq_manual')
         a,b,c = st.columns(3)
         max_ev = a.number_input('EV/EBIT TTM ≤', min_value=0.1, max_value=100.0, value=15.0, step=0.5, key='vq_ev')
@@ -96,7 +127,8 @@ def render_value_quality(vdf):
                                 min_value=1.0,max_value=10.0,value=2.0,step=0.25,key='vq_spike',disabled=not history)
         refresh = st.checkbox(tr('Reîncarcă datele din Yahoo', 'Reload data from Yahoo'), value=False, key='vq_reload')
         rules = vq.Rules(max_ev,min_roa,min_growth,basis,tuple(excluded),tuple(c.strip() for c in countries.split(',') if c.strip()),history,spike)
-        result_key = 'vq_results_' + str(current_user() or '_legacy')
+        result_key = _result_key()
+        st.session_state[_rules_key()] = rules
         if st.button(tr('Analizează Value + Quality', 'Run Value + Quality'), key='vq_run', type='primary'):
             from yahoo import resolve_yahoo_symbol
             from watchlist import load_watchlist
@@ -124,8 +156,8 @@ def render_value_quality(vdf):
             return
         evaluated = [(r['metrics'], vq.evaluate(r['metrics'], rules), r['origins']) for r in results]
         evaluated.sort(key=lambda r: (vq.number(r[0].get('ev_ebit')) is None, vq.number(r[0].get('ev_ebit')) or 0, r[0]['symbol']))
-        st.caption(tr('Pragurile se aplică imediat. Schimbarea listei de simboluri necesită o nouă analiză.',
-                      'Threshold changes apply immediately. Changes to the symbol list require another run.'))
+        st.caption(tr('Pragurile se aplică imediat. Rezultatul apare și în lista Watchlist. Schimbarea simbolurilor necesită o nouă analiză.',
+                      'Threshold changes apply immediately. Results also appear in the Watchlist table. Changes to symbols require another run.'))
         for col, status in zip(st.columns(3), ['candidate','review','insufficient']):
             col.metric(status_label(status), sum(o['status']==status for _,o,_ in evaluated))
         filter_labels = {'all':tr('Toate','All'), **{k:status_label(k) for k in ('candidate','review','insufficient','rejected','excluded')}}

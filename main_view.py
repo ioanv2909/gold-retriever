@@ -295,7 +295,7 @@ def _render_tabs(df, df_display, vdf, display_ccy, total_portfolio_value, compac
 
     if not detail_loading:
         with tab_wl:
-            render_watchlist_tab()
+            render_watchlist_tab(vdf)
 
 
 def _render_update_notes(div_status, div_snapshot, rat_status, rat_snapshot):
@@ -343,8 +343,8 @@ def render_main_view(me, api_key_id, api_secret):
     elif t212_err:
         st.error(t212_err)
     if not has_t212 and not has_xtb:
-        from value_quality_ui import render_value_quality
-        render_value_quality(None)
+        st.subheader(t("tab.watchlist"))
+        render_watchlist_tab()
         return
 
     cash = snapshot["cash"] if has_t212 else {}
@@ -356,8 +356,8 @@ def render_main_view(me, api_key_id, api_secret):
     positions = (snapshot.get("positions") or []) if has_t212 else []
     if not positions and not has_xtb:
         st.info(t("main.no_positions"))
-        from value_quality_ui import render_value_quality
-        render_value_quality(None)
+        st.subheader(t("tab.watchlist"))
+        render_watchlist_tab()
         return
 
     account_currency, _ = fetch_account_currency(api_key_id, api_secret)

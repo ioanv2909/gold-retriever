@@ -24,7 +24,15 @@ def watch_row(symbol):
     return None
 
 
-def render_watchlist_tab():
+def render_watchlist_tab(vdf=None):
+    from value_quality_ui import render_value_quality, watchlist_results, status_label, tr, retain_controls
+    retain_controls()
+    labels = {'list': tr('Listă', 'List'), 'value_quality': 'Value + Quality'}
+    view = st.segmented_control('Watchlist', list(labels), default='list',
+                                format_func=labels.get, key='wl_view')
+    if view == 'value_quality':
+        render_value_quality(vdf)
+        return
     wl_symbol_col, wl_isin_col, wl_add_col = st.columns([3, 3, 1])
     with wl_symbol_col:
         st.text_input(t("wl.symbol"), key="wl_symbol")
@@ -51,6 +59,8 @@ def render_watchlist_tab():
     watchlist_symbols = list(watchlist_items_by_symbol.keys())
 
     if watchlist_symbols:
+        quality = watchlist_results()
+        from yahoo import resolve_yahoo_symbol
         def format_watch_score(entry, total_key, coverage_key):
             coverage = entry.get(coverage_key)
             total = entry.get(total_key)
@@ -78,6 +88,13 @@ def render_watchlist_tab():
                 "Preț la": price_at[11:16] if price_at[:10] == datetime.now().strftime("%Y-%m-%d") else (price_at[:10] or "n/a"),
             })
 
+        if quality:
+            for row in watchlist_rows:
+                symbol = resolve_yahoo_symbol(row['Simbol']).strip().upper()
+                result = quality.get(symbol)
+                row['Value + Quality'] = status_label(result['status']) if result else tr('Neanalizat', 'Not analyzed')
+            st.caption(tr('Coloana Value + Quality folosește ultima analiză și pragurile alese în vizualizarea Value + Quality.',
+                          'The Value + Quality column uses the last analysis and thresholds selected in the Value + Quality view.'))
         watchlist_df = pd.DataFrame(watchlist_rows)
         _wl_help = {col(nume): text for nume, text in COLUMN_HELP.items() if nume in watchlist_df.columns}
         _wl_help.update({col("Actualizat"): t("wl.help_updated"), col("Preț la"): t("wl.help_price_at")})
