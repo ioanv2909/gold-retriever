@@ -37,6 +37,7 @@ in `data/` or `/tmp` (tmpfs, 64 MB, also HOME). New code that writes elsewhere f
 - Backup: `tools/backup-goldretriever.sh` (cron, Synology share), status in `data/backup_status.json`.
 - Restore: `RESTORE-CASAOS.local.md` (private, git-ignored: full restore of this server); `tools/nas_copy.py` (cron of ioanv, 04:00)
   copies it to the share as `RESTORE-CASAOS.md` with the code bundle and the git-ignored config. Update it when the setup changes.
+- Docs privacy: tracked `*.md` stay generic (placeholders such as `NAS_IP`, `<tailnet>`); anything specific to this network (LAN IPs, NAS paths and users, tailnet name, local domain) goes only in `*.local.md` (git-ignored). `tools/git-hooks/pre-commit` blocks `.md` commits that add such details (personal patterns in `.git/info/private-patterns`, not tracked; bypass only on purpose with `--no-verify`).
 
 ## Done (v0.2.6 – v0.2.25, see CHANGELOG.md)
 Events calendar with email digest, dividend score, position alerts (price/score/concentration), analyst data,

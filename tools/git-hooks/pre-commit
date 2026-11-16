@@ -1,0 +1,31 @@
+#!/bin/bash
+# Blocheaza commit-ul cand un fisier .md primeste detalii specifice retelei locale (IP-uri din LAN, numele
+# tailnet-ului, cai de pe NAS). Documentatia urmarita in git ramane generica: placeholdere ca NAS_IP, <tailnet>.
+# Ce e specific retelei merge in *.local.md (git-ignored; RESTORE-CASAOS.local.md ajunge pe NAS prin nas_copy).
+# Tiparele personale (domeniu, utilizatori NAS, IP public) stau in .git/info/private-patterns, un regex extins
+# pe linie, ca sa nu ajunga ele insele in git. Se verifica doar liniile adaugate.
+# Ocolire constienta: git commit --no-verify
+generic='192\.168\.[0-9]{1,3}\.[0-9]{1,3}|tail[0-9a-f]{6,}\.ts\.net|/volume[0-9]+/'
+local_file="$(git rev-parse --git-dir)/info/private-patterns"
+pattern="$generic"
+if [ -s "$local_file" ]; then
+    extra=$(grep -vE '^[[:space:]]*(#|$)' "$local_file" | paste -sd'|' -)
+    [ -n "$extra" ] && pattern="$pattern|$extra"
+fi
+
+bad=0
+while IFS= read -r -d '' f; do
+    hits=$(git diff --cached -U0 -- "$f" | grep -E '^\+' | grep -vE '^\+\+\+ ' | grep -iE "$pattern")
+    if [ -n "$hits" ]; then
+        echo "pre-commit: $f contine detalii specifice retelei:"
+        echo "$hits" | cut -c1-200 | sed 's/^/    /'
+        bad=1
+    fi
+done < <(git diff --cached --name-only -z --diff-filter=ACMR -- '*.md')
+
+if [ "$bad" = 1 ]; then
+    echo "Muta-le intr-un fisier *.local.md (git-ignored) sau inlocuieste-le cu un placeholder (NAS_IP, <tailnet>)."
+    echo "Daca e intentionat: git commit --no-verify"
+    exit 1
+fi
+exit 0
