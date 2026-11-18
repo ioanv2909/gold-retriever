@@ -1,3 +1,7 @@
+## 0.4.60 — 2026-11-18
+
+- Position page: the position logo is shown large (64 px) next to the name in the page title, instead of the magnifier icon.
+
 ## 0.4.59 — 2026-11-18
 
 - Position logos: positions left without a logo are retried right away after this update (logos already found are kept).

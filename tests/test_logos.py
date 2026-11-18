@@ -200,3 +200,9 @@ def test_issuer_parent_logo_when_issuer_site_blocks(monkeypatch):
     monkeypatch.setattr(logos, "fmp_logo", lambda sym: asked.append(sym) or (_png() if sym == "WT" else None))
     assert logos.fetch_logo("8RMYd_EQ", "WisdomTree Europe Defence") is True
     assert asked == ["8RMY.DE", "WT"]
+
+
+def test_position_page_shows_the_logo():
+    src = open(os.path.join(os.path.dirname(logos.__file__), "detail_view.py"), encoding="utf-8").read()
+    assert "logos.logo_uri(ticker, name)" in src and 'width="64"' in src
+    assert "_html.escape(str(name))" in src

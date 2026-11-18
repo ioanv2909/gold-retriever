@@ -5,6 +5,7 @@ import requests
 import pandas as pd
 import numpy as np
 import base64
+import html as _html
 import os
 import json
 import time
@@ -20,6 +21,7 @@ from descriptions import TABLE_HELP, checklist_tooltip, indicator_tooltip, score
 from core import CHART_PERIODS, HIST_TO_CHART, RECOMMENDATION_LABELS, SECTOR_TYPICAL_RANGES, load_config, load_notes, load_ticker_map, save_note, save_ticker_map
 from etf import ETF_INDICATORS, compute_etf_score, extract_etf_metrics, get_instrument
 from gauges import make_gauge
+import logos
 from holdings_ui import render_holdings_section, target_portfolios
 from xtb_positions import xtb_rows
 from risk import RISK_INDICATORS, compute_risk, extract_risk_metrics
@@ -325,7 +327,14 @@ def render_detail_view(position_row, total_portfolio_value, api_key_id, api_secr
                 st.session_state["table_nonce"] = st.session_state.get("table_nonce", 0) + 1
                 st.rerun()
         with col_title:
-            st.markdown(f"## 🔍 {name} ({ticker})")
+            logos.prefetch([(ticker, name)])
+            st.markdown(
+                f'<div style="display:flex;align-items:center;gap:14px">'
+                f'<img src="{logos.logo_uri(ticker, name)}" width="64" height="64" alt="" '
+                f'style="border-radius:12px;flex:none">'
+                f'<h2 style="margin:0;padding:0">{_html.escape(str(name))} ({_html.escape(str(ticker))})</h2></div>',
+                unsafe_allow_html=True,
+            )
         with col_sym:
             yahoo_symbol = st.text_input(
                 tr("dv.map_label"),
