@@ -1,3 +1,7 @@
+## 0.4.59 — 2026-11-18
+
+- Position logos: positions left without a logo are retried right away after this update (logos already found are kept).
+
 ## 0.4.58 — 2026-11-18
 
 - Position logos: when neither the fund symbol nor the issuer site gives a logo (e.g. WisdomTree funds outside London, the WisdomTree site blocks automatic downloads), funds use the logo of the listed parent company from the same database (`ISSUER_FMP` in `logos.py`: WisdomTree, BlackRock for iShares, State Street for SPDR, Invesco, Amundi, DWS and others).

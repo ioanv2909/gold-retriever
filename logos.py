@@ -36,7 +36,8 @@ MAX_PAGE_BYTES = 1_000_000
 MAX_ICON_BYTES = 400_000
 SIZE = 64
 UA = "Mozilla/5.0 (X11; Linux x86_64) GoldRetriever-logo-fetch"
-VERSION = 3   # intrarile din versiuni mai vechi (cu sau fara logo) se refac imediat
+VERSION = 4        # intrarile FARA logo din versiuni mai vechi se reincearca imediat
+LOGO_VERSION = 3   # logo-urile gasite inainte de aceasta versiune se refac
 FMP_URL = "https://financialmodelingprep.com/image-stock/{}.png"
 
 # Emitenti de ETF/ETC: (tipar in familia fondului / nume, site oficial). Ordinea conteaza: primul tipar gasit.
@@ -156,10 +157,11 @@ def needs_fetch(ticker, now=None):
     entry = _load_index().get(str(ticker))
     if not isinstance(entry, dict):
         return True
-    if int(entry.get("v") or 1) < VERSION:
-        return True
+    version = int(entry.get("v") or 1)
     if entry.get("file"):
-        return False
+        return version < LOGO_VERSION
+    if version < VERSION:
+        return True
     return (now or time.time()) - float(entry.get("ts") or 0) > RETRY_MISS_S
 
 

@@ -149,8 +149,12 @@ def test_one_download_per_site(monkeypatch):
 def test_entries_from_older_versions_are_redone():
     logos._save_entry("OLD_EQ", {"file": None, "ts": 10**12})
     assert logos.needs_fetch("OLD_EQ", now=10**12 + 1)
-    logos._save_entry("OLDLOGO_EQ", {"file": "x.png", "ts": 10**12, "v": logos.VERSION - 1})
+    logos._save_entry("OLDLOGO_EQ", {"file": "x.png", "ts": 10**12, "v": logos.LOGO_VERSION - 1})
     assert logos.needs_fetch("OLDLOGO_EQ", now=10**12 + 1)
+    logos._save_entry("KEEP_EQ", {"file": "x.png", "ts": 10**12, "v": logos.LOGO_VERSION})
+    assert not logos.needs_fetch("KEEP_EQ", now=10**12 + 1)
+    logos._save_entry("MISS_EQ", {"file": None, "ts": 10**12, "v": logos.VERSION - 1})
+    assert logos.needs_fetch("MISS_EQ", now=10**12 + 1)
     logos._save_entry("NEW_EQ", {"file": None, "ts": 10**12, "v": logos.VERSION})
     assert not logos.needs_fetch("NEW_EQ", now=10**12 + 1)
 
