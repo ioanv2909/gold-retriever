@@ -67,7 +67,7 @@ def test_logo_uri_uses_cache_and_falls_back_to_badge():
     with open(logos.INDEX_FILE, "w") as f:
         json.dump({"AAPL_US_EQ": {"file": "a.png", "ts": 1}}, f)
     assert logos.logo_uri("AAPL_US_EQ", "Apple").startswith("data:image/png;base64,")
-    assert not logos.needs_fetch("AAPL_US_EQ")
+    assert logos.needs_fetch("AAPL_US_EQ")  # intrare fara versiune: se reface
 
 
 def test_misses_are_retried_after_the_retry_period():
@@ -89,7 +89,9 @@ def test_fetch_logo_uses_company_site_only(monkeypatch):
             return url, _png(), "image/png"
         raise ValueError("404")
 
-    monkeypatch.setattr(logos, "yahoo_profile", lambda tk: ("https://www.example.com", "Example Inc", False))
+    monkeypatch.setattr(logos, "yahoo_symbol", lambda tk: "EX")
+    monkeypatch.setattr(logos, "fmp_logo", lambda sym: None)
+    monkeypatch.setattr(logos, "yahoo_profile", lambda sym: ("https://www.example.com", "Example Inc", False))
     monkeypatch.setattr(logos, "_get", fake_get)
     assert logos.fetch_logo("EX_US_EQ") is True
     assert all(u.startswith("https://www.example.com") for u in calls)
@@ -97,7 +99,9 @@ def test_fetch_logo_uses_company_site_only(monkeypatch):
 
 
 def test_fetch_logo_without_website_records_a_miss(monkeypatch):
-    monkeypatch.setattr(logos, "yahoo_profile", lambda tk: ("", "", True))
+    monkeypatch.setattr(logos, "yahoo_symbol", lambda tk: "ETF")
+    monkeypatch.setattr(logos, "fmp_logo", lambda sym: None)
+    monkeypatch.setattr(logos, "yahoo_profile", lambda sym: ("", "", True))
     monkeypatch.setattr(logos, "_get", lambda *a: pytest.fail("no download without a website"))
     assert logos.fetch_logo("ETF_EQ", "Unknown Fund") is False
     assert logos._load_index()["ETF_EQ"]["file"] is None
@@ -132,7 +136,9 @@ def test_funds_use_issuer_site_even_with_a_website():
 
 def test_one_download_per_site(monkeypatch):
     downloads = []
-    monkeypatch.setattr(logos, "yahoo_profile", lambda tk: ("", "iShares", True))
+    monkeypatch.setattr(logos, "yahoo_symbol", lambda tk: tk)
+    monkeypatch.setattr(logos, "fmp_logo", lambda sym: None)
+    monkeypatch.setattr(logos, "yahoo_profile", lambda sym: ("", "iShares", True))
     monkeypatch.setattr(logos, "_download_icon", lambda site: downloads.append(site) or _png())
     assert logos.fetch_logo("IWDA_EQ", "iShares Core MSCI World") is True
     assert logos.fetch_logo("EIMI_EQ", "iShares Core MSCI EM IMI") is True
@@ -140,8 +146,43 @@ def test_one_download_per_site(monkeypatch):
     assert logos.logo_uri("EIMI_EQ", "x") == logos.logo_uri("IWDA_EQ", "x")
 
 
-def test_old_misses_are_retried_immediately():
+def test_entries_from_older_versions_are_redone():
     logos._save_entry("OLD_EQ", {"file": None, "ts": 10**12})
     assert logos.needs_fetch("OLD_EQ", now=10**12 + 1)
+    logos._save_entry("OLDLOGO_EQ", {"file": "x.png", "ts": 10**12, "v": logos.VERSION - 1})
+    assert logos.needs_fetch("OLDLOGO_EQ", now=10**12 + 1)
     logos._save_entry("NEW_EQ", {"file": None, "ts": 10**12, "v": logos.VERSION})
     assert not logos.needs_fetch("NEW_EQ", now=10**12 + 1)
+
+
+def test_fmp_logo_is_preferred(monkeypatch):
+    urls = []
+
+    def fake_get(url, limit):
+        urls.append(url)
+        if url == logos.FMP_URL.format("SAP.DE"):
+            return url, _png(), "image/png"
+        raise ValueError("404")
+
+    monkeypatch.setattr(logos, "_get", fake_get)
+    monkeypatch.setattr(logos, "yahoo_symbol", lambda tk: "SAP.DE")
+    monkeypatch.setattr(logos, "yahoo_profile", lambda sym: pytest.fail("no site lookup when FMP has the logo"))
+    assert logos.fetch_logo("SAPd_EQ", "SAP SE") is True
+    assert urls == [logos.FMP_URL.format("SAP.DE")]
+    assert logos._load_index()["SAPd_EQ"]["source"] == "fmp"
+    assert not logos.needs_fetch("SAPd_EQ")
+
+
+def test_fmp_rejects_odd_symbols(monkeypatch):
+    monkeypatch.setattr(logos, "_get", lambda *a: pytest.fail("no request for an invalid symbol"))
+    assert logos.fmp_logo("../etc/passwd") is None
+    assert logos.fmp_logo("") is None
+
+
+def test_falls_back_to_site_when_fmp_has_no_logo(monkeypatch):
+    monkeypatch.setattr(logos, "yahoo_symbol", lambda tk: "XYZ")
+    monkeypatch.setattr(logos, "fmp_logo", lambda sym: None)
+    monkeypatch.setattr(logos, "yahoo_profile", lambda sym: ("https://www.xyz.example", "XYZ", False))
+    monkeypatch.setattr(logos, "_download_icon", lambda site: _png())
+    assert logos.fetch_logo("XYZ_US_EQ", "XYZ") is True
+    assert logos._load_index()["XYZ_US_EQ"]["source"] == "site"

@@ -1,3 +1,7 @@
+## 0.4.57 — 2026-11-18
+
+- Position logos: the Financial Modeling Prep logo database (public, no account; looked up by the Yahoo symbol, once per symbol) is now the first source, which covers most European stocks and ETFs; the company website and, for funds, the issuer site remain the fallbacks, then the initials badge. All cached logos are redone once, which also replaces wrong website icons.
+
 ## 0.4.56 — 2026-11-18
 
 - Position logos: ETFs/ETCs show their issuer's logo (iShares, Vanguard, Xtrackers, SPDR, Amundi, Invesco, VanEck, HSBC, UBS, J.P. Morgan and other major issuers), recognised from the Yahoo fund family and the position name; the issuer site comes from a fixed list in `logos.py`. Each site is downloaded once and reused by all its positions. Positions left without a logo by the first version are retried right away.

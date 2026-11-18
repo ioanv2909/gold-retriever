@@ -1,7 +1,9 @@
-"""Logo-ul fiecarei pozitii, luat de pe site-ul companiei (adresa vine de la Yahoo).
+"""Logo-ul fiecarei pozitii.
 
-Nu foloseste servicii terte de logo-uri: serverul descarca iconul direct de pe site-ul companiei
-(apple-touch-icon / icon / favicon.ico), il micsoreaza la 64x64 PNG si il pastreaza in data/logos/.
+Ordinea surselor: 1) baza de logo-uri Financial Modeling Prep, dupa simbolul Yahoo (serviciu public, fara cont;
+vede doar simbolul, o data pe simbol); 2) iconul de pe site-ul companiei (adresa vine de la Yahoo:
+apple-touch-icon / icon / favicon.ico); 3) pentru fonduri, site-ul emitentului. Imaginea e micsorata la
+64x64 PNG si pastrata in data/logos/.
 Pagina citeste doar cache-ul; descarcarile ruleaza in fundal, deci tabelul nu asteapta reteaua.
 ETF-urile primesc logo-ul emitentului (iShares, Vanguard, Xtrackers...), recunoscut din familia fondului
 data de Yahoo si din numele pozitiei; site-ul emitentului vine dintr-o lista fixa (ISSUERS).
@@ -34,7 +36,8 @@ MAX_PAGE_BYTES = 1_000_000
 MAX_ICON_BYTES = 400_000
 SIZE = 64
 UA = "Mozilla/5.0 (X11; Linux x86_64) GoldRetriever-logo-fetch"
-VERSION = 2   # intrarile fara logo din versiuni mai vechi se reincearca imediat
+VERSION = 3   # intrarile din versiuni mai vechi (cu sau fara logo) se refac imediat
+FMP_URL = "https://financialmodelingprep.com/image-stock/{}.png"
 
 # Emitenti de ETF/ETC: (tipar in familia fondului / nume, site oficial). Ordinea conteaza: primul tipar gasit.
 ISSUERS = [
@@ -143,10 +146,10 @@ def needs_fetch(ticker, now=None):
     entry = _load_index().get(str(ticker))
     if not isinstance(entry, dict):
         return True
-    if entry.get("file"):
-        return False
     if int(entry.get("v") or 1) < VERSION:
         return True
+    if entry.get("file"):
+        return False
     return (now or time.time()) - float(entry.get("ts") or 0) > RETRY_MISS_S
 
 
@@ -250,11 +253,14 @@ def to_png(raw):
     return out.getvalue()
 
 
-def yahoo_profile(ticker):
-    """(site, text despre fond, e_fond) de la Yahoo."""
+def yahoo_symbol(ticker):
     from yahoo import resolve_yahoo_symbol
+    return resolve_yahoo_symbol(ticker)
+
+
+def yahoo_profile(symbol):
+    """(site, text despre fond, e_fond) de la Yahoo."""
     import yfinance as yf
-    symbol = resolve_yahoo_symbol(ticker)
     info = yf.Ticker(symbol).info or {}
     site = (info.get("website") or "").strip()
     if site and not site.startswith(("http://", "https://")):
@@ -270,6 +276,17 @@ def choose_site(ticker, name, profile):
     if issuer and (is_fund or not site):
         return issuer
     return site
+
+
+def fmp_logo(symbol):
+    """Logo din baza Financial Modeling Prep dupa simbolul Yahoo; None daca lipseste."""
+    if not symbol or not re.fullmatch(r"[A-Za-z0-9.\-^=]{1,20}", symbol):
+        return None
+    try:
+        _, raw, _ = _get(FMP_URL.format(symbol.upper()), MAX_ICON_BYTES)
+    except Exception:  # noqa: BLE001 - 404 / retea: trecem la urmatoarea sursa
+        return None
+    return to_png(raw)
 
 
 def _site_key(site):
@@ -293,32 +310,44 @@ def _download_icon(site):
     return None
 
 
+def _store(key, png):
+    file_name = _file_name(key)
+    os.makedirs(LOGO_DIR, exist_ok=True)
+    with open(os.path.join(LOGO_DIR, file_name), "wb") as f:
+        f.write(png)
+    return file_name
+
+
 def fetch_logo(ticker, name=""):
     """Cauta logo-ul pozitiei si il salveaza in cache. Intoarce True daca a gasit unul."""
     key = str(ticker)
+    now = time.time()
     try:
-        profile = yahoo_profile(key)
+        symbol = yahoo_symbol(key)
+    except Exception:  # noqa: BLE001
+        symbol = ""
+    png = fmp_logo(symbol)
+    if png:
+        _save_entry(key, {"file": _store("fmp:" + symbol.upper(), png), "source": "fmp", "symbol": symbol, "ts": now, "v": VERSION})
+        return True
+    try:
+        profile = yahoo_profile(symbol) if symbol else ("", "", False)
     except Exception:  # noqa: BLE001 - Yahoo indisponibil: macar emitentul dupa nume
         profile = ("", "", False)
     site = choose_site(key, name, profile)
-    now = time.time()
     if not site:
-        _save_entry(key, {"file": None, "site": "", "ts": now, "v": VERSION})
+        _save_entry(key, {"file": None, "site": "", "symbol": symbol, "ts": now, "v": VERSION})
         return False
     skey = _site_key(site)
     cached = _load_index().get(skey)
-    if isinstance(cached, dict) and (cached.get("file") or now - float(cached.get("ts") or 0) < RETRY_MISS_S):
-        _save_entry(key, {"file": cached.get("file"), "site": site, "ts": now, "v": VERSION})
+    if (isinstance(cached, dict) and int(cached.get("v") or 1) >= VERSION
+            and (cached.get("file") or now - float(cached.get("ts") or 0) < RETRY_MISS_S)):
+        _save_entry(key, {"file": cached.get("file"), "source": "site", "site": site, "symbol": symbol, "ts": now, "v": VERSION})
         return bool(cached.get("file"))
     png = _download_icon(site)
-    file_name = None
-    if png:
-        file_name = _file_name(skey)
-        os.makedirs(LOGO_DIR, exist_ok=True)
-        with open(os.path.join(LOGO_DIR, file_name), "wb") as f:
-            f.write(png)
+    file_name = _store(skey, png) if png else None
     _save_entry(skey, {"file": file_name, "site": site, "ts": now, "v": VERSION})
-    _save_entry(key, {"file": file_name, "site": site, "ts": now, "v": VERSION})
+    _save_entry(key, {"file": file_name, "source": "site", "site": site, "symbol": symbol, "ts": now, "v": VERSION})
     return bool(file_name)
 
 
