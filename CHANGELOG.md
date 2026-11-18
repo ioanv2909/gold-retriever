@@ -1,3 +1,8 @@
+## 0.4.56 — 2026-11-18
+
+- Position logos: ETFs/ETCs show their issuer's logo (iShares, Vanguard, Xtrackers, SPDR, Amundi, Invesco, VanEck, HSBC, UBS, J.P. Morgan and other major issuers), recognised from the Yahoo fund family and the position name; the issuer site comes from a fixed list in `logos.py`. Each site is downloaded once and reused by all its positions. Positions left without a logo by the first version are retried right away.
+- Fix: logos downloaded in quick succession could stay hidden until the next cache write (the logo index cache now refreshes on every write).
+
 ## 0.4.55 — 2026-11-18
 
 - Holdings table: each position shows its logo before the name (new `logos.py`). The server takes the company website from Yahoo and downloads its icon (apple-touch-icon / icon / favicon.ico) from that site only, no third-party logo service; icons are resized to 64x64 PNG and cached in `data/logos/` (positions without a logo are retried after 14 days). Downloads run in the background, so the table never waits for the network; until a logo is found, a coloured badge with the initials is shown. Private or local addresses are refused.

@@ -71,7 +71,7 @@ def test_logo_uri_uses_cache_and_falls_back_to_badge():
 
 
 def test_misses_are_retried_after_the_retry_period():
-    logos._save_entry("X_EQ", {"file": None, "ts": 1000.0})
+    logos._save_entry("X_EQ", {"file": None, "ts": 1000.0, "v": logos.VERSION})
     assert not logos.needs_fetch("X_EQ", now=1000.0 + 60)
     assert logos.needs_fetch("X_EQ", now=1000.0 + logos.RETRY_MISS_S + 1)
     assert logos.needs_fetch("NEW_EQ")
@@ -89,7 +89,7 @@ def test_fetch_logo_uses_company_site_only(monkeypatch):
             return url, _png(), "image/png"
         raise ValueError("404")
 
-    monkeypatch.setattr(logos, "website_for", lambda tk: "https://www.example.com")
+    monkeypatch.setattr(logos, "yahoo_profile", lambda tk: ("https://www.example.com", "Example Inc", False))
     monkeypatch.setattr(logos, "_get", fake_get)
     assert logos.fetch_logo("EX_US_EQ") is True
     assert all(u.startswith("https://www.example.com") for u in calls)
@@ -97,9 +97,9 @@ def test_fetch_logo_uses_company_site_only(monkeypatch):
 
 
 def test_fetch_logo_without_website_records_a_miss(monkeypatch):
-    monkeypatch.setattr(logos, "website_for", lambda tk: "")
+    monkeypatch.setattr(logos, "yahoo_profile", lambda tk: ("", "", True))
     monkeypatch.setattr(logos, "_get", lambda *a: pytest.fail("no download without a website"))
-    assert logos.fetch_logo("ETF_EQ") is False
+    assert logos.fetch_logo("ETF_EQ", "Unknown Fund") is False
     assert logos._load_index()["ETF_EQ"]["file"] is None
 
 
@@ -114,3 +114,34 @@ def test_private_addresses_are_refused(monkeypatch):
     assert logos._public_host("https://www.example.com/")
     with pytest.raises(ValueError):
         logos._get("https://intern.example/", 1000)
+
+
+def test_issuer_detection():
+    assert logos.issuer_site("iShares", "") == "https://www.ishares.com"
+    assert logos.issuer_site("", "Vanguard FTSE All-World UCITS ETF") == "https://www.vanguard.com"
+    assert logos.issuer_site("Xtrackers MSCI World", "") == "https://etf.dws.com"
+    assert logos.issuer_site("", "SPDR S&P 500") == "https://www.ssga.com"
+    assert logos.issuer_site("", "Apple Inc") == ""
+
+
+def test_funds_use_issuer_site_even_with_a_website():
+    assert logos.choose_site("X", "", ("https://fund.example", "iShares Core MSCI World", True)) == "https://www.ishares.com"
+    assert logos.choose_site("X", "Vanguard S&P 500", ("", "", False)) == "https://www.vanguard.com"
+    assert logos.choose_site("X", "Apple", ("https://www.apple.com", "Apple Inc.", False)) == "https://www.apple.com"
+
+
+def test_one_download_per_site(monkeypatch):
+    downloads = []
+    monkeypatch.setattr(logos, "yahoo_profile", lambda tk: ("", "iShares", True))
+    monkeypatch.setattr(logos, "_download_icon", lambda site: downloads.append(site) or _png())
+    assert logos.fetch_logo("IWDA_EQ", "iShares Core MSCI World") is True
+    assert logos.fetch_logo("EIMI_EQ", "iShares Core MSCI EM IMI") is True
+    assert downloads == ["https://www.ishares.com"]
+    assert logos.logo_uri("EIMI_EQ", "x") == logos.logo_uri("IWDA_EQ", "x")
+
+
+def test_old_misses_are_retried_immediately():
+    logos._save_entry("OLD_EQ", {"file": None, "ts": 10**12})
+    assert logos.needs_fetch("OLD_EQ", now=10**12 + 1)
+    logos._save_entry("NEW_EQ", {"file": None, "ts": 10**12, "v": logos.VERSION})
+    assert not logos.needs_fetch("NEW_EQ", now=10**12 + 1)

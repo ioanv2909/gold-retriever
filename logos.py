@@ -3,7 +3,10 @@
 Nu foloseste servicii terte de logo-uri: serverul descarca iconul direct de pe site-ul companiei
 (apple-touch-icon / icon / favicon.ico), il micsoreaza la 64x64 PNG si il pastreaza in data/logos/.
 Pagina citeste doar cache-ul; descarcarile ruleaza in fundal, deci tabelul nu asteapta reteaua.
-Fara logo (ETF-uri fara site, site-uri fara icon): insigna SVG cu initialele, generata local.
+ETF-urile primesc logo-ul emitentului (iShares, Vanguard, Xtrackers...), recunoscut din familia fondului
+data de Yahoo si din numele pozitiei; site-ul emitentului vine dintr-o lista fixa (ISSUERS).
+Un site se descarca o singura data (cheia "site:<domeniu>"), refolosit de toate pozitiile lui.
+Fara logo (site-uri fara icon, emitent necunoscut): insigna SVG cu initialele, generata local.
 """
 import base64
 import colorsys
@@ -31,6 +34,38 @@ MAX_PAGE_BYTES = 1_000_000
 MAX_ICON_BYTES = 400_000
 SIZE = 64
 UA = "Mozilla/5.0 (X11; Linux x86_64) GoldRetriever-logo-fetch"
+VERSION = 2   # intrarile fara logo din versiuni mai vechi se reincearca imediat
+
+# Emitenti de ETF/ETC: (tipar in familia fondului / nume, site oficial). Ordinea conteaza: primul tipar gasit.
+ISSUERS = [
+    (r"\bishares\b", "https://www.ishares.com"),
+    (r"\bvanguard\b", "https://www.vanguard.com"),
+    (r"\bx-?trackers\b|\bdws\b", "https://etf.dws.com"),
+    (r"\bspdr\b|\bstate street\b", "https://www.ssga.com"),
+    (r"\bamundi\b|\blyxor\b", "https://www.amundietf.com"),
+    (r"\binvesco\b|\bpowershares\b", "https://www.invesco.com"),
+    (r"\bwisdomtree\b", "https://www.wisdomtree.eu"),
+    (r"\bvaneck\b|\bmarket vectors\b", "https://www.vaneck.com"),
+    (r"\bglobal x\b", "https://www.globalxetfs.eu"),
+    (r"\bhsbc\b", "https://www.hsbc.com"),
+    (r"\bubs\b", "https://www.ubs.com"),
+    (r"\bj\.?p\.? ?morgan\b|\bjpm\b", "https://am.jpmorgan.com"),
+    (r"\bfranklin\b", "https://www.franklintempleton.com"),
+    (r"\bl&g\b|\blegal (?:&|and) general\b", "https://www.lgim.com"),
+    (r"\bfidelity\b", "https://www.fidelity.com"),
+    (r"\bfirst trust\b", "https://www.ftglobalportfolios.com"),
+    (r"\bgoldman sachs\b", "https://am.gs.com"),
+    (r"\bbnp paribas\b", "https://www.bnpparibas-am.com"),
+    (r"\bdeka\b", "https://www.deka.de"),
+    (r"\bhanetf\b", "https://www.hanetf.com"),
+    (r"\bossiam\b", "https://www.ossiam.com"),
+    (r"\btabula\b", "https://www.tabulaim.com"),
+    (r"\b21shares\b", "https://www.21shares.com"),
+    (r"\bcoinshares\b", "https://coinshares.com"),
+    (r"\bboost\b", "https://www.wisdomtree.eu"),
+    (r"\bschwab\b", "https://www.schwab.com"),
+    (r"\bark\b", "https://www.ark-funds.com"),
+]
 
 _lock = threading.Lock()
 _inflight: set[str] = set()
@@ -40,7 +75,7 @@ _index_cache = {"mtime": None, "data": {}}
 # ---------------------------------------------------------------- cache
 def _load_index():
     try:
-        mtime = os.path.getmtime(INDEX_FILE)
+        mtime = os.stat(INDEX_FILE).st_mtime_ns
     except OSError:
         return {}
     if _index_cache["mtime"] != mtime:
@@ -62,6 +97,8 @@ def _save_entry(key, entry):
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump(data, f)
         os.replace(tmp, INDEX_FILE)
+        # scrierile din aceeasi clipa pot avea acelasi mtime: cache-ul se actualizeaza direct
+        _index_cache.update(mtime=os.stat(INDEX_FILE).st_mtime_ns, data=data)
 
 
 def _file_name(key):
@@ -108,7 +145,18 @@ def needs_fetch(ticker, now=None):
         return True
     if entry.get("file"):
         return False
+    if int(entry.get("v") or 1) < VERSION:
+        return True
     return (now or time.time()) - float(entry.get("ts") or 0) > RETRY_MISS_S
+
+
+def issuer_site(*texts):
+    """Site-ul emitentului unui fond, dupa familia fondului / nume; "" daca nu e recunoscut."""
+    text = " ".join(str(t or "") for t in texts).lower()
+    for pattern, site in ISSUERS:
+        if re.search(pattern, text):
+            return site
+    return ""
 
 
 # ---------------------------------------------------------------- descarcare
@@ -202,7 +250,8 @@ def to_png(raw):
     return out.getvalue()
 
 
-def website_for(ticker):
+def yahoo_profile(ticker):
+    """(site, text despre fond, e_fond) de la Yahoo."""
     from yahoo import resolve_yahoo_symbol
     import yfinance as yf
     symbol = resolve_yahoo_symbol(ticker)
@@ -210,48 +259,75 @@ def website_for(ticker):
     site = (info.get("website") or "").strip()
     if site and not site.startswith(("http://", "https://")):
         site = "https://" + site
+    text = " ".join(str(info.get(k) or "") for k in ("fundFamily", "longName", "shortName"))
+    return site, text, info.get("quoteType") in ("ETF", "MUTUALFUND")
+
+
+def choose_site(ticker, name, profile):
+    """Fondurile (sau pozitiile fara site) primesc site-ul emitentului; restul, site-ul companiei."""
+    site, text, is_fund = profile
+    issuer = issuer_site(text, name)
+    if issuer and (is_fund or not site):
+        return issuer
     return site
 
 
-def fetch_logo(ticker):
+def _site_key(site):
+    return "site:" + (urlparse(site).hostname or site).lower().removeprefix("www.")
+
+
+def _download_icon(site):
+    try:
+        final_url, page, _ = _get(site, MAX_PAGE_BYTES)
+        candidates = icon_candidates(page.decode("utf-8", "replace"), final_url)
+    except Exception:  # noqa: BLE001 - site picat: macar /favicon.ico
+        candidates = [urljoin(site, "/favicon.ico")]
+    for url in candidates[:6]:
+        try:
+            _, raw, _ = _get(url, MAX_ICON_BYTES)
+        except Exception:  # noqa: BLE001
+            continue
+        png = to_png(raw)
+        if png:
+            return png
+    return None
+
+
+def fetch_logo(ticker, name=""):
     """Cauta logo-ul pozitiei si il salveaza in cache. Intoarce True daca a gasit unul."""
     key = str(ticker)
     try:
-        site = website_for(key)
-    except Exception:  # noqa: BLE001 - Yahoo indisponibil: reincercam mai tarziu
-        site = ""
-    found = None
-    if site:
-        try:
-            final_url, page, _ = _get(site, MAX_PAGE_BYTES)
-            candidates = icon_candidates(page.decode("utf-8", "replace"), final_url)
-        except Exception:  # noqa: BLE001 - site picat: macar /favicon.ico
-            candidates = [urljoin(site, "/favicon.ico")]
-        for url in candidates[:6]:
-            try:
-                _, raw, _ = _get(url, MAX_ICON_BYTES)
-            except Exception:  # noqa: BLE001
-                continue
-            png = to_png(raw)
-            if png:
-                found = png
-                break
-    if found:
-        name = _file_name(key)
+        profile = yahoo_profile(key)
+    except Exception:  # noqa: BLE001 - Yahoo indisponibil: macar emitentul dupa nume
+        profile = ("", "", False)
+    site = choose_site(key, name, profile)
+    now = time.time()
+    if not site:
+        _save_entry(key, {"file": None, "site": "", "ts": now, "v": VERSION})
+        return False
+    skey = _site_key(site)
+    cached = _load_index().get(skey)
+    if isinstance(cached, dict) and (cached.get("file") or now - float(cached.get("ts") or 0) < RETRY_MISS_S):
+        _save_entry(key, {"file": cached.get("file"), "site": site, "ts": now, "v": VERSION})
+        return bool(cached.get("file"))
+    png = _download_icon(site)
+    file_name = None
+    if png:
+        file_name = _file_name(skey)
         os.makedirs(LOGO_DIR, exist_ok=True)
-        with open(os.path.join(LOGO_DIR, name), "wb") as f:
-            f.write(found)
-        _save_entry(key, {"file": name, "site": site, "ts": time.time()})
-        return True
-    _save_entry(key, {"file": None, "site": site, "ts": time.time()})
-    return False
+        with open(os.path.join(LOGO_DIR, file_name), "wb") as f:
+            f.write(png)
+    _save_entry(skey, {"file": file_name, "site": site, "ts": now, "v": VERSION})
+    _save_entry(key, {"file": file_name, "site": site, "ts": now, "v": VERSION})
+    return bool(file_name)
 
 
-def _run(tickers):
+def _run(items):
+    tickers = [tk for tk, _ in items]
     try:
-        for tk in tickers:
+        for tk, name in items:
             try:
-                fetch_logo(tk)
+                fetch_logo(tk, name)
             finally:
                 with _lock:
                     _inflight.discard(tk)
@@ -260,14 +336,15 @@ def _run(tickers):
             _inflight.difference_update(tickers)
 
 
-def prefetch(tickers):
-    """Porneste in fundal descarcarea logo-urilor lipsa; nu blocheaza pagina."""
+def prefetch(items):
+    """Porneste in fundal descarcarea logo-urilor lipsa; nu blocheaza pagina. items: (ticker, nume) sau ticker."""
     todo = []
     with _lock:
-        for tk in dict.fromkeys(str(t) for t in tickers if t):
-            if tk not in _inflight and needs_fetch(tk):
+        pairs = [(str(i[0]), str(i[1] or "")) if isinstance(i, (tuple, list)) else (str(i), "") for i in items if i]
+        for tk, name in dict(pairs).items():
+            if tk and tk not in _inflight and needs_fetch(tk):
                 _inflight.add(tk)
-                todo.append(tk)
+                todo.append((tk, name))
     if todo:
         threading.Thread(target=joblog.wrap("logos", _run, skip_fast=True), args=(todo,), daemon=True).start()
     return todo

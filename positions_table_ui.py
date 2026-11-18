@@ -15,7 +15,7 @@ _COL_HELP_I18N = {"Scor div.": lambda: t("help.div_score"), "Țintă %": lambda:
 def render_positions_table(df, df_display, display_ccy, total_portfolio_value, compact):
     """df: toate pozitiile Trading 212 (pentru pagina de detaliu); df_display: randurile afisate (filtrate)."""
     _c = display_ccy
-    logos.prefetch(df_display["ticker"].tolist())
+    logos.prefetch(list(zip(df_display["ticker"], df_display["name"])))
     table_df = pd.DataFrame({
         "Logo": [logos.logo_uri(tk, nm) for tk, nm in zip(df_display["ticker"], df_display["name"])],
         "Nume": df_display["name"],
