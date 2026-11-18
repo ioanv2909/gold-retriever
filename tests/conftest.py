@@ -203,3 +203,13 @@ def _isolated_pace_target(tmp_path, monkeypatch):
     """Starea alertei de ritm lunar se scrie in data/users/<nume>/; in teste merge intr-un director temporar."""
     import pace_target
     monkeypatch.setattr(pace_target, "STATE_FILE", str(tmp_path / "pace_alert_state.json"))
+
+
+@pytest.fixture(autouse=True)
+def _isolated_logos(tmp_path, monkeypatch):
+    """Logo-urile se pastreaza in data/logos/; in teste merg intr-un director temporar, fara descarcari."""
+    import logos
+    monkeypatch.setattr(logos, "LOGO_DIR", str(tmp_path / "logos"))
+    monkeypatch.setattr(logos, "INDEX_FILE", str(tmp_path / "logos" / "index.json"))
+    monkeypatch.setattr(logos, "_index_cache", {"mtime": None, "data": {}})
+    monkeypatch.setattr(logos, "prefetch", lambda tickers: [])

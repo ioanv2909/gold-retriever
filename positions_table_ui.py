@@ -2,6 +2,7 @@
 import pandas as pd
 import streamlit as st
 
+import logos
 import privacy
 from core import RECOMMENDATION_LABELS
 from descriptions import COLUMN_HELP
@@ -14,7 +15,9 @@ _COL_HELP_I18N = {"Scor div.": lambda: t("help.div_score"), "Țintă %": lambda:
 def render_positions_table(df, df_display, display_ccy, total_portfolio_value, compact):
     """df: toate pozitiile Trading 212 (pentru pagina de detaliu); df_display: randurile afisate (filtrate)."""
     _c = display_ccy
+    logos.prefetch(df_display["ticker"].tolist())
     table_df = pd.DataFrame({
+        "Logo": [logos.logo_uri(tk, nm) for tk, nm in zip(df_display["ticker"], df_display["name"])],
         "Nume": df_display["name"],
         "Monedă": df_display["currencyCode"],
         "Cant.": pd.to_numeric(df_display["quantity"], errors="coerce"),
@@ -42,7 +45,7 @@ def render_positions_table(df, df_display, display_ccy, total_portfolio_value, c
     if privacy.hidden():
         table_df = table_df.drop(columns=["Cant.", f"Cost achiz. ({_c})", f"Val. curentă ({_c})", f"P/L ({_c})", f"Div. ({_c})"])
     if compact:
-        table_df = table_df[[c for c in ("Nume", f"Val. curentă ({_c})", f"P/L ({_c})", "Randament %") if c in table_df.columns]]
+        table_df = table_df[[c for c in ("Logo", "Nume", f"Val. curentă ({_c})", f"P/L ({_c})", "Randament %") if c in table_df.columns]]
 
     def colorize(value):
         if value is None or pd.isna(value):
@@ -95,7 +98,9 @@ def render_positions_table(df, df_display, display_ccy, total_portfolio_value, c
         styled_table,
         width="stretch",
         hide_index=True,
-        column_config={c: st.column_config.Column(col(c), help=_COL_HELP_I18N[c]() if c in _COL_HELP_I18N else COLUMN_HELP.get(c)) for c in table_df.columns},
+        column_config={c: (st.column_config.ImageColumn("", width="small") if c == "Logo" else
+                           st.column_config.Column(col(c), help=_COL_HELP_I18N[c]() if c in _COL_HELP_I18N else COLUMN_HELP.get(c)))
+                       for c in table_df.columns},
         on_select="rerun",
         selection_mode="single-row",
         key=f"positions_table_{st.session_state.get('table_nonce', 0)}",

@@ -1,0 +1,116 @@
+"""Logo-urile pozitiilor: cache local, insigna cu initiale, alegerea iconului, fara adrese private."""
+import base64
+import io
+import json
+import os
+import socket
+
+import pytest
+from PIL import Image
+
+import logos
+
+
+def _png(size=(128, 128), color=(200, 30, 30, 255)):
+    out = io.BytesIO()
+    Image.new("RGBA", size, color).save(out, "PNG")
+    return out.getvalue()
+
+
+def _ico():
+    out = io.BytesIO()
+    Image.new("RGBA", (48, 48), (0, 0, 255, 255)).save(out, "ICO", sizes=[(16, 16), (48, 48)])
+    return out.getvalue()
+
+
+def test_initials_and_badge_are_stable():
+    assert logos.initials("Apple Inc.", "AAPL_US_EQ") == "AP"
+    assert logos.initials("Vanguard FTSE All-World", "VWCEd_EQ") == "VF"
+    assert logos.initials("", "MSFT_US_EQ") == "MS"
+    a, b = logos.badge_uri("Apple", "AAPL"), logos.badge_uri("Apple", "AAPL")
+    assert a == b and a.startswith("data:image/svg+xml;base64,")
+    assert b"AP" in base64.b64decode(a.split(",", 1)[1])
+
+
+def test_badge_escapes_name():
+    svg = base64.b64decode(logos.badge_uri("<script>", "X").split(",", 1)[1])
+    assert b"<script>" not in svg
+
+
+def test_icon_candidates_prefer_large_touch_icons_and_skip_svg():
+    page = """<html><head>
+      <link rel="icon" href="/small.png" sizes="16x16">
+      <link rel="icon" type="image/svg+xml" href="/logo.svg">
+      <link rel="apple-touch-icon" href="/touch.png" sizes="180x180">
+      <link rel="shortcut icon" href="https://cdn.example.com/fav.ico">
+    </head></html>"""
+    urls = logos.icon_candidates(page, "https://www.example.com/home")
+    assert urls[0] == "https://www.example.com/touch.png"
+    assert "https://www.example.com/logo.svg" not in urls
+    assert urls[-1] == "https://www.example.com/favicon.ico"
+    assert len(urls) == len(set(urls))
+
+
+def test_to_png_handles_png_ico_and_garbage():
+    for raw in (_png(), _png((300, 100)), _ico()):
+        img = Image.open(io.BytesIO(logos.to_png(raw)))
+        assert img.size == (64, 64) and img.format == "PNG"
+    assert logos.to_png(b"not an image") is None
+    assert logos.to_png(_png((8, 8))) is None
+
+
+def test_logo_uri_uses_cache_and_falls_back_to_badge():
+    assert logos.logo_uri("AAPL_US_EQ", "Apple").startswith("data:image/svg+xml")
+    os.makedirs(logos.LOGO_DIR)
+    with open(os.path.join(logos.LOGO_DIR, "a.png"), "wb") as f:
+        f.write(_png())
+    with open(logos.INDEX_FILE, "w") as f:
+        json.dump({"AAPL_US_EQ": {"file": "a.png", "ts": 1}}, f)
+    assert logos.logo_uri("AAPL_US_EQ", "Apple").startswith("data:image/png;base64,")
+    assert not logos.needs_fetch("AAPL_US_EQ")
+
+
+def test_misses_are_retried_after_the_retry_period():
+    logos._save_entry("X_EQ", {"file": None, "ts": 1000.0})
+    assert not logos.needs_fetch("X_EQ", now=1000.0 + 60)
+    assert logos.needs_fetch("X_EQ", now=1000.0 + logos.RETRY_MISS_S + 1)
+    assert logos.needs_fetch("NEW_EQ")
+
+
+def test_fetch_logo_uses_company_site_only(monkeypatch):
+    calls = []
+    page = b'<link rel="apple-touch-icon" href="/touch.png">'
+
+    def fake_get(url, limit):
+        calls.append(url)
+        if url == "https://www.example.com":
+            return "https://www.example.com/", page, "text/html"
+        if url == "https://www.example.com/touch.png":
+            return url, _png(), "image/png"
+        raise ValueError("404")
+
+    monkeypatch.setattr(logos, "website_for", lambda tk: "https://www.example.com")
+    monkeypatch.setattr(logos, "_get", fake_get)
+    assert logos.fetch_logo("EX_US_EQ") is True
+    assert all(u.startswith("https://www.example.com") for u in calls)
+    assert logos.logo_uri("EX_US_EQ", "Example").startswith("data:image/png")
+
+
+def test_fetch_logo_without_website_records_a_miss(monkeypatch):
+    monkeypatch.setattr(logos, "website_for", lambda tk: "")
+    monkeypatch.setattr(logos, "_get", lambda *a: pytest.fail("no download without a website"))
+    assert logos.fetch_logo("ETF_EQ") is False
+    assert logos._load_index()["ETF_EQ"]["file"] is None
+
+
+def test_private_addresses_are_refused(monkeypatch):
+    def fake_getaddrinfo(host, port):
+        ip = {"intern.example": "192.168.1.10", "local.example": "127.0.0.1"}.get(host, "93.184.216.34")
+        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (ip, 0))]
+
+    monkeypatch.setattr(socket, "getaddrinfo", fake_getaddrinfo)
+    assert not logos._public_host("https://intern.example/")
+    assert not logos._public_host("http://local.example/x.png")
+    assert logos._public_host("https://www.example.com/")
+    with pytest.raises(ValueError):
+        logos._get("https://intern.example/", 1000)

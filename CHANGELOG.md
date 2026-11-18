@@ -1,3 +1,7 @@
+## 0.4.55 — 2026-11-18
+
+- Holdings table: each position shows its logo before the name (new `logos.py`). The server takes the company website from Yahoo and downloads its icon (apple-touch-icon / icon / favicon.ico) from that site only, no third-party logo service; icons are resized to 64x64 PNG and cached in `data/logos/` (positions without a logo are retried after 14 days). Downloads run in the background, so the table never waits for the network; until a logo is found, a coloured badge with the initials is shown. Private or local addresses are refused.
+
 ## 0.4.51 — 2026-11-07
 
 - Price and value charts (desktop): the vertical axis fits the visible data after each drag or zoom (script in the page, `chart_window.Y_AUTO_JS`); if it cannot run, the axis stays fixed over all loaded data.
