@@ -186,3 +186,13 @@ def test_falls_back_to_site_when_fmp_has_no_logo(monkeypatch):
     monkeypatch.setattr(logos, "_download_icon", lambda site: _png())
     assert logos.fetch_logo("XYZ_US_EQ", "XYZ") is True
     assert logos._load_index()["XYZ_US_EQ"]["source"] == "site"
+
+
+def test_issuer_parent_logo_when_issuer_site_blocks(monkeypatch):
+    asked = []
+    monkeypatch.setattr(logos, "yahoo_symbol", lambda tk: "8RMY.DE")
+    monkeypatch.setattr(logos, "yahoo_profile", lambda sym: ("", "WisdomTree", True))
+    monkeypatch.setattr(logos, "_download_icon", lambda site: None)
+    monkeypatch.setattr(logos, "fmp_logo", lambda sym: asked.append(sym) or (_png() if sym == "WT" else None))
+    assert logos.fetch_logo("8RMYd_EQ", "WisdomTree Europe Defence") is True
+    assert asked == ["8RMY.DE", "WT"]

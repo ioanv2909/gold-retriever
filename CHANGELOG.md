@@ -1,3 +1,7 @@
+## 0.4.58 — 2026-11-18
+
+- Position logos: when neither the fund symbol nor the issuer site gives a logo (e.g. WisdomTree funds outside London, the WisdomTree site blocks automatic downloads), funds use the logo of the listed parent company from the same database (`ISSUER_FMP` in `logos.py`: WisdomTree, BlackRock for iShares, State Street for SPDR, Invesco, Amundi, DWS and others).
+
 ## 0.4.57 — 2026-11-18
 
 - Position logos: the Financial Modeling Prep logo database (public, no account; looked up by the Yahoo symbol, once per symbol) is now the first source, which covers most European stocks and ETFs; the company website and, for funds, the issuer site remain the fallbacks, then the initials badge. All cached logos are redone once, which also replaces wrong website icons.

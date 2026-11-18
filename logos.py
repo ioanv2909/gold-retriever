@@ -70,6 +70,16 @@ ISSUERS = [
     (r"\bark\b", "https://www.ark-funds.com"),
 ]
 
+# Rezerva pentru fonduri cand nici simbolul fondului, nici site-ul emitentului nu dau logo:
+# logo-ul companiei-mama listate, din aceeasi baza FMP (site emitent -> simbol bursier).
+ISSUER_FMP = {
+    "https://www.ishares.com": "BLK", "https://www.ssga.com": "STT", "https://www.invesco.com": "IVZ",
+    "https://www.wisdomtree.eu": "WT", "https://www.amundietf.com": "AMUN.PA", "https://www.hsbc.com": "HSBA.L",
+    "https://www.ubs.com": "UBSG.SW", "https://am.jpmorgan.com": "JPM", "https://www.franklintempleton.com": "BEN",
+    "https://www.lgim.com": "LGEN.L", "https://am.gs.com": "GS", "https://www.bnpparibas-am.com": "BNP.PA",
+    "https://etf.dws.com": "DWS.DE", "https://www.schwab.com": "SCHW",
+}
+
 _lock = threading.Lock()
 _inflight: set[str] = set()
 _index_cache = {"mtime": None, "data": {}}
@@ -344,7 +354,7 @@ def fetch_logo(ticker, name=""):
             and (cached.get("file") or now - float(cached.get("ts") or 0) < RETRY_MISS_S)):
         _save_entry(key, {"file": cached.get("file"), "source": "site", "site": site, "symbol": symbol, "ts": now, "v": VERSION})
         return bool(cached.get("file"))
-    png = _download_icon(site)
+    png = _download_icon(site) or fmp_logo(ISSUER_FMP.get(site, ""))
     file_name = _store(skey, png) if png else None
     _save_entry(skey, {"file": file_name, "site": site, "ts": now, "v": VERSION})
     _save_entry(key, {"file": file_name, "source": "site", "site": site, "symbol": symbol, "ts": now, "v": VERSION})
