@@ -86,6 +86,40 @@ def render_pension_settings():
     if cfg["points"] or cfg["contrib_years"]:
         if st.button(t("pen.open_results"), key="pension_open_results"):
             _go(page="pension")
+    _p3_statement(cfg)
+
+
+def _p3_statement(cfg):
+    """Pilonul III din extrasul CSV al fondului (unitati + valoarea unitatii), cu actualizarea valorii unitatii."""
+    import pension_statement
+    st.markdown(f"**{t('pen.st_title')}**")
+    st.caption(t("pen.st_intro"))
+    up = st.file_uploader(t("pen.st_upload"), type=["csv"], key="p3_statement")
+    if up is not None:
+        try:
+            info = pension_statement.parse(up.getvalue())
+        except pension_statement.StatementError as e:
+            st.error(str(e))
+            info = None
+        if info:
+            st.markdown(t("pen.st_summary", units=f"{info['units']:,.6f}", vuan=f"{info['vuan']:.6f}", date=info["vuan_date"],
+                          value=_money(info["value"], "RON", 1.0), paid=_money(info["paid_in"], "RON", 1.0), n=info["count"],
+                          first=info["first_date"], monthly=_money(info["monthly_avg"], "RON", 1.0),
+                          xirr=f"{info['xirr']:.2f}%" if info["xirr"] is not None else "—"))
+            if st.button(t("pen.st_apply"), key="p3_statement_apply", type="primary"):
+                pension.save(dict(cfg, p3_units=info["units"], p3_vuan=info["vuan"], p3_balance=info["value"],
+                                  p3_monthly=round(info["monthly_avg"], 2)))
+                st.success(t("pen.saved"))
+                st.rerun()
+    if cfg["p3_units"]:
+        with st.form("p3_vuan_form"):
+            c1, c2 = st.columns([2, 3])
+            vuan = c1.number_input(t("pen.st_vuan"), 0.0, 1e6, float(cfg["p3_vuan"]), 0.000001, format="%.6f",
+                                   help=t("pen.st_vuan_help", units=f"{cfg['p3_units']:,.6f}"))
+            if st.form_submit_button(t("pen.st_vuan_save")):
+                pension.save(dict(cfg, p3_vuan=vuan, p3_balance=cfg["p3_units"] * vuan))
+                st.success(t("pen.saved"))
+                st.rerun()
 
 
 def render_pension_tab():

@@ -1,3 +1,7 @@
+## 0.4.75 — 2026-11-19
+
+- Settings → Pensions: **pillar III from the fund statement** — upload the “My contributions” CSV export (BT Pensii) to read units, unit value, balance, deposits, the monthly average and the money-weighted return, and apply them in one click; between statements, enter only the new unit value and the balance is recalculated. (The administrator's site blocks automatic downloads, so the unit value cannot be fetched by the app.)
+
 ## 0.4.74 — 2026-11-19
 
 - Investments: a **quick search** field above the tabs (name or ticker; **Ctrl+K** jumps to it) that opens the position page directly.

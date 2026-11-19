@@ -38,6 +38,8 @@ DEFAULTS = {
     "inv_return": -99.0,      # randament anual nominal %; -99 = randamentul de pana acum
     "inv_inflation": 2.5,     # inflatia anuala pentru valoarea in bani de azi
     "inv_ccy": "EUR",
+    "p3_units": 0.0,          # unitatile de fond din extras (0 = soldul se completeaza de mana)
+    "p3_vuan": 0.0,           # ultima valoare cunoscuta a unitatii
     "goal_amount": 0.0,       # obiectivul de avere (investitii + pilonii II/III), in inv_ccy, bani de azi; 0 = fara
     "goal_age": 60.0,
     "currency": "RON",
@@ -53,6 +55,7 @@ LIMITS = {
     "p2_upfront": (0, 30), "p2_years": (8, 40),
     "inv_monthly": (0, 1e7), "inv_return": (-99, 30), "inv_inflation": (0, 30),
     "goal_amount": (0, 1e10), "goal_age": (30, 80),
+    "p3_units": (0, 1e9), "p3_vuan": (0, 1e6),
 }
 CURRENCIES = ("RON", "EUR", "USD")
 EARLY_YEARS = 5
