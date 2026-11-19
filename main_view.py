@@ -93,11 +93,34 @@ def _render_header(me, compact, detail_loading):
                 dismiss_alert(a["ticker"], a["triggered_at"])
                 st.rerun()
 
+    if not detail_loading and _top_section() == "pension":
+        return "pension"
+
     if not detail_loading:
         _sum_t, _sum_eye = st.columns([5, 2], vertical_alignment="bottom")
         _sum_t.subheader(t("app.summary"))
         with _sum_eye:
             privacy.toggle_button("privacy_toggle")
+
+
+TOP_SECTIONS = ("portfolio", "pension")
+
+
+def _top_section():
+    """Sectiunile principale ale paginii (Portofoliu / Pensie); Pensie are adresa proprie ?page=pension."""
+    current = "pension" if st.query_params.get("page") == "pension" else "portfolio"
+    choice = st.segmented_control(
+        t("nav.section"), TOP_SECTIONS, default=current, key=f"top_section_{current}",
+        format_func=lambda k: t("nav.portfolio") if k == "portfolio" else t("tab.pension"),
+        label_visibility="collapsed")
+    if choice and choice != current:
+        st.query_params.pop("tab", None)
+        if choice == "pension":
+            st.query_params["page"] = "pension"
+        else:
+            st.query_params.pop("page", None)
+        st.rerun()
+    return current
 
 
 def _pick_portfolios(has_t212, account_currency, detail_loading):
@@ -254,12 +277,11 @@ def _render_tabs(df, df_display, vdf, display_ccy, total_portfolio_value, compac
     _tabs = url_tabs([e for e in [("positions", t("tab.positions")), ("strategies", t("tab.strategies")),
                                   ("exposure", t("tab.exposure")), ("compare", t("tab.compare")),
                                   ("calendar", t("tab.events")), ("journal", t("tab.journal")),
-                                  ("markets", t("tab.markets")), ("pension", t("tab.pension")),
-                                  ("watchlist", t("tab.watchlist"))]
+                                  ("markets", t("tab.markets")), ("watchlist", t("tab.watchlist"))]
                       if not (compact and e[0] in ("strategies", "exposure", "compare"))], "main_tab")
-    tab_pos, tab_st, tab_ex, tab_cmp, tab_ev, tab_jr, tab_mh, tab_pen, tab_wl = (
+    tab_pos, tab_st, tab_ex, tab_cmp, tab_ev, tab_jr, tab_mh, tab_wl = (
         _tabs.get(k) for k in ("positions", "strategies", "exposure", "compare", "calendar", "journal", "markets",
-                               "pension", "watchlist"))
+                               "watchlist"))
     with tab_pos:
         render_positions_table(df, df_display, display_ccy, total_portfolio_value, compact)
 
@@ -294,11 +316,6 @@ def _render_tabs(df, df_display, vdf, display_ccy, total_portfolio_value, compac
             from market_hours_ui import render_market_hours_tab
             render_market_hours_tab(vdf)
 
-    if tab_pen.open is not False:
-        with tab_pen:
-            from pension_ui import render_pension_tab
-            render_pension_tab()
-
     if not detail_loading:
         with tab_wl:
             render_watchlist_tab(vdf)
@@ -329,7 +346,10 @@ def render_main_view(me, api_key_id, api_secret):
     if st.session_state.pop("scroll_to_top_main", False):
         scroll_page_to_top()
     compact = mobile.compact()
-    _render_header(me, compact, detail_loading)
+    if _render_header(me, compact, detail_loading) == "pension":
+        from pension_ui import render_pension_tab
+        render_pension_tab()
+        return
 
     div_status = load_dividends_status()
     rat_status = load_ratings_status()

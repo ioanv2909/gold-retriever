@@ -13,6 +13,11 @@ VERSION = "0.2.0"
 REPO_URL = "https://github.com/ioanv2909/gold-retriever"
 
 
+
+def _tab_pension():
+    from pension_ui import render_pension_settings
+    render_pension_settings()
+
 def _L(ro, en):
     return ro if str(st.session_state.get("lang", "")).upper().startswith("RO") else en
 
@@ -159,6 +164,7 @@ def render_settings(me, sections=()):
     xtb = next((fn for i, _, fn in sections if i == "xtb"), None)
     entries = [("brokers", t("set.brokers"), lambda: _tab_brokers(xtb))]
     entries.append(("password", t("pwd.tab"), lambda: _tab_password(me)))
+    entries.append(("pension", t("set.pension"), _tab_pension))
     notify = {i: (label, fn) for i, label, fn in sections if i in NOTIFY_TABS}
     notify_entry = ("notifications", "📬 " + _L("Notificări", "Notifications"), lambda: _tab_notifications(me, notify))
     # Notificarile stau unde era prima lor sectiune; fara sectiuni (si fara admin) tabul lipseste

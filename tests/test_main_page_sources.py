@@ -124,3 +124,18 @@ def test_settings_log_tab_shows_the_disk_archive(tmp_path):
 def test_about_tab_shows_canis_major(tmp_path):
     out = _run(tmp_path, "xtb_only", detail="page=settings&tab=about")
     assert out["exception"] == []
+
+
+def test_pension_is_a_main_section_with_its_own_page(tmp_path):
+    main = _run(tmp_path, "t212_only")
+    assert any(any("Pensie" in o or "Pension" in o for o in p) for p in main["pills"])
+    assert not any("Pensie" in t or "Pension" in t for t in main["tabs"])  # nu mai e tab langa Pozitii
+    (tmp_path / "p").mkdir()
+    page = _run(tmp_path / "p", "t212_only", "page=pension")
+    assert not page["tabs"] and not page["rows"]  # fara tabelul de pozitii, doar rezultatele pensiei
+
+
+def test_pension_form_is_in_settings(tmp_path):
+    out = _run(tmp_path, "t212_only", "page=settings&tab=pension")
+    assert any("Pensii" in t or "Pensions" in t for t in out["tabs"])
+    assert any(k.startswith("FormSubmitter:pension_form") for k in out["keys"])

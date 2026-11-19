@@ -72,12 +72,32 @@ def _when(r):
     return lines
 
 
-def render_pension_tab():
+def _go(**params):
+    """Deschide alta pagina/alt tab prin parametrii din URL (Setari: ?page=settings&tab=pension)."""
+    st.query_params.clear()
+    st.query_params.update(params)
+    st.rerun()
+
+
+def render_pension_settings():
+    """Setari -> Pensii: datele pentru proiectie (rezultatele sunt in tabul Pensie de pe pagina principala)."""
     st.caption(t("pen.intro"))
     cfg = _form(pension.load())
+    if cfg["points"] or cfg["contrib_years"]:
+        if st.button(t("pen.open_results"), key="pension_open_results"):
+            _go(page="pension")
+
+
+def render_pension_tab():
+    """Tabul Pensie de pe pagina principala: doar rezultatele; datele se completeaza in Setari -> Pensii."""
+    cfg = pension.load()
     if not cfg["points"] and not cfg["contrib_years"]:
         notice.card(t("pen.empty"), icon="ℹ️")
+        if st.button(t("pen.open_settings"), key="pension_open_settings_empty", type="primary"):
+            _go(page="settings", tab="pension")
         return
+    if st.button(t("pen.open_settings"), key="pension_open_settings"):
+        _go(page="settings", tab="pension")
     ccy = st.radio(t("pen.currency"), pension.CURRENCIES, index=pension.CURRENCIES.index(cfg["currency"]),
                    horizontal=True, key="pension_ccy")
     if ccy != cfg["currency"]:

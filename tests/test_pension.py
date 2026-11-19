@@ -89,3 +89,21 @@ def test_timeline_matches_the_chosen_age():
     assert std["penalty"] == 0 and std["allowed"]
     assert any(x["age"] == 60 for x in r["timeline"])  # earliest early-retirement age is listed
     assert not next(x for x in r["timeline"] if x["age"] == 55)["allowed"]
+
+
+def test_settings_has_the_pension_form_and_the_tab_only_results():
+    import inspect
+    import pension_ui
+    import settings_page
+    assert "render_pension_settings" in inspect.getsource(settings_page)
+    tab_src = inspect.getsource(pension_ui.render_pension_tab)
+    assert "_form(" not in tab_src and "pension.load()" in tab_src
+    assert "_form(" in inspect.getsource(pension_ui.render_pension_settings)
+
+
+def test_pension_is_a_top_section_not_a_portfolio_tab():
+    import inspect
+    import main_view
+    tabs_src = inspect.getsource(main_view._render_tabs)
+    assert "pension" not in tabs_src
+    assert "pension" in main_view.TOP_SECTIONS and "segmented_control" in inspect.getsource(main_view._top_section)

@@ -1,3 +1,7 @@
+## 0.4.65 — 2026-11-19
+
+- Pension: the data form moved to **Settings → 🏖️ Pensions**; the results are a main section of the page: a **📊 Portfolio | 🏖️ Pension** switch under the top bar (Pension has its own address, ?page=pension), no longer a tab next to Positions; buttons lead from the results to the settings and back.
+
 ## 0.4.64 — 2026-11-19
 
 - Pension tab: the table now shows the pension you would get if you retired at each age, with the early-retirement reduction before the standard age (new Reduction column, "not possible" when it is too early), the earliest and the chosen age (▶) included, so it matches the figures above.
