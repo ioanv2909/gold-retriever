@@ -19,6 +19,7 @@ import json
 import time
 import threading
 import joblog
+import logos
 import pace_target
 import users as users_mod
 import tempfile
@@ -392,6 +393,16 @@ def xtb_tickers():
     return [i["ticker"] for i in xtb_instruments() if i.get("ticker")]
 
 
+LOGO_PREFETCH_INTERVAL = 3600  # doar pozitiile fara logo sunt cautate, deci un tur pe ora e ieftin
+
+
+def prefetch_logos(snap, all_tickers):
+    """Logo-urile pozitiilor, descarcate in fundal inainte ca cineva sa deschida pagina (cache comun data/logos/)."""
+    names = {i.get("ticker"): i.get("name") for i in ((snap or {}).get("instruments") or []) if i.get("ticker")}
+    names.update({i["ticker"]: i.get("name") for i in xtb_instruments() if i.get("ticker")})
+    return logos.prefetch([(t, names.get(t) or "") for t in all_tickers])
+
+
 def _iso_with_timezone(value):
     if not value:
         return None
@@ -446,7 +457,7 @@ def _start_scheduler(user=None):
     def run_loop():
         last_core = last_div = last_rat = last_q = last_m = last_w = last_j = last_x = last_h = 0.0
         last_hc = last_ev = last_evn = last_pa = last_ex = last_st = last_sym = last_wp = last_wr = 0.0
-        last_pace = 0.0
+        last_pace = last_logo = 0.0
         while True:
             if user and not users_mod.exists(user):
                 # contul a fost sters sau redenumit: fara ciclu orfan care sa scrie in data/users/<vechiul nume>/
@@ -513,6 +524,13 @@ def _start_scheduler(user=None):
             if (time.time() - last_w) >= WATCHLIST_REFRESH_INTERVAL:
                 if start_watchlist_refresh_background():
                     last_w = time.time()
+
+            if all_tickers and (time.time() - last_logo) >= LOGO_PREFETCH_INTERVAL:
+                try:
+                    prefetch_logos(snap, all_tickers)
+                except Exception as e:
+                    print(f"[logos] prefetch: {e}", flush=True)
+                last_logo = time.time()
 
             if all_tickers and (time.time() - last_ev) >= 3600:
                 # tickerele deja proaspete sunt sarite, deci un tur pe ora e ieftin

@@ -1,3 +1,7 @@
+## 0.4.61 — 2026-11-19
+
+- Position logos are downloaded in the background for every user's positions (hourly, only the missing ones), so they are ready before the page is opened, also for accounts that have not been opened since a new position appeared.
+
 ## 0.4.60 — 2026-11-18
 
 - Position page: the position logo is shown large (64 px) next to the name in the page title, instead of the magnifier icon.

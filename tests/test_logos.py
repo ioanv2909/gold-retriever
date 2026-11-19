@@ -206,3 +206,13 @@ def test_position_page_shows_the_logo():
     src = open(os.path.join(os.path.dirname(logos.__file__), "detail_view.py"), encoding="utf-8").read()
     assert "logos.logo_uri(ticker, name)" in src and 'width="64"' in src
     assert "_html.escape(str(name))" in src
+
+
+def test_background_prefetch_passes_names_for_all_tickers(monkeypatch):
+    import background
+    calls = []
+    monkeypatch.setattr(background.logos, "prefetch", lambda items: calls.append(list(items)) or [])
+    monkeypatch.setattr(background, "xtb_instruments", lambda: [{"ticker": "SAP.DE", "name": "SAP SE"}])
+    snap = {"instruments": [{"ticker": "AAPL_US_EQ", "name": "Apple"}]}
+    background.prefetch_logos(snap, ["AAPL_US_EQ", "SAP.DE", "X_EQ"])
+    assert calls == [[("AAPL_US_EQ", "Apple"), ("SAP.DE", "SAP SE"), ("X_EQ", "")]]
