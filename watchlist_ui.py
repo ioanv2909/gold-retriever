@@ -123,11 +123,11 @@ def render_watchlist_tab(vdf=None):
         for raw, row in zip(watchlist_rows, watchlist_df.to_dict("records")):
             sym = raw["Simbol"]
             name = raw["Nume"] if raw["Nume"] != "n/a" else sym
-            cells = {c: ("{:,.2f}".format(v) if isinstance(v, float) else v) for c, v in row.items()}
+            cells = {c: ({"text": "{:,.2f}".format(v), "sort": v} if isinstance(v, float) else v) for c, v in row.items()}
             cells["_logo"] = {"img": logos.logo_uri(sym, name), "img_title": sym}
             cells[name_col] = {"text": name, "title": sym, "href": html_table.detail_href(sym)}
             out.append(cells)
-        html_table.render(cols, out)
+        html_table.render(cols, out, tid="watchlist")
         st.caption(t("wl.table_hint"))
 
         wl_remove_col, wl_delete_col, wl_refresh_col = st.columns([3, 1, 1])

@@ -343,14 +343,16 @@ def render_strategies_tab(vdf):
     for r in rows:
         row = {"logo": {"img": logos.logo_uri(r["ticker"], r["name"]), "img_title": r["ticker"]},
                "name": {"text": r["name"] or r["ticker"], "title": r["ticker"], "href": html_table.detail_href(r["ticker"])},
-               "ddm_margin": "{:+.0f}%".format(r["ddm_margin"]) if r["ddm_margin"] is not None else "—",
+               "ddm_margin": {"text": "{:+.0f}%".format(r["ddm_margin"]) if r["ddm_margin"] is not None else "—",
+                              "sort": r["ddm_margin"] if r["ddm_margin"] is not None else ""},
                "conv": r["conv"], "note": r["note"]}
         for lens in strategies.LENSES:
             v = r[lens]
             style = _shade(v) if lens in inside else "color: #8a8a8a"
-            row[lens] = {"text": "{:.0f}/100".format(v) if v is not None else "—", "style": style}
+            row[lens] = {"text": "{:.0f}/100".format(v) if v is not None else "—", "style": style,
+                         "sort": v if v is not None else ""}
         out.append(row)
-    html_table.render(cols, out)
+    html_table.render(cols, out, tid="strategies")
     st.caption(t("st.table_hint"))
     st.caption(t("st.scale"))
     if outside:

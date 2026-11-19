@@ -1,3 +1,7 @@
+## 0.4.79 — 2026-11-19
+
+- Strategies, Calendar and Watchlist tables: **sorting** again — click a column title (▲/▼; numbers, scores and dates sort as values) — and a **⚙ Columns** button to hide or show columns. Both are remembered in the browser for each table.
+
 ## 0.4.78 — 2026-11-19
 
 - Release notes: the changes of 0.4.77 are listed under one version.

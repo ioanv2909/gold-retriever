@@ -54,14 +54,15 @@ def render_calendar_tab(names):
             name = names.get(ev["ticker"]) or ev["ticker"]
             when = _short_date(ev["date"], year) + ("–" + _short_date(ev["date_end"], year) if ev.get("date_end") else "")
             out.append({
-                "date": {"text": when, "title": ev["date"] + (" – " + ev["date_end"] if ev.get("date_end") else "")},
+                "date": {"text": when, "title": ev["date"] + (" – " + ev["date_end"] if ev.get("date_end") else ""),
+                         "sort": ev["date"]},
                 "days": ev["days"],
                 "logo": {"img": logos.logo_uri(ev["ticker"], name), "img_title": ev["ticker"]},
                 "name": {"text": name, "title": ev["ticker"], "href": html_table.detail_href(ev["ticker"])},
                 "type": {"text": ICONS.get(ev["type"], "•") + " " + t("ev.type." + ev["type"]), "title": t("ev.desc." + ev["type"])},
                 "detail": t("ev.eps_est", v="%.2f" % ev["eps_avg"]) if ev.get("eps_avg") is not None else "",
             })
-        html_table.render(cols, out)
+        html_table.render(cols, out, tid="calendar")
     with st.expander(t("ev.legend")):
         for k in events.TYPES:
             st.markdown(f"{ICONS.get(k, '•')} **{t('ev.type.' + k)}** — {t('ev.desc.' + k)}")
