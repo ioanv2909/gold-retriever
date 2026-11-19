@@ -1,3 +1,7 @@
+## 0.4.63 — 2026-11-19
+
+- Pension tab: **when you can retire** (date of the standard age and the earliest early-retirement date, or why it is not possible), a field for the age you want to retire at with the **early-retirement reduction** (law 360/2023 table: 0.40%–0.20% a month of anticipation), the full contribution period, **net values** (10% health contribution and 10% tax above 3,000 lei a month) next to the gross ones, the stability points shown in the explanation, and a **RON / EUR / USD** selector (today's rate).
+
 ## 0.4.62 — 2026-11-19
 
 - New **🏖️ Pension** tab: enter the points accumulated so far (from the pension office decision), contribution years, points per year from now on, birth date, retirement age and the point value (VPR); optionally pillar II and III balances and contributions. It shows, in today's money: points and monthly pension at retirement (with the stability points of law 360/2023), the pension for today's points, the pension as wealth (at retirement and today) and pillars II and III at retirement, plus the points/pension every five years. Per user.
