@@ -129,6 +129,36 @@ def _ym(cfg, age):
     return idx // 12, idx % 12 + 1
 
 
+def scenarios(cfg, stop_ages=(55, 60, 65), today=None):
+    """Ce pensie primesti daca te opresti din munca acum sau la varstele date (cu acelasi salariu pana atunci).
+    Pensia poate incepe cel mai devreme cu 5 ani inainte de varsta standard, si doar daca stagiul complet e atins
+    pana la oprire; altfel abia la varsta standard. Punctele raman cele adunate pana la oprire."""
+    cfg = clean(cfg)
+    today = today or date.today()
+    age_now = (today.year * 12 + today.month - 1 - (cfg["birth_year"] * 12 + cfg["birth_month"] - 1)) / 12
+    std = cfg["retire_age"]
+    rows = []
+    for stop in [None] + [a for a in stop_ages if a > age_now]:
+        stop_age = age_now if stop is None else float(stop)
+        worked = max(0.0, stop_age - age_now)
+        contrib = cfg["contrib_years"] + worked
+        pts = (cfg["points"] + cfg["points_per_year"] * worked
+               + stability_points(contrib) - stability_points(cfg["contrib_years"]))
+        full = contrib >= cfg["full_stage"] - 1e-9
+        earliest = max(stop_age, std - EARLY_YEARS) if full else max(stop_age, std)
+        earliest = max(earliest, age_now)
+        months_early = max(0, round((std - earliest) * 12))
+        cut = min(1.0, months_early * early_rate(contrib - cfg["full_stage"]) / 100) if months_early else 0.0
+        at_std = max(std, stop_age)
+        rows.append({
+            "stop_age": None if stop is None else stop_age, "contrib_years": contrib, "points": pts,
+            "full_stage": full, "earliest_age": earliest, "earliest_date": _ym(cfg, earliest), "penalty": cut,
+            "net_earliest": net_pension(pts * cfg["vpr"] * (1 - cut))["net"],
+            "std_age": at_std, "std_date": _ym(cfg, at_std), "net_std": net_pension(pts * cfg["vpr"])["net"],
+        })
+    return rows
+
+
 def project(cfg, today=None):
     """Proiectia la varsta la care vrei sa iesi la pensie, in bani de azi."""
     cfg = clean(cfg)

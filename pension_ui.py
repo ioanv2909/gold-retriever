@@ -109,6 +109,7 @@ def render_pension_tab():
     r = pension.project(cfg)
     tab1, tab2, tab3 = st.tabs([t("pen.tab_p1"), t("pen.tab_p2"), t("pen.tab_p3")])
     with tab1:
+        _scenarios(cfg, ccy, rate)
         _pillar1(r, ccy, rate)
     with tab2:
         _private(cfg, r, "p2", ccy, rate)
@@ -130,6 +131,29 @@ def _private(cfg, r, key, ccy, rate):
     c3.metric(t("pen.m_return"), f"{ret:g}%")
     c4.metric(t("pen.m_at_retire"), _money(at_retire, ccy, rate),
               help=t("pen.m_at_retire_help", date=_ym(r["out_date"]), gain=_money(at_retire - paid_in, ccy, rate)))
+
+
+def _scenarios(cfg, ccy, rate):
+    """Scenariile: punctele de pana azi si continuarea cu acelasi salariu pana la 55 / 60 / 65 de ani."""
+    rows = pension.scenarios(cfg)
+    st.subheader(t("pen.sc_title"))
+    st.caption(t("pen.sc_intro", ppy=f"{cfg['points_per_year']:g}"))
+    out = []
+    for x in rows:
+        early = x["earliest_age"] < x["std_age"] - 1e-9
+        out.append({
+            t("pen.sc_col_stop"): t("pen.sc_now") if x["stop_age"] is None else t("pen.sc_until", age=f"{x['stop_age']:g}"),
+            t("pen.sc_col_contrib"): f"{x['contrib_years']:.1f}",
+            t("pen.sc_col_points"): f"{x['points']:.2f}",
+            t("pen.sc_col_earliest"): (f"{x['earliest_age']:.1f} ({_ym(x['earliest_date'])})" if early else "—"),
+            t("pen.sc_col_net_early"): (f"{_money(x['net_earliest'], ccy, rate)} (−{x['penalty'] * 100:.0f}%)" if early else "—"),
+            t("pen.sc_col_std"): f"{x['std_age']:g} ({_ym(x['std_date'])})",
+            t("pen.sc_col_net_std"): _money(x["net_std"], ccy, rate),
+        })
+    st.dataframe(pd.DataFrame(out), hide_index=True, width="content")
+    first = rows[0]
+    if not first["full_stage"]:
+        st.caption(t("pen.sc_note_full", years=f"{cfg['full_stage']:g}"))
 
 
 def _pillar1(r, ccy, rate):

@@ -116,3 +116,18 @@ def test_pension_page_has_a_tab_per_pillar():
     src = inspect.getsource(pension_ui.render_pension_tab)
     assert "pen.tab_p1" in src and "pen.tab_p2" in src and "pen.tab_p3" in src
     assert "pen.total" not in inspect.getsource(pension_ui)  # pensia de stat nu se aduna cu banii reali
+
+
+def test_scenarios_stop_now_and_keep_working():
+    cfg = dict(BASE, points=80.0, contrib_years=24.0, points_per_year=3.0, birth_year=1979, birth_month=3)
+    rows = pension.scenarios(cfg, today=date(2026, 11, 1))
+    now, at55, at60, at65 = rows
+    # stop now: 24 years < 35 -> no early retirement, pension at 65 with today's points
+    assert now["stop_age"] is None and not now["full_stage"] and now["earliest_age"] == pytest.approx(65)
+    assert now["net_std"] == pytest.approx(pension.net_pension(80.0 * 81)["net"])
+    # until 55: ~32 years < 35 -> still only at 65
+    assert at55["stop_age"] == 55 and not at55["full_stage"] and at55["earliest_age"] == pytest.approx(65)
+    # until 60: ~37 years >= 35 -> can start at 60 with a reduction
+    assert at60["full_stage"] and at60["earliest_age"] == pytest.approx(60) and at60["penalty"] > 0
+    assert at60["net_earliest"] < at60["net_std"]
+    assert at65["penalty"] == 0 and at65["net_std"] > at60["net_std"]

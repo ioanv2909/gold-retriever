@@ -1,3 +1,7 @@
+## 0.4.67 — 2026-11-19
+
+- Pension, pillar I: a **scenarios** table — the pension from the points earned so far if you stop working now, and if you keep the same salary until 55, 60 or 65: contribution years, points, the earliest (early) start with its reduction and the net pension, and the net pension at the standard age.
+
 ## 0.4.66 — 2026-11-19
 
 - Main sections are now **📋 Summary | 📊 Investments | 🏖️ Pension**. Summary shows today's wealth (stock market investments of all portfolios + pillar II and III balances, real money only) and, separately, the net state pension and the pillars at retirement. Pension has a tab per pillar (I state, II, III); the state pension is no longer added to the pillars as one total. Investments (the portfolio) is still the start page.
