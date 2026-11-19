@@ -109,8 +109,12 @@ def render_pension_tab():
     st.markdown(t("pen.total", total=_money(total, ccy, rate)))
     if r["timeline"]:
         st.markdown(f"**{t('pen.timeline')}**")
-        df = pd.DataFrame([{t("pen.col_age"): x["age"], t("pen.col_year"): x["year"],
-                            t("pen.col_points"): round(x["points"], 2), t("pen.col_gross"): _money(x["gross"], ccy, rate),
-                            t("pen.col_net"): _money(x["net"], ccy, rate)} for x in r["timeline"]])
+        no = t("pen.not_allowed")
+        df = pd.DataFrame([{t("pen.col_age"): (f"▶ {x['age']:g}" if x["chosen"] else f"{x['age']:g}"),
+                            t("pen.col_year"): _ym(x["date"]),
+                            t("pen.col_points"): round(x["points"], 2),
+                            t("pen.col_penalty"): (no if not x["allowed"] else (f"−{x['penalty'] * 100:.1f}%" if x["penalty"] else "—")),
+                            t("pen.col_gross"): _money(x["gross"], ccy, rate) if x["allowed"] else no,
+                            t("pen.col_net"): _money(x["net"], ccy, rate) if x["allowed"] else no} for x in r["timeline"]])
         st.dataframe(df, hide_index=True, width="content")
     notice.card(t("pen.assumptions"), icon="ℹ️")

@@ -79,3 +79,13 @@ def test_clean_limits_currency_and_save_roundtrip():
     assert "unknown" not in cfg and cfg["currency"] == "RON"
     pension.save({"points": 25.5, "contrib_years": 18, "currency": "EUR"})
     assert pension.load()["points"] == pytest.approx(25.5) and pension.load()["currency"] == "EUR"
+
+
+def test_timeline_matches_the_chosen_age():
+    r = pension.project(dict(BASE, planned_age=62), today=date(2025, 1, 1))
+    row = next(x for x in r["timeline"] if x["chosen"])
+    assert row["age"] == 62 and row["gross"] == pytest.approx(r["gross_at_retire"]) and row["net"] == pytest.approx(r["pension_at_retire"])
+    std = next(x for x in r["timeline"] if x["age"] == 65)
+    assert std["penalty"] == 0 and std["allowed"]
+    assert any(x["age"] == 60 for x in r["timeline"])  # earliest early-retirement age is listed
+    assert not next(x for x in r["timeline"] if x["age"] == 55)["allowed"]

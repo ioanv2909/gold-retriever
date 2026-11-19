@@ -167,13 +167,21 @@ def project(cfg, today=None):
     wealth_at_retire = annuity_value(taxed["net"], cfg["real_return"], payout_months)
     wealth_today = wealth_at_retire / (1 + _monthly_rate(cfg["real_return"])) ** months_left
     now_taxed = net_pension(cfg["points"] * cfg["vpr"])
+    # pensia daca iesi la fiecare varsta: din 5 in 5 ani, plus varsta standard, cea mai devreme si cea aleasa
+    last = max(std, age_out)
+    ages = {a for a in range(int(age_now) + 1, int(last) + 1) if (int(last) - a) % 5 == 0}
+    ages |= {std, age_out} | ({earliest} if early_possible else set())
     timeline = []
-    for age in range(int(age_now) + 1, int(max(std, age_out)) + 1):
-        if (int(max(std, age_out)) - age) % 5:
-            continue
+    for age in sorted(a for a in ages if a > age_now - 1e-9):
         pts = points_at(age)
-        timeline.append({"age": age, "year": _ym(cfg, age)[0], "points": pts,
-                         "gross": pts * cfg["vpr"], "net": net_pension(pts * cfg["vpr"])["net"]})
+        allowed = age >= std - 1e-9 or (early_possible and age >= earliest - 1e-9)
+        early_m = max(0, round((std - age) * 12))
+        cut = min(1.0, early_m * early_rate(contrib_at(age) - cfg["full_stage"]) / 100) if early_m else 0.0
+        g = pts * cfg["vpr"] * (1 - cut)
+        timeline.append({"age": age, "year": _ym(cfg, age)[0], "date": _ym(cfg, age), "points": pts,
+                         "allowed": allowed, "penalty": cut if allowed else None,
+                         "gross": g if allowed else None, "net": net_pension(g)["net"] if allowed else None,
+                         "chosen": abs(age - age_out) < 1e-9})
     return {
         "age_now": age_now, "standard_age": std, "standard_date": _ym(cfg, std),
         "early_possible": early_possible, "earliest_age": earliest if early_possible else None,

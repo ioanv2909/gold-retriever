@@ -1,3 +1,7 @@
+## 0.4.64 — 2026-11-19
+
+- Pension tab: the table now shows the pension you would get if you retired at each age, with the early-retirement reduction before the standard age (new Reduction column, "not possible" when it is too early), the earliest and the chosen age (▶) included, so it matches the figures above.
+
 ## 0.4.63 — 2026-11-19
 
 - Pension tab: **when you can retire** (date of the standard age and the earliest early-retirement date, or why it is not possible), a field for the age you want to retire at with the **early-retirement reduction** (law 360/2023 table: 0.40%–0.20% a month of anticipation), the full contribution period, **net values** (10% health contribution and 10% tax above 3,000 lei a month) next to the gross ones, the stability points shown in the explanation, and a **RON / EUR / USD** selector (today's rate).
