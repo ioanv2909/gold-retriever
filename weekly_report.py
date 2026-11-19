@@ -10,7 +10,7 @@ from userctx import UPath
 
 PREFS_FILE = UPath("weekly_report.json")
 STATE_FILE = UPath("weekly_report_state.json")
-DEFAULT_PREFS = {"enabled": False, "weekday": 5, "hour": 9}  # sambata, dupa ora 09:00
+DEFAULT_PREFS = {"enabled": False, "weekday": 5, "hour": 9, "monthly": True}  # sambata, dupa ora 09:00; rezumat lunar
 TOP = 3
 
 
@@ -22,8 +22,9 @@ def load_prefs():
     return prefs
 
 
-def save_prefs(enabled, weekday, hour):
-    prefs = {"enabled": bool(enabled), "weekday": int(weekday) % 7, "hour": max(0, min(23, int(hour)))}
+def save_prefs(enabled, weekday, hour, monthly=True):
+    prefs = {"enabled": bool(enabled), "weekday": int(weekday) % 7, "hour": max(0, min(23, int(hour))),
+             "monthly": bool(monthly)}
     save_json_file(PREFS_FILE, prefs)
     return prefs
 
@@ -134,7 +135,59 @@ def dividends_since_last(state):
     return sum(max(0.0, v - float(prev.get(t, 0.0))) for t, v in totals.items()), totals
 
 
-def build(lang="RO", today=None, now=None, changes_fn=None, state=None):
+def month_key(day):
+    return "%d-%02d" % (day.year, day.month)
+
+
+def monthly_lines(lang="RO"):
+    """Rezumatul lunar (primul raport din luna): averea de azi, pensiile estimate si obiectivul de avere."""
+    from i18n import t
+    import pension
+    L = lambda key, **kw: t(key, _lang=lang, **kw)  # noqa: E731
+    cfg = pension.load()
+    ccy = cfg["currency"]
+    from portfolio_model import fx
+    rate = fx("RON", ccy) if ccy != "RON" else 1.0
+    money = lambda v: f"{v:,.0f} {ccy}"  # noqa: E731
+    lines = ["", L("wr.month_title")]
+    p = None
+    try:
+        import summary_ui
+        p = summary_ui.projection_inputs(cfg, ccy)
+    except Exception:  # fara date de la brokeri rezumatul ramane doar cu pensiile
+        p = None
+    pillars = (cfg["p2_balance"] + cfg["p3_balance"]) * rate
+    if p:
+        lines.append(L("wr.month_wealth", inv=money(p["value"]), pillars=money(pillars), total=money(p["value"] + pillars)))
+    elif pillars:
+        lines.append(L("wr.month_pillars", pillars=money(pillars)))
+    if cfg["points"] or cfg["contrib_years"]:
+        r = pension.project(cfg)
+        lines.append(L("wr.month_pension", age=f"{r['age_out']:g}", date="%02d.%d" % (r["out_date"][1], r["out_date"][0]),
+                       state=money(r["pension_at_retire"] * rate), pillars=money((r["p2_at_retire"] + r["p3_at_retire"]) * rate)))
+        if p:
+            at = [x for x in pension.invest_by_age(cfg, p["now"], p["monthly"], p["ret"], cfg["inv_inflation"], ages=(r["age_out"],))
+                  if abs(x["age"] - r["age_out"]) < 1e-9]
+            if at:
+                lines.append(L("wr.month_invest", value=money(at[0]["real"]), income=money(at[0]["real"] * 0.04 / 12)))
+    if p and cfg["goal_amount"]:
+        from datetime import datetime as _dt
+        now = _dt.now()
+        age_now = (now.year * 12 + now.month - 1 - (cfg["birth_year"] * 12 + cfg["birth_month"] - 1)) / 12
+        months = round((cfg["goal_age"] - age_now) * 12)
+        if months > 0:
+            real = pension.real_return(p["ret"], cfg["inv_inflation"])
+            pil = (pension.future_value(cfg["p2_balance"], cfg["p2_monthly"], cfg["p2_return"], months)
+                   + pension.future_value(cfg["p3_balance"], cfg["p3_monthly"], cfg["p3_return"], months)) * rate
+            goal = cfg["goal_amount"] * p["inv_rate"]
+            need = pension.required_monthly(goal - pil, p["now"], real, months) or 0
+            lines.append(L("wr.month_goal_ok" if p["monthly"] >= need - 1e-6 else "wr.month_goal_short",
+                           goal=money(goal), age=f"{cfg['goal_age']:g}", need=money(need), monthly=money(p["monthly"])))
+    lines.append(L("wr.month_note"))
+    return lines if len(lines) > 3 else []
+
+
+def build(lang="RO", today=None, now=None, changes_fn=None, state=None, monthly=None):
     """Textul raportului: (subiect, corp, totalurile de dividende de salvat)."""
     import events
     from i18n import t
@@ -174,6 +227,14 @@ def build(lang="RO", today=None, now=None, changes_fn=None, state=None):
         when = ev["date"] + (" - " + ev["date_end"] if ev.get("date_end") else "")
         lines.append("  %s  %s: %s" % (when, held.get(ev["ticker"]) or ev["ticker"], t("ev.type." + ev["type"], _lang=lang)))
 
+    if monthly is None:
+        monthly = load_prefs().get("monthly", True) and state.get("last_month") != month_key(today)
+    if monthly:
+        try:
+            lines += monthly_lines(lang)
+        except Exception as e:  # rezumatul lunar nu trebuie sa opreasca raportul saptamanal
+            lines += ["", "[%s]" % e]
+
     subject = L("wr.mail_subject", d=today.strftime("%d.%m.%Y"))
     return subject, "\n".join(lines), totals
 
@@ -197,7 +258,9 @@ def send(user, now=None, mark=True, changes_fn=None):
     ok = notify.notify("weekly", subject, body, to=[email], sync=True,
                        key="weekly:%s:%s:%s" % (user, week_key(now.date()), "auto" if mark else time.time()), min_hours=0)
     if ok and mark:
-        save_json_file(STATE_FILE, {"last_week": week_key(now.date()), "sent_at": now.isoformat(), "div_totals": totals})
+        save_json_file(STATE_FILE, {"last_week": week_key(now.date()), "sent_at": now.isoformat(), "div_totals": totals,
+                                    "last_month": month_key(now.date()) if load_prefs().get("monthly", True)
+                                    else state.get("last_month")})
     return ok
 
 

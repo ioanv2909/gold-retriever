@@ -122,6 +122,30 @@ def test_settings_save_and_preview(data, monkeypatch):
     at.checkbox(key="wr_on").check()
     at.selectbox(key="wr_day").select(0)
     at.button(key="wr_save").click().run()
-    assert wr.load_prefs() == {"enabled": True, "weekday": 0, "hour": 9}
+    assert wr.load_prefs() == {"enabled": True, "weekday": 0, "hour": 9, "monthly": True}
     at.button(key="wr_preview").click().run()
     assert not at.exception and "Raport săptămânal GoldRetriever" in at.code[0].value
+
+
+def test_monthly_summary_only_once_a_month(monkeypatch):
+    import weekly_report as wr
+    monkeypatch.setattr(wr, "monthly_lines", lambda lang="RO": ["", "MONTHLY"])
+    from datetime import date
+    _s, body, _t = wr.build("RO", today=date(2026, 11, 7), state={"last_month": "2026-10"})
+    assert "MONTHLY" in body
+    _s, body, _t = wr.build("RO", today=date(2026, 11, 14), state={"last_month": "2026-11"})
+    assert "MONTHLY" not in body
+    _s, body, _t = wr.build("RO", today=date(2026, 11, 14), state={"last_month": "2026-11"}, monthly=True)
+    assert "MONTHLY" in body
+
+
+def test_monthly_lines_with_pension_data(monkeypatch):
+    import pension
+    import weekly_report as wr
+    pension.save({"points": 30, "contrib_years": 15, "birth_year": 1980, "p2_balance": 10000, "p2_monthly": 100,
+                  "goal_amount": 0})
+    import summary_ui
+    monkeypatch.setattr(summary_ui, "projection_inputs", lambda cfg, ccy, *a: None)
+    lines = wr.monthly_lines("RO")
+    text = "\n".join(lines)
+    assert "Rezumat lunar" in text and "pensia de stat netă" in text and "Pilonii II/III" in text

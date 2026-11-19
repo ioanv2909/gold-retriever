@@ -1,3 +1,7 @@
+## 0.4.76 — 2026-11-19
+
+- Weekly e-mail report: the first report of each month adds a **monthly summary** — wealth (investments + pillars II/III), the net state pension and pillars at retirement, the investments at retirement with their 4% income, and the progress towards the wealth goal. A tick in Settings → Notifications → Weekly report turns it off; the preview shows it.
+
 ## 0.4.75 — 2026-11-19
 
 - Settings → Pensions: **pillar III from the fund statement** — upload the “My contributions” CSV export (BT Pensii) to read units, unit value, balance, deposits, the monthly average and the money-weighted return, and apply them in one click; between statements, enter only the new unit value and the balance is recalculated. (The administrator's site blocks automatic downloads, so the unit value cannot be fetched by the app.)
