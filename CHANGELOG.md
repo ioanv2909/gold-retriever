@@ -1,3 +1,7 @@
+## 0.4.81 — 2026-11-19
+
+- Positions table: the same table as Strategies, Calendar and Watchlist — the **ticker appears next to the name** while the mouse is over the row, clicking the name opens the position, click a column title to sort and **⚙ Columns** hides or shows columns. Profit and returns keep their green / red colours. The row checkboxes are gone: the name link opens the position.
+
 ## 0.4.80 — 2026-11-19
 
 - Strategies, Calendar and Watchlist: the ticker now appears **immediately** as a small label next to the name while the mouse is over the row (the browser tooltip appeared only after a delay, if at all).

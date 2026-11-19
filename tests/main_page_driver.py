@@ -2,6 +2,7 @@
 tipareste ce s-a afisat. Folosit de test_main_page_sources.py intr-un proces separat.
 argv: repo, workdir, scenariu, [ticker pentru ?detail=]"""
 import json
+import re
 import os
 import socket
 import sys
@@ -76,8 +77,11 @@ print("RESULT " + json.dumps({
     "info": [e.value for e in at.info],
     "error": [e.value for e in at.error],
     "metrics": [[m.label, m.value] for m in at.metric],
-    "rows": [len(d.value) for d in at.dataframe],
-    "columns": [[str(c) for c in d.value.columns] for d in at.dataframe],
+    # tabelul de pozitii e HTML (data-tid="positions"); celelalte tabele sunt st.dataframe
+    "rows": [m.value.count("<tr>") - 1 for m in at.markdown if 'data-tid="positions"' in m.value]
+            + [len(d.value) for d in at.dataframe],
+    "columns": [re.findall(r'data-label="([^"]*)"', m.value) for m in at.markdown if 'data-tid="positions"' in m.value]
+               + [[str(c) for c in d.value.columns] for d in at.dataframe],
     "pills": [list(p.options) for p in at.get("button_group")],
     "selected": at.session_state["selected_ticker"] if "selected_ticker" in at.session_state else None,
     "checkboxes": [c.label for c in at.checkbox],

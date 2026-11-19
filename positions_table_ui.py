@@ -56,32 +56,26 @@ def render_positions_table(df, df_display, display_ccy, total_portfolio_value, c
             return "color: #ff6b6b;"
         return "color: #9aa0a6;"
 
-    styled_table = table_df.style.format(
-        {k: v for k, v in {
-            "Cant.": "{:.4f}",
-            "Preț mediu": "{:.2f}",
-            "Preț curent": "{:.2f}",
-            f"Cost achiz. ({_c})": "{:,.2f}",
-            f"Val. curentă ({_c})": "{:,.2f}",
-            f"P/L ({_c})": "{:+,.2f}",
-            "Randament %": "{:+.2f}%",
-            f"Div. ({_c})": "{:,.2f}",
-            "Div/Inv %": "{:.2f}%",
-            "Rand. total %": "{:+.2f}%",
-            "S&P500 %": "{:+.2f}%",
-            "PEG": "{:.2f}",
-            "vs S&P500 pp": "{:+.2f}",
-            "Scor TL": "{:.1f}",
-            "Scor risc": "{:.1f}",
-            "Scor div.": "{:.1f}",
-            "Țintă %": "{:+.1f}%",
-        }.items() if k in table_df.columns},
-        na_rep="n/a",
-    )
-    styled_table = styled_table.map(
-        colorize,
-        subset=[c for c in (f"P/L ({_c})", "Randament %", "Rand. total %", "vs S&P500 pp", "Țintă %") if c in table_df.columns],
-    )
+    formats = {
+        "Cant.": "{:.4f}",
+        "Preț mediu": "{:.2f}",
+        "Preț curent": "{:.2f}",
+        f"Cost achiz. ({_c})": "{:,.2f}",
+        f"Val. curentă ({_c})": "{:,.2f}",
+        f"P/L ({_c})": "{:+,.2f}",
+        "Randament %": "{:+.2f}%",
+        f"Div. ({_c})": "{:,.2f}",
+        "Div/Inv %": "{:.2f}%",
+        "Rand. total %": "{:+.2f}%",
+        "S&P500 %": "{:+.2f}%",
+        "PEG": "{:.2f}",
+        "vs S&P500 pp": "{:+.2f}",
+        "Scor TL": "{:.1f}",
+        "Scor risc": "{:.1f}",
+        "Scor div.": "{:.1f}",
+        "Țintă %": "{:+.1f}%",
+    }
+    colored = {f"P/L ({_c})", "Randament %", "Rand. total %", "vs S&P500 pp", "Țintă %"}
 
     _t212_rows = {r["ticker"]: r for r in df.to_dict("records")}
     _detail_rows = []
@@ -94,22 +88,29 @@ def render_positions_table(df, df_display, display_ccy, total_portfolio_value, c
             _detail_rows.append({"ticker": _tk, "name": _r["name"], "currencyCode": '', "currentPrice": _r.get("currentPrice") or 0.0, "isin": _r.get("isin"), "type": _xtb_kinds.get(_tk), "watchlist": True})
     st.session_state["_table_rows"] = _detail_rows
     st.session_state["_table_total"] = total_portfolio_value
-    table_event = st.dataframe(
-        styled_table,
-        width="stretch",
-        hide_index=True,
-        column_config={c: (st.column_config.ImageColumn("", width="small") if c == "Logo" else
-                           st.column_config.Column(col(c), help=_COL_HELP_I18N[c]() if c in _COL_HELP_I18N else COLUMN_HELP.get(c)))
-                       for c in table_df.columns},
-        on_select="rerun",
-        selection_mode="single-row",
-        key=f"positions_table_{st.session_state.get('table_nonce', 0)}",
-    )
-    sel_rows = table_event.selection.rows if table_event and table_event.selection else []
-    if sel_rows:
-        _sel_row = _detail_rows[sel_rows[0]]
-        st.session_state["selected_ticker"] = _sel_row["ticker"]
-        st.session_state["selected_row"] = _sel_row
-        st.session_state["total_portfolio_value"] = total_portfolio_value
-        st.session_state["scroll_to_top_detail"] = True
-        st.rerun()
+    import html_table
+    cols = []
+    for c in table_df.columns:
+        if c == "Logo":
+            cols.append({"key": c, "label": "", "width": "30px"})
+            continue
+        cols.append({"key": c, "label": col(c), "nowrap": c != "Nume",
+                     "align": "right" if c in formats or c == "Zile" else None,
+                     "help": _COL_HELP_I18N[c]() if c in _COL_HELP_I18N else COLUMN_HELP.get(c)})
+    out = []
+    for tk, raw in zip(df_display["ticker"], table_df.to_dict("records")):
+        row = {}
+        for c, v in raw.items():
+            if c == "Logo":
+                row[c] = {"img": v, "img_title": tk}
+            elif c == "Nume":
+                row[c] = {"text": v or tk, "title": tk, "tip": tk, "href": html_table.detail_href(tk)}
+            else:
+                num = pd.to_numeric(v, errors="coerce") if not isinstance(v, str) else None
+                if num is None or pd.isna(num):
+                    row[c] = "n/a" if v is None or (not isinstance(v, str) and pd.isna(v)) else str(v)
+                else:
+                    text = formats[c].format(num) if c in formats else str(v)
+                    row[c] = {"text": text, "sort": float(num), "style": colorize(num) if c in colored else ""}
+        out.append(row)
+    html_table.render(cols, out, tid="positions", max_height=720)
