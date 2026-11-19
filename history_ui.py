@@ -15,7 +15,6 @@ from i18n import t, x as _tx
 from portfolio_model import fx as _fx
 from privacy import mask as _mask
 import benchmark
-from lang_prefs import load_pref, save_pref
 from yf_compat import yf, YFINANCE_AVAILABLE
 
 # perioadele graficului de valoare; pe telefon doar o parte, cele lipsa trec la cea mai apropiata
@@ -25,6 +24,8 @@ _HIST_NEAR_COMPACT = {"3H": "1D", "6M": "3M", "3Y": "1Y", "5Y": "Max"}
 
 
 LINES = ("value", "sp500", "invested")
+# la fiecare deschidere a aplicatiei graficul porneste cu valoarea actuala si suma investita
+DEFAULT_LINES = ("value", "invested")
 _LINE_COLORS = {"value": "#4da3ff", "sp500": "#1baf7a", "invested": "#ff9f43"}
 
 
@@ -177,8 +178,7 @@ def render_history(sel_portfolios, display_ccy, native, compact, right_extra, ma
         history_df = _sel if len(_sel) >= 2 else history_df.tail(2)
     history_df = history_df.copy()
     if "hist_lines" not in st.session_state:
-        _saved = load_pref("hist_lines")
-        st.session_state["hist_lines"] = [k for k in _saved if k in LINES] if isinstance(_saved, list) else list(LINES)
+        st.session_state["hist_lines"] = list(DEFAULT_LINES)
     _nowl = pd.Timestamp(datetime.now())
     _first_local = pd.Timestamp(_first_all)
     if range_choice == "YTD":
@@ -210,7 +210,6 @@ def render_history(sel_portfolios, display_ccy, native, compact, right_extra, ma
     with _hc_left:
         _lines = st.pills(t("hist.lines"), LINES, selection_mode="multi", key="hist_lines",
                           format_func=_line_label, label_visibility="collapsed")
-    save_pref("hist_lines", list(_lines or []))
     _plot_df = history_df
     if _start is not None and not compact and not mobile.compact():
         import chart_window

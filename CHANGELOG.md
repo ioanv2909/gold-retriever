@@ -1,3 +1,7 @@
+## 0.4.82 — 2026-11-19
+
+- Main page chart: it now always opens with **current value** and **amount invested** selected; S&P 500 can still be added for the session.
+
 ## 0.4.81 — 2026-11-19
 
 - Positions table: the same table as Strategies, Calendar and Watchlist — the **ticker appears next to the name** while the mouse is over the row, clicking the name opens the position, click a column title to sort and **⚙ Columns** hides or shows columns. Profit and returns keep their green / red colours. The row checkboxes are gone: the name link opens the position.
