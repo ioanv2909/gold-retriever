@@ -128,7 +128,8 @@ def test_about_tab_shows_canis_major(tmp_path):
 
 def test_pension_is_a_main_section_with_its_own_page(tmp_path):
     main = _run(tmp_path, "t212_only")
-    assert any(any("Pensie" in o or "Pension" in o for o in p) for p in main["pills"])
+    assert any(any("Pensie" in o for o in p) and any("Rezumat" in o for o in p) and any("Investiții" in o for o in p)
+               for p in main["pills"])
     assert not any("Pensie" in t or "Pension" in t for t in main["tabs"])  # nu mai e tab langa Pozitii
     (tmp_path / "p").mkdir()
     page = _run(tmp_path / "p", "t212_only", "page=pension")
@@ -139,3 +140,10 @@ def test_pension_form_is_in_settings(tmp_path):
     out = _run(tmp_path, "t212_only", "page=settings&tab=pension")
     assert any("Pensii" in t or "Pensions" in t for t in out["tabs"])
     assert any(k.startswith("FormSubmitter:pension_form") for k in out["keys"])
+
+
+def test_summary_section_renders(tmp_path):
+    out = _run(tmp_path, "t212_only", "page=summary")
+    assert not out["rows"]  # fara tabelul de pozitii
+    assert any("Investiții la bursă" in m[0] for m in out["metrics"])
+    assert any("Total avere" in m[0] for m in out["metrics"])

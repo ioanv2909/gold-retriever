@@ -1,3 +1,7 @@
+## 0.4.66 — 2026-11-19
+
+- Main sections are now **📋 Summary | 📊 Investments | 🏖️ Pension**. Summary shows today's wealth (stock market investments of all portfolios + pillar II and III balances, real money only) and, separately, the net state pension and the pillars at retirement. Pension has a tab per pillar (I state, II, III); the state pension is no longer added to the pillars as one total. Investments (the portfolio) is still the start page.
+
 ## 0.4.65 — 2026-11-19
 
 - Pension: the data form moved to **Settings → 🏖️ Pensions**; the results are a main section of the page: a **📊 Portfolio | 🏖️ Pension** switch under the top bar (Pension has its own address, ?page=pension), no longer a tab next to Positions; buttons lead from the results to the settings and back.

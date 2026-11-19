@@ -93,8 +93,10 @@ def _render_header(me, compact, detail_loading):
                 dismiss_alert(a["ticker"], a["triggered_at"])
                 st.rerun()
 
-    if not detail_loading and _top_section() == "pension":
-        return "pension"
+    if not detail_loading:
+        section = _top_section()
+        if section != "portfolio":
+            return section
 
     if not detail_loading:
         _sum_t, _sum_eye = st.columns([5, 2], vertical_alignment="bottom")
@@ -103,22 +105,24 @@ def _render_header(me, compact, detail_loading):
             privacy.toggle_button("privacy_toggle")
 
 
-TOP_SECTIONS = ("portfolio", "pension")
+TOP_SECTIONS = ("summary", "portfolio", "pension")
+_SECTION_LABELS = {"summary": "nav.summary", "portfolio": "nav.portfolio", "pension": "tab.pension"}
 
 
 def _top_section():
-    """Sectiunile principale ale paginii (Portofoliu / Pensie); Pensie are adresa proprie ?page=pension."""
-    current = "pension" if st.query_params.get("page") == "pension" else "portfolio"
+    """Sectiunile principale: Rezumat (?page=summary), Investitii (fara parametru, pagina de start) si
+    Pensie (?page=pension)."""
+    page = st.query_params.get("page")
+    current = page if page in ("summary", "pension") else "portfolio"
     choice = st.segmented_control(
         t("nav.section"), TOP_SECTIONS, default=current, key=f"top_section_{current}",
-        format_func=lambda k: t("nav.portfolio") if k == "portfolio" else t("tab.pension"),
-        label_visibility="collapsed")
+        format_func=lambda k: t(_SECTION_LABELS[k]), label_visibility="collapsed")
     if choice and choice != current:
         st.query_params.pop("tab", None)
-        if choice == "pension":
-            st.query_params["page"] = "pension"
-        else:
+        if choice == "portfolio":
             st.query_params.pop("page", None)
+        else:
+            st.query_params["page"] = choice
         st.rerun()
     return current
 
@@ -346,9 +350,14 @@ def render_main_view(me, api_key_id, api_secret):
     if st.session_state.pop("scroll_to_top_main", False):
         scroll_page_to_top()
     compact = mobile.compact()
-    if _render_header(me, compact, detail_loading) == "pension":
+    section = _render_header(me, compact, detail_loading)
+    if section == "pension":
         from pension_ui import render_pension_tab
         render_pension_tab()
+        return
+    if section == "summary":
+        from summary_ui import render_summary
+        render_summary(api_key_id, api_secret)
         return
 
     div_status = load_dividends_status()

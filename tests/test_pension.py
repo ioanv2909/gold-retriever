@@ -106,4 +106,13 @@ def test_pension_is_a_top_section_not_a_portfolio_tab():
     import main_view
     tabs_src = inspect.getsource(main_view._render_tabs)
     assert "pension" not in tabs_src
-    assert "pension" in main_view.TOP_SECTIONS and "segmented_control" in inspect.getsource(main_view._top_section)
+    assert main_view.TOP_SECTIONS == ("summary", "portfolio", "pension")
+    assert "segmented_control" in inspect.getsource(main_view._top_section)
+
+
+def test_pension_page_has_a_tab_per_pillar():
+    import inspect
+    import pension_ui
+    src = inspect.getsource(pension_ui.render_pension_tab)
+    assert "pen.tab_p1" in src and "pen.tab_p2" in src and "pen.tab_p3" in src
+    assert "pen.total" not in inspect.getsource(pension_ui)  # pensia de stat nu se aduna cu banii reali

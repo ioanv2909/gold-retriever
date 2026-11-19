@@ -107,6 +107,32 @@ def render_pension_tab():
         st.caption(t("pen.rate", ccy=ccy, rate=f"{1 / rate:.4f}" if rate else "?"))
 
     r = pension.project(cfg)
+    tab1, tab2, tab3 = st.tabs([t("pen.tab_p1"), t("pen.tab_p2"), t("pen.tab_p3")])
+    with tab1:
+        _pillar1(r, ccy, rate)
+    with tab2:
+        _private(cfg, r, "p2", ccy, rate)
+    with tab3:
+        _private(cfg, r, "p3", ccy, rate)
+
+
+def _private(cfg, r, key, ccy, rate):
+    """Pilonul II / III: soldul de azi si valoarea estimata la pensionare (bani reali, nu estimari de venit)."""
+    balance, monthly, ret = cfg[key + "_balance"], cfg[key + "_monthly"], cfg[key + "_return"]
+    if not balance and not monthly:
+        notice.card(t("pen.private_empty"), icon="ℹ️")
+        return
+    at_retire = r[key + "_at_retire"]
+    paid_in = balance + monthly * r["months_left"]
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric(t("pen.m_balance_now"), _money(balance, ccy, rate))
+    c2.metric(t("pen.m_monthly"), _money(monthly, ccy, rate))
+    c3.metric(t("pen.m_return"), f"{ret:g}%")
+    c4.metric(t("pen.m_at_retire"), _money(at_retire, ccy, rate),
+              help=t("pen.m_at_retire_help", date=_ym(r["out_date"]), gain=_money(at_retire - paid_in, ccy, rate)))
+
+
+def _pillar1(r, ccy, rate):
     st.subheader(t("pen.when_title"))
     for line in _when(r):
         st.markdown("- " + line)
@@ -123,10 +149,6 @@ def render_pension_tab():
     c1.metric(t("pen.m_pension_now"), _money(r["pension_now"], ccy, rate), help=t("pen.m_pension_now_help"))
     c2.metric(t("pen.m_wealth_retire"), _money(r["wealth_at_retire"], ccy, rate), help=t("pen.m_wealth_retire_help"))
     c3.metric(t("pen.m_wealth_today"), _money(r["wealth_today"], ccy, rate), help=t("pen.m_wealth_today_help"))
-    c4.metric(t("pen.m_p2p3"), _money(r["p2_at_retire"] + r["p3_at_retire"], ccy, rate),
-              help=t("pen.m_p2p3_help", p2=_money(r["p2_at_retire"], ccy, rate), p3=_money(r["p3_at_retire"], ccy, rate)))
-    total = r["wealth_at_retire"] + r["p2_at_retire"] + r["p3_at_retire"]
-    st.markdown(t("pen.total", total=_money(total, ccy, rate)))
     if r["timeline"]:
         st.markdown(f"**{t('pen.timeline')}**")
         no = t("pen.not_allowed")
