@@ -34,6 +34,10 @@ DEFAULTS = {
     "p3_balance": 0.0, "p3_monthly": 0.0, "p3_return": 3.0,
     "p2_upfront": 30.0,       # % platit odata la pensionare (legea 2/2026: cel mult 30%)
     "p2_years": 8.0,          # anii in care se plateste restul (cel putin 8)
+    "inv_monthly": 0.0,       # depunerea lunara la bursa pentru proiectie (in inv_ccy); 0 = ritmul de pana acum
+    "inv_return": -99.0,      # randament anual nominal %; -99 = randamentul de pana acum
+    "inv_inflation": 2.5,     # inflatia anuala pentru valoarea in bani de azi
+    "inv_ccy": "EUR",
     "currency": "RON",
 }
 
@@ -45,6 +49,7 @@ LIMITS = {
     "p2_balance": (0, 1e9), "p2_monthly": (0, 1e7), "p2_return": (-5, 15),
     "p3_balance": (0, 1e9), "p3_monthly": (0, 1e7), "p3_return": (-5, 15),
     "p2_upfront": (0, 30), "p2_years": (8, 40),
+    "inv_monthly": (0, 1e7), "inv_return": (-99, 30), "inv_inflation": (0, 30),
 }
 CURRENCIES = ("RON", "EUR", "USD")
 EARLY_YEARS = 5
@@ -69,6 +74,8 @@ def clean(data):
     out["birth_month"] = int(out["birth_month"])
     if data.get("currency") in CURRENCIES:
         out["currency"] = data["currency"]
+    if data.get("inv_ccy") in CURRENCIES:
+        out["inv_ccy"] = data["inv_ccy"]
     return out
 
 
@@ -147,6 +154,40 @@ def private_by_age(cfg, key, ages=(55, 60, 62, 65, 67), today=None):
         paid = balance + monthly * months
         rows.append({"age": age, "date": _ym(cfg, age), "months": months, "paid_in": paid, "value": value,
                      "gain": value - paid, "available": key == "p3" and age >= 60 or key == "p2"})
+    return rows
+
+
+def uniform_return(deposits, months, value):
+    """Randamentul anual (%) care, cu depuneri egale lunare insumand `deposits` in `months` luni, ajunge la `value`.
+    Aproximare a randamentului pe bani (fara datele exacte ale depunerilor); None daca datele nu ajung."""
+    if not deposits or deposits <= 0 or not months or months < 1 or not value or value <= 0:
+        return None
+    m = deposits / months
+
+    def fv(r):
+        return m * months if abs(r) < 1e-12 else m * ((1 + r) ** months - 1) / r
+    lo, hi = -0.2, 0.2
+    if not fv(lo) <= value <= fv(hi):
+        return None
+    for _ in range(200):
+        mid = (lo + hi) / 2
+        lo, hi = (mid, hi) if fv(mid) < value else (lo, mid)
+    return ((1 + lo) ** 12 - 1) * 100
+
+
+def invest_by_age(cfg, value_now, monthly, annual_pct, inflation_pct, ages=(55, 60, 62, 65, 67), today=None):
+    """Valoarea investitiilor la fiecare varsta: valoarea de azi + depunerea lunara, la randamentul anual dat;
+    nominal si in bani de azi (dupa inflatie)."""
+    cfg = clean(cfg)
+    today = today or date.today()
+    age_now = (today.year * 12 + today.month - 1 - (cfg["birth_year"] * 12 + cfg["birth_month"] - 1)) / 12
+    wanted = set(ages) | {cfg["retire_age"]} | ({cfg["planned_age"]} if cfg["planned_age"] else set())
+    rows = []
+    for age in sorted(a for a in wanted if a > age_now):
+        months = max(0, round((age - age_now) * 12))
+        value = future_value(value_now, monthly, annual_pct, months)
+        rows.append({"age": age, "date": _ym(cfg, age), "months": months, "paid_in": value_now + monthly * months,
+                     "value": value, "real": value / (1 + inflation_pct / 100) ** (months / 12)})
     return rows
 
 

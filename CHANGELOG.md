@@ -1,3 +1,7 @@
+## 0.4.71 — 2026-11-19
+
+- Summary: **projection of the stock market investments** — today's value plus a monthly deposit (default: your pace so far) at an annual return (default: your return so far, estimated from deposits and today's value) and inflation, shown for retiring at 55, 60, 62, 65 or 67 (and the chosen age): value plus deposits, estimated value, gain, value in today's money. The settings are kept.
+
 ## 0.4.70 — 2026-11-19
 
 - Pension: new **Σ Total** tab (first) with the monthly income from all three pillars by retirement age: pillar I net (with the early-retirement reduction), the pillar II monthly payment, pillar III, the monthly total while pillar II is paid and after it ends, and the pillar II lump sum.

@@ -171,3 +171,18 @@ def test_totals_by_age_combine_the_pillars():
     assert r65["monthly"] == pytest.approx(r65["state"] + r65["p2_month"] + 100)
     assert r65["after_p2"] == pytest.approx(r65["state"] + 100)
     assert rows[60]["allowed"] and rows[60]["penalty"] > 0
+
+
+def test_uniform_return_and_investment_projection():
+    # 1000 pe luna, 30 de luni, la 7% pe an: randamentul se regaseste din suma depusa si valoare
+    value = pension.future_value(0, 1000, 7.0, 30)
+    assert pension.uniform_return(30000, 30, value) == pytest.approx(7.0, abs=0.01)
+    assert pension.uniform_return(0, 10, 100) is None and pension.uniform_return(100, 10, 0) is None
+    cfg = dict(BASE, birth_year=1979, birth_month=3, planned_age=60)
+    rows = {x["age"]: x for x in pension.invest_by_age(cfg, 40000, 1000, 7.0, 2.5, today=date(2026, 11, 1))}
+    at60 = rows[60]
+    assert at60["months"] == 148 and at60["paid_in"] == pytest.approx(40000 + 148000)
+    assert at60["value"] == pytest.approx(pension.future_value(40000, 1000, 7.0, 148))
+    assert at60["real"] == pytest.approx(at60["value"] / 1.025 ** (148 / 12))
+    cfg2 = pension.clean({"inv_return": -150, "inv_ccy": "GBP"})
+    assert cfg2["inv_return"] == -99 and cfg2["inv_ccy"] == "EUR"

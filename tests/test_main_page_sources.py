@@ -144,6 +144,7 @@ def test_pension_form_is_in_settings(tmp_path):
 
 def test_summary_section_renders(tmp_path):
     out = _run(tmp_path, "t212_only", "page=summary")
-    assert not out["rows"]  # fara tabelul de pozitii
+    assert not any("Nume" in c or "Name" in c for cols in out["columns"] for c in cols)  # fara tabelul de pozitii
+    assert any("Valoare estimată" in c for cols in out["columns"] for c in cols)  # proiectia investitiilor
     assert any("Investiții la bursă" in m[0] for m in out["metrics"])
     assert any("Total avere" in m[0] for m in out["metrics"])
