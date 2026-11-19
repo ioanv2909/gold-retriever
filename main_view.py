@@ -254,11 +254,12 @@ def _render_tabs(df, df_display, vdf, display_ccy, total_portfolio_value, compac
     _tabs = url_tabs([e for e in [("positions", t("tab.positions")), ("strategies", t("tab.strategies")),
                                   ("exposure", t("tab.exposure")), ("compare", t("tab.compare")),
                                   ("calendar", t("tab.events")), ("journal", t("tab.journal")),
-                                  ("markets", t("tab.markets")), ("watchlist", t("tab.watchlist"))]
+                                  ("markets", t("tab.markets")), ("pension", t("tab.pension")),
+                                  ("watchlist", t("tab.watchlist"))]
                       if not (compact and e[0] in ("strategies", "exposure", "compare"))], "main_tab")
-    tab_pos, tab_st, tab_ex, tab_cmp, tab_ev, tab_jr, tab_mh, tab_wl = (
+    tab_pos, tab_st, tab_ex, tab_cmp, tab_ev, tab_jr, tab_mh, tab_pen, tab_wl = (
         _tabs.get(k) for k in ("positions", "strategies", "exposure", "compare", "calendar", "journal", "markets",
-                               "watchlist"))
+                               "pension", "watchlist"))
     with tab_pos:
         render_positions_table(df, df_display, display_ccy, total_portfolio_value, compact)
 
@@ -292,6 +293,11 @@ def _render_tabs(df, df_display, vdf, display_ccy, total_portfolio_value, compac
         with tab_mh:
             from market_hours_ui import render_market_hours_tab
             render_market_hours_tab(vdf)
+
+    if tab_pen.open is not False:
+        with tab_pen:
+            from pension_ui import render_pension_tab
+            render_pension_tab()
 
     if not detail_loading:
         with tab_wl:

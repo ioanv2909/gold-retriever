@@ -1,3 +1,7 @@
+## 0.4.62 — 2026-11-19
+
+- New **🏖️ Pension** tab: enter the points accumulated so far (from the pension office decision), contribution years, points per year from now on, birth date, retirement age and the point value (VPR); optionally pillar II and III balances and contributions. It shows, in today's money: points and monthly pension at retirement (with the stability points of law 360/2023), the pension for today's points, the pension as wealth (at retirement and today) and pillars II and III at retirement, plus the points/pension every five years. Per user.
+
 ## 0.4.61 — 2026-11-19
 
 - Position logos are downloaded in the background for every user's positions (hourly, only the missing ones), so they are ready before the page is opened, also for accounts that have not been opened since a new position appeared.

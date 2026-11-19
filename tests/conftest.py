@@ -213,3 +213,10 @@ def _isolated_logos(tmp_path, monkeypatch):
     monkeypatch.setattr(logos, "INDEX_FILE", str(tmp_path / "logos" / "index.json"))
     monkeypatch.setattr(logos, "_index_cache", {"mtime": None, "data": {}})
     monkeypatch.setattr(logos, "prefetch", lambda tickers: [])
+
+
+@pytest.fixture(autouse=True)
+def _isolated_pension(tmp_path, monkeypatch):
+    """Setarile de pensie se scriu in data/users/<nume>/; in teste merg intr-un director temporar."""
+    import pension
+    monkeypatch.setattr(pension, "PENSION_FILE", str(tmp_path / "pension.json"))
