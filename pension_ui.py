@@ -51,7 +51,7 @@ def _form(cfg):
                                 "birth_month": bm, "retire_age": ra, "full_stage": fs, "planned_age": pa, "vpr": vpr,
                                 "payout_years": payout, "real_return": rr, "p2_balance": p2b, "p2_monthly": p2m,
                                 "p2_return": p2r, "p3_balance": p3b, "p3_monthly": p3m, "p3_return": p3r,
-                                "currency": cfg["currency"]})
+                                "currency": cfg["currency"], "p2_upfront": cfg["p2_upfront"], "p2_years": cfg["p2_years"]})
             st.success(t("pen.saved"))
     return cfg
 
@@ -132,14 +132,28 @@ def _private(cfg, r, key, ccy, rate):
     c4.metric(t("pen.m_at_retire"), _money(at_retire, ccy, rate),
               help=t("pen.m_at_retire_help", date=_ym(r["out_date"]), gain=_money(at_retire - paid_in, ccy, rate)))
     st.markdown(f"**{t('pen.pv_title')}**")
+    if key == "p2":
+        c1, c2 = st.columns(2)
+        up = c1.slider(t("pen.p2_upfront"), 0, 30, int(cfg["p2_upfront"]), 5, format="%d%%", help=t("pen.p2_upfront_help"),
+                       key="p2_upfront")
+        yrs = c2.slider(t("pen.p2_years"), 8, 40, int(cfg["p2_years"]), 1, help=t("pen.p2_years_help"), key="p2_years")
+        if up != cfg["p2_upfront"] or yrs != cfg["p2_years"]:
+            cfg = pension.save(dict(cfg, p2_upfront=up, p2_years=yrs))
     chosen = cfg["planned_age"] or cfg["retire_age"]
-    out = [{t("pen.col_age"): (f"▶ {x['age']:g}" if abs(x["age"] - chosen) < 1e-9 else f"{x['age']:g}"),
-            t("pen.col_year"): _ym(x["date"]),
-            t("pen.pv_col_paid"): _money(x["paid_in"], ccy, rate),
-            t("pen.pv_col_value"): _money(x["value"], ccy, rate),
-            t("pen.pv_col_gain"): _money(x["gain"], ccy, rate),
-            t("pen.pv_col_month"): _money(x["value"] / (cfg["payout_years"] * 12), ccy, rate)}
-           for x in pension.private_by_age(cfg, key)]
+    out = []
+    for x in pension.private_by_age(cfg, key):
+        row = {t("pen.col_age"): (f"▶ {x['age']:g}" if abs(x["age"] - chosen) < 1e-9 else f"{x['age']:g}"),
+               t("pen.col_year"): _ym(x["date"]),
+               t("pen.pv_col_paid"): _money(x["paid_in"], ccy, rate),
+               t("pen.pv_col_value"): _money(x["value"], ccy, rate),
+               t("pen.pv_col_gain"): _money(x["gain"], ccy, rate)}
+        if key == "p2":
+            lump, monthly_pay = pension.p2_payout(x["value"], cfg["p2_upfront"], cfg["p2_years"])
+            row[t("pen.pv_col_lump", pct=f"{cfg['p2_upfront']:g}")] = _money(lump, ccy, rate)
+            row[t("pen.pv_col_rate", years=f"{cfg['p2_years']:g}")] = _money(monthly_pay, ccy, rate)
+        else:
+            row[t("pen.pv_col_month")] = _money(x["value"] / (cfg["payout_years"] * 12), ccy, rate)
+        out.append(row)
     st.dataframe(pd.DataFrame(out), hide_index=True, width="content")
     st.caption(t("pen.pv_note_" + key, years=f"{cfg['payout_years']:g}"))
 

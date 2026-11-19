@@ -32,6 +32,8 @@ DEFAULTS = {
     "real_return": 2.0,       # % pe an peste inflatie, pentru valoarea "ca avere"
     "p2_balance": 0.0, "p2_monthly": 0.0, "p2_return": 3.0,
     "p3_balance": 0.0, "p3_monthly": 0.0, "p3_return": 3.0,
+    "p2_upfront": 30.0,       # % platit odata la pensionare (legea 2/2026: cel mult 30%)
+    "p2_years": 8.0,          # anii in care se plateste restul (cel putin 8)
     "currency": "RON",
 }
 
@@ -42,6 +44,7 @@ LIMITS = {
     "vpr": (0, 100000), "payout_years": (1, 50), "real_return": (-5, 15),
     "p2_balance": (0, 1e9), "p2_monthly": (0, 1e7), "p2_return": (-5, 15),
     "p3_balance": (0, 1e9), "p3_monthly": (0, 1e7), "p3_return": (-5, 15),
+    "p2_upfront": (0, 30), "p2_years": (8, 40),
 }
 CURRENCIES = ("RON", "EUR", "USD")
 EARLY_YEARS = 5
@@ -145,6 +148,14 @@ def private_by_age(cfg, key, ages=(55, 60, 62, 65, 67), today=None):
         rows.append({"age": age, "date": _ym(cfg, age), "months": months, "paid_in": paid, "value": value,
                      "gain": value - paid, "available": key == "p3" and age >= 60 or key == "p2"})
     return rows
+
+
+def p2_payout(value, upfront_pct, years):
+    """Plata Pilonului II dupa legea 2/2026: (plata unica, rata lunara) - cel mult 30% odata, restul lunar in cel
+    putin 8 ani. Fara randamentul obtinut in perioada de plata (ratele reale pot iesi putin mai mari)."""
+    pct = min(max(float(upfront_pct), 0.0), 30.0) / 100
+    months = max(8.0, float(years)) * 12
+    return value * pct, value * (1 - pct) / months
 
 
 def scenarios(cfg, stop_ages=(55, 60, 65), today=None):

@@ -142,3 +142,18 @@ def test_private_pillar_values_by_age():
     assert at60["months"] == 180 and at60["value"] == pytest.approx(1000 + 100 * 180) and at60["gain"] == pytest.approx(0)
     p3 = pension.private_by_age(dict(cfg, p3_balance=500), "p3", today=date(2025, 1, 1))
     assert not next(x for x in p3 if x["age"] == 55)["available"] and next(x for x in p3 if x["age"] == 60)["available"]
+
+
+def test_pillar2_payout_law_limits():
+    lump, monthly = pension.p2_payout(100000, 30, 8)
+    assert lump == pytest.approx(30000) and monthly == pytest.approx(100000 * 0.7 / 96)
+    assert pension.p2_payout(1000, 50, 2) == pension.p2_payout(1000, 30, 8)  # max 30%, min 8 ani
+    cfg = pension.clean({"p2_upfront": 45, "p2_years": 3})
+    assert cfg["p2_upfront"] == 30 and cfg["p2_years"] == 8
+
+
+def test_settings_form_keeps_the_payout_choice():
+    import inspect
+    import pension_ui
+    src = inspect.getsource(pension_ui._form)
+    assert "p2_upfront" in src and "p2_years" in src

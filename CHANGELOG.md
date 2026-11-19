@@ -1,3 +1,7 @@
+## 0.4.69 — 2026-11-19
+
+- Pension, pillar II: two selectors on the page — the lump sum at retirement (0–30%) and the years over which the rest is paid (at least 8), as in law 2/2026; the table by age shows the lump sum and the monthly payment instead of the rough monthly equivalent. The choice is remembered.
+
 ## 0.4.68 — 2026-11-19
 
 - Pension, pillars II and III: a table with the estimated value if you retire at 55, 60, 62, 65 or 67 (plus the standard and the chosen age): balance plus contributions, estimated value, gain and a monthly equivalent; with when each pillar can be paid out.
