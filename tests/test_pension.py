@@ -186,3 +186,30 @@ def test_uniform_return_and_investment_projection():
     assert at60["real"] == pytest.approx(at60["value"] / 1.025 ** (148 / 12))
     cfg2 = pension.clean({"inv_return": -150, "inv_ccy": "GBP"})
     assert cfg2["inv_return"] == -99 and cfg2["inv_ccy"] == "EUR"
+
+
+def test_required_monthly_and_real_return():
+    assert pension.real_return(7.0, 2.0) == pytest.approx(4.902, abs=0.001)
+    need = pension.required_monthly(100000, 10000, 0, 90)
+    assert need == pytest.approx(1000)
+    assert pension.required_monthly(1000, 5000, 5, 12) == 0.0 and pension.required_monthly(1, 1, 1, 0) is None
+    need = pension.required_monthly(200000, 20000, 5.0, 120)
+    assert pension.future_value(20000, need, 5.0, 120) == pytest.approx(200000)
+
+
+def test_wealth_path_is_in_todays_money_and_ordered():
+    cfg = dict(BASE, birth_year=1979, birth_month=3, p2_balance=50000, p2_monthly=500, p2_return=3, p3_balance=0, p3_monthly=0)
+    path = pension.wealth_path(cfg, 40000, 1000, 7.0, 2.5, until_age=67, today=date(2026, 11, 1))
+    assert path[0]["inv"] == pytest.approx(40000) and path[0]["pillars"] == pytest.approx(50000)
+    assert path[-1]["age"] == 67 and all(a["age"] < b["age"] for a, b in zip(path, path[1:]))
+    end = path[-1]
+    assert end["inv_low"] < end["inv"] < end["inv_high"]
+    assert end["total"] == pytest.approx(end["inv"] + end["pillars"])
+
+
+def test_totals_include_investment_income_when_given():
+    cfg = dict(BASE, p2_balance=0, p3_balance=0)
+    rows = pension.totals_by_age(cfg, today=date(2025, 1, 1), inv={"now": 120000, "monthly": 0, "ret": 0, "inflation": 0})
+    r65 = next(x for x in rows if x["age"] == 65)
+    assert r65["inv_month"] == pytest.approx(120000 * 0.04 / 12)
+    assert all(x["inv_month"] is None for x in pension.totals_by_age(cfg, today=date(2025, 1, 1)))

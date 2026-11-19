@@ -1,3 +1,8 @@
+## 0.4.72 — 2026-11-19
+
+- Summary: **road to retirement** chart (investments + pillars II/III in today's money up to 67, with a ±2% return band and the retirement age marked), a **wealth goal** (amount and age: the monthly deposit needed and whether you are on track), the change **vs a month ago and since 1 January** (market gain without new deposits), the **income from investments** by the 4% rule at retirement and in the age table; on the phone only the big figures and the chart.
+- Pension, Σ Total: columns with the investment income (4% rule) and the total including it.
+
 ## 0.4.71 — 2026-11-19
 
 - Summary: **projection of the stock market investments** — today's value plus a monthly deposit (default: your pace so far) at an annual return (default: your return so far, estimated from deposits and today's value) and inflation, shown for retiring at 55, 60, 62, 65 or 67 (and the chosen age): value plus deposits, estimated value, gain, value in today's money. The settings are kept.

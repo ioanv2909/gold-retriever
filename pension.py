@@ -38,6 +38,8 @@ DEFAULTS = {
     "inv_return": -99.0,      # randament anual nominal %; -99 = randamentul de pana acum
     "inv_inflation": 2.5,     # inflatia anuala pentru valoarea in bani de azi
     "inv_ccy": "EUR",
+    "goal_amount": 0.0,       # obiectivul de avere (investitii + pilonii II/III), in inv_ccy, bani de azi; 0 = fara
+    "goal_age": 60.0,
     "currency": "RON",
 }
 
@@ -50,6 +52,7 @@ LIMITS = {
     "p3_balance": (0, 1e9), "p3_monthly": (0, 1e7), "p3_return": (-5, 15),
     "p2_upfront": (0, 30), "p2_years": (8, 40),
     "inv_monthly": (0, 1e7), "inv_return": (-99, 30), "inv_inflation": (0, 30),
+    "goal_amount": (0, 1e10), "goal_age": (30, 80),
 }
 CURRENCIES = ("RON", "EUR", "USD")
 EARLY_YEARS = 5
@@ -191,6 +194,44 @@ def invest_by_age(cfg, value_now, monthly, annual_pct, inflation_pct, ages=(55, 
     return rows
 
 
+def real_return(nominal_pct, inflation_pct):
+    """Randamentul real (%) din cel nominal si inflatie."""
+    return ((1 + nominal_pct / 100) / (1 + inflation_pct / 100) - 1) * 100
+
+
+def required_monthly(goal, value_now, annual_pct, months):
+    """Depunerea lunara necesara ca `value_now` sa ajunga la `goal` in `months` luni la randamentul dat
+    (0 daca ajunge si fara depuneri; None fara timp ramas)."""
+    if months <= 0:
+        return None
+    r = _monthly_rate(annual_pct)
+    grow = (1 + r) ** months
+    rest = goal - value_now * grow
+    if rest <= 0:
+        return 0.0
+    return rest / months if abs(r) < 1e-12 else rest * r / (grow - 1)
+
+
+def wealth_path(cfg, inv_now, monthly, nominal_pct, inflation_pct, until_age=67, spread=2.0, today=None):
+    """Drumul averii pe ani, in bani de azi: investitiile (randament nominal +/- spread, minus inflatia) si pilonii
+    II + III (randamente deja reale). Un punct pe an de varsta, de azi pana la until_age."""
+    cfg = clean(cfg)
+    today = today or date.today()
+    age_now = (today.year * 12 + today.month - 1 - (cfg["birth_year"] * 12 + cfg["birth_month"] - 1)) / 12
+    ages = [age_now] + list(range(int(age_now) + 1, int(until_age) + 1))
+    out = []
+    for age in ages:
+        months = max(0, round((age - age_now) * 12))
+        deflate = (1 + inflation_pct / 100) ** (months / 12)
+        inv = {k: future_value(inv_now, monthly, nominal_pct + d, months) / deflate
+               for k, d in (("inv", 0), ("inv_low", -spread), ("inv_high", spread))}
+        pillars = (future_value(cfg["p2_balance"], cfg["p2_monthly"], cfg["p2_return"], months)
+                   + future_value(cfg["p3_balance"], cfg["p3_monthly"], cfg["p3_return"], months))
+        out.append(dict(inv, age=age, pillars=pillars, total=inv["inv"] + pillars,
+                        total_low=inv["inv_low"] + pillars, total_high=inv["inv_high"] + pillars))
+    return out
+
+
 def p2_payout(value, upfront_pct, years):
     """Plata Pilonului II dupa legea 2/2026: (plata unica, rata lunara) - cel mult 30% odata, restul lunar in cel
     putin 8 ani. Fara randamentul obtinut in perioada de plata (ratele reale pot iesi putin mai mari)."""
@@ -199,7 +240,7 @@ def p2_payout(value, upfront_pct, years):
     return value * pct, value * (1 - pct) / months
 
 
-def totals_by_age(cfg, today=None):
+def totals_by_age(cfg, today=None, inv=None):
     """Venitul lunar din cei trei piloni daca iesi la pensie la fiecare varsta (lucrand pana atunci).
     Pilonul II se plateste odata cu pensia de stat (plata unica + rate pe p2_years ani); Pilonul III de la 60 de ani,
     impartit orientativ pe payout_years ani. Sub limita legala pentru pensie (anticipata) nu se poate iesi."""
@@ -207,6 +248,10 @@ def totals_by_age(cfg, today=None):
     today = today or date.today()
     p2 = {x["age"]: x for x in private_by_age(cfg, "p2", today=today)}
     p3 = {x["age"]: x for x in private_by_age(cfg, "p3", today=today)}
+    invest = {}
+    if inv:  # {"now", "monthly", "ret", "inflation"} in aceeasi moneda ca restul (lei)
+        invest = {x["age"]: x for x in invest_by_age(cfg, inv["now"], inv["monthly"], inv["ret"], inv["inflation"],
+                                                      ages=tuple(p2), today=today)}
     rows = []
     for age in sorted(p2):
         r = project(dict(cfg, planned_age=age), today=today)
@@ -215,7 +260,9 @@ def totals_by_age(cfg, today=None):
         lump, p2_month = p2_payout(p2[age]["value"], cfg["p2_upfront"], cfg["p2_years"]) if ok else (None, None)
         p3_month = p3[age]["value"] / (cfg["payout_years"] * 12) if p3[age]["available"] else None
         monthly = (state or 0) + (p2_month or 0) + (p3_month or 0) if ok else None
+        inv_month = invest[age]["real"] * 0.04 / 12 if age in invest else None
         rows.append({"age": age, "date": _ym(cfg, age), "allowed": ok, "penalty": r["penalty"] if ok else None,
+                     "inv_month": inv_month,
                      "state": state, "p2_lump": lump, "p2_month": p2_month, "p3_month": p3_month,
                      "monthly": monthly, "after_p2": (state or 0) + (p3_month or 0) if ok else None})
     return rows

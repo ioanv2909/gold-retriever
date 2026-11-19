@@ -125,8 +125,16 @@ def _total(cfg, ccy, rate):
     no = t("pen.not_allowed")
     chosen = cfg["planned_age"] or cfg["retire_age"]
     yrs = f"{cfg['p2_years']:g}"
+    inv = None
+    try:
+        import summary_ui
+        pi = summary_ui.projection_inputs(cfg, "RON")
+        if pi:
+            inv = {"now": pi["now"], "monthly": pi["monthly"], "ret": pi["ret"], "inflation": cfg["inv_inflation"]}
+    except Exception:  # fara date de la brokeri tabelul ramane doar cu pensiile
+        inv = None
     out = []
-    for x in pension.totals_by_age(cfg):
+    for x in pension.totals_by_age(cfg, inv=inv):
         m = lambda v: _money(v, ccy, rate) if v is not None else "—"  # noqa: E731
         out.append({
             t("pen.col_age"): (f"▶ {x['age']:g}" if abs(x["age"] - chosen) < 1e-9 else f"{x['age']:g}"),
@@ -138,6 +146,9 @@ def _total(cfg, ccy, rate):
             t("pen.tot_col_after", years=yrs): m(x["after_p2"]) if x["allowed"] else no,
             t("pen.tot_col_lump", pct=f"{cfg['p2_upfront']:g}"): m(x["p2_lump"]) if x["allowed"] else no,
         })
+        if inv:
+            out[-1][t("pen.tot_col_inv")] = m(x["inv_month"])
+            out[-1][t("pen.tot_col_all", years=yrs)] = m((x["monthly"] or 0) + (x["inv_month"] or 0)) if x["allowed"] else no
     st.dataframe(pd.DataFrame(out), hide_index=True, width="content")
     st.caption(t("pen.tot_note", years=yrs, payout=f"{cfg['payout_years']:g}"))
 
