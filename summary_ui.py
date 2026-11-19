@@ -203,8 +203,8 @@ def render_summary(api_key_id, api_secret):
             if key in ch:
                 x = ch[key]
                 arrow = "🟢 ▲" if x["gain"] >= 0 else "🔴 ▼"
-                parts.append(t("sum.change_" + key, arrow=arrow, gain=_money(x["gain"], ccy),
-                               pct=f"{x['pct']:+.1f}" if x["pct"] is not None else "—", value=_money(x["value"], ccy)))
+                parts.append(t("sum.change_" + key, arrow=arrow, gain=("+" if x["gain"] >= 0 else "") + _money(x["gain"], ccy),
+                               pct=f"{x['pct']:+.1f}" if x["pct"] is not None else "—", value=("+" if x["value"] >= 0 else "") + _money(x["value"], ccy)))
         if parts:
             st.markdown(" · ".join(parts))
 

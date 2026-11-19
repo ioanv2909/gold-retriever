@@ -614,7 +614,7 @@ _T = {
     "sum.chart_goal": {"RO": 'Obiectiv', "EN": 'Goal'},
     "sum.chart_age": {"RO": 'Vârsta', "EN": 'Age'},
     "sum.chart_note": {"RO": 'Drumul spre pensie, în bani de azi: investițiile la {ret}% pe an minus inflația de {infl}%, banda arată randamentul cu 2 puncte mai mic / mai mare; pilonii II și III cu randamentele lor reale din setări. Pensia de stat nu e inclusă (e venit, nu avere).', "EN": "The road to retirement, in today's money: investments at {ret}% a year less {infl}% inflation, the band shows the return 2 points lower / higher; pillars II and III at their real returns from the settings. The state pension is not included (it is income, not wealth)."},
-    "sum.change_month": {"RO": '{arrow} față de acum o lună: {gain} din piață ({pct}%), valoarea +{value} cu depuneri', "EN": '{arrow} vs a month ago: {gain} from the market ({pct}%), value +{value} with deposits'},
+    "sum.change_month": {"RO": '{arrow} față de acum o lună: {gain} din piață ({pct}%), valoarea {value} cu depuneri', "EN": '{arrow} vs a month ago: {gain} from the market ({pct}%), value {value} with deposits'},
     "sum.change_ytd": {"RO": '{arrow} de la 1 ianuarie: {gain} din piață ({pct}%)', "EN": '{arrow} since 1 January: {gain} from the market ({pct}%)'},
     "sum.inv_income": {"RO": 'Venit din investiții / lună', "EN": 'Income from investments / month'},
     "sum.inv_income_help": {"RO": 'Regula de 4%: retragi anual 4% din investiții ({value} în bani de azi la pensionare), o sumă considerată sustenabilă pe 30 de ani.', "EN": "The 4% rule: withdraw 4% of the investments a year ({value} in today's money at retirement), considered sustainable for 30 years."},
