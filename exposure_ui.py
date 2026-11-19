@@ -7,6 +7,7 @@ import mobile
 import privacy
 
 import exposure
+import flags
 from i18n import t
 
 BAR = "#2a78d6"
@@ -34,8 +35,18 @@ def _fold(items, dim):
     return head + [(t("ex.bucket.rest", n=len(tail)), sum(v for _, v, _ in tail), sum(p for _, _, p in tail))]
 
 
-def _chart(items, ccy):
+def _flag(dim, label):
+    """Steagul pentru o tara sau o moneda (imagine); None pentru sector si pentru grupuri (Altele, ETF...)."""
+    if dim == "country":
+        return flags.flag_uri(flags.country_code(label))
+    if dim == "currency":
+        return flags.flag_uri(flags.currency_code(label))
+    return None
+
+
+def _chart(items, ccy, dim=None):
     labels = [k for k, _, _ in items]
+    icons = [_flag(dim, k) for k in labels]
     fig = go.Figure(go.Bar(
         y=labels, x=[p for _, _, p in items], orientation="h", marker={"color": BAR, "cornerradius": 4},
         text=[f"{p:.1f}%" for _, _, p in items], textposition="outside", cliponaxis=False,
@@ -44,6 +55,15 @@ def _chart(items, ccy):
     fig.update_layout(height=40 + 30 * len(items), margin={"l": 10, "r": 50, "t": 10, "b": 10}, bargap=0.3,
                       xaxis={"visible": False, "range": [0, max(p for _, _, p in items) * 1.15]},
                       yaxis={"autorange": "reversed"}, showlegend=False)
+    if any(icons):
+        # tara / moneda: steagul in locul numelui (numele ramane in hover); grupurile fara steag pastreaza textul
+        fig.update_yaxes(tickmode="array", tickvals=labels,
+                         ticktext=["" if icon else label for icon, label in zip(icons, labels)])
+        for label, icon in zip(labels, icons):
+            if icon:
+                fig.add_layout_image(source=icon, xref="paper", yref="y", x=-0.01, y=label, sizex=0.12, sizey=0.62,
+                                     xanchor="right", yanchor="middle", layer="above")
+        fig.update_layout(margin={"l": 46, "r": 50, "t": 10, "b": 10})
     return fig
 
 
@@ -86,7 +106,7 @@ def render_exposure_tab(vdf, display_ccy):
                 st.caption(t("ex.no_data"))
                 continue
             items = _fold(items, dim)
-            mobile.plotly_chart(_chart(items, display_ccy), width="stretch", key="ex_chart_" + dim)
+            mobile.plotly_chart(_chart(items, display_ccy, dim), width="stretch", key="ex_chart_" + dim)
             with st.expander(t("ex.table")):
                 _tbl = pd.DataFrame([{
                     t("ex.col.category"): k, t("ex.col.value", ccy=display_ccy): round(v, 2), "%": round(p, 1),

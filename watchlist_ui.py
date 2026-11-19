@@ -111,15 +111,24 @@ def render_watchlist_tab(vdf=None):
             }
             for r in watchlist_rows
         ]
-        st.dataframe(
-            watchlist_df,
-            width="stretch",
-            hide_index=True,
-            column_config={nume: st.column_config.Column(nume, help=text) for nume, text in _wl_help.items()},
-            on_select="rerun",
-            selection_mode="single-row",
-            key=f"watchlist_table_{st.session_state.get('table_nonce', 0)}",
-        )
+        import html_table
+        import logos
+        logos.prefetch([(r["Simbol"], r["Nume"] if r["Nume"] != "n/a" else "") for r in watchlist_rows])
+        sym_col, name_col = col("Simbol"), col("Nume")
+        cols = [{"key": "_logo", "label": "", "width": "30px"},
+                {"key": name_col, "label": name_col, "help": _wl_help.get(name_col)}]
+        cols += [{"key": c, "label": c, "help": _wl_help.get(c), "nowrap": True}
+                 for c in watchlist_df.columns if c not in (sym_col, name_col)]
+        out = []
+        for raw, row in zip(watchlist_rows, watchlist_df.to_dict("records")):
+            sym = raw["Simbol"]
+            name = raw["Nume"] if raw["Nume"] != "n/a" else sym
+            cells = {c: ("{:,.2f}".format(v) if isinstance(v, float) else v) for c, v in row.items()}
+            cells["_logo"] = {"img": logos.logo_uri(sym, name), "img_title": sym}
+            cells[name_col] = {"text": name, "title": sym, "href": html_table.detail_href(sym)}
+            out.append(cells)
+        html_table.render(cols, out)
+        st.caption(t("wl.table_hint"))
 
         wl_remove_col, wl_delete_col, wl_refresh_col = st.columns([3, 1, 1])
         with wl_remove_col:

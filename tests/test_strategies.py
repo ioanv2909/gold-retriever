@@ -228,15 +228,25 @@ def _ui_setup(monkeypatch):
     })
 
 
+def _table_html(at):
+    return next(m.value for m in at.markdown if "grtbl" in m.value)
+
+
+def _tickers(html):
+    import re
+    return re.findall(r'<td title="([^"]+)"><a href="\?detail=', html)
+
+
 def test_strategies_tab_renders_matrix(monkeypatch):
     from streamlit.testing.v1 import AppTest
     _ui_setup(monkeypatch)
     at = AppTest.from_function(_tab_page).run()
     assert not at.exception
-    df = at.dataframe[0].value
-    assert list(df["ticker"]) == ["AAA", "EEE", "NEW"]
-    assert df.loc[0, "value"] is not None and "pozitive" in df.loc[0, "conv"]
-    assert df.loc[1, "conv"] == "Nicio lentilă cu date suficiente" and df.loc[2, "conv"].startswith("Fără date")
+    html = _table_html(at)
+    assert _tickers(html) == ["AAA", "EEE", "NEW"]  # tickerul e tooltip pe nume, coloana ticker nu mai exista
+    rows = html.split("<tr>")[2:]
+    assert "/100" in rows[0] and "pozitive" in rows[0]
+    assert "Nicio lentilă cu date suficiente" in rows[1] and "Fără date" in rows[2]
 
 
 def test_strategy_section_renders_cards_and_ddm(monkeypatch):
@@ -301,5 +311,5 @@ def test_strategies_tab_profile_limits_convergence(monkeypatch):
     s.save_profile("income")
     at = AppTest.from_function(_tab_page).run()
     assert not at.exception
-    assert at.dataframe[0].value.loc[0, "conv"].endswith("din 3 lentile cu date")
+    assert "din 3 lentile cu date" in _table_html(at).split("<tr>")[2]
     assert any("Coloanele gri" in c.value for c in at.caption)

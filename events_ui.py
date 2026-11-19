@@ -8,6 +8,13 @@ import users
 from i18n import t
 
 RANGES = (7, 14, 30, 60)
+ICONS = {"earnings": "📊", "ex_dividend": "✂️", "dividend_payment": "💰"}
+
+
+def _short_date(iso, today_year):
+    """05.12 (sau 05.12.2027 daca e in alt an decat cel curent)."""
+    y, m, d = iso[:10].split("-")
+    return f"{d}.{m}" + (f".{y}" if int(y) != today_year else "")
 
 
 def render_calendar_tab(names):
@@ -31,15 +38,34 @@ def render_calendar_tab(names):
     if not rows:
         st.info(t("ev.empty"))
     else:
-        df = pd.DataFrame([{
-            t("ev.col.date"): ev["date"] + (" – " + ev["date_end"] if ev.get("date_end") else ""),
-            t("ev.col.days"): ev["days"],
-            t("ev.col.ticker"): ev["ticker"],
-            t("ev.col.name"): names.get(ev["ticker"]) or "",
-            t("ev.col.type"): t("ev.type." + ev["type"]),
-            t("ev.col.detail"): t("ev.eps_est", v="%.2f" % ev["eps_avg"]) if ev.get("eps_avg") is not None else "",
-        } for ev in rows])
-        st.dataframe(df, hide_index=True, width="stretch")
+        import html_table
+        import logos
+        from datetime import date as _date
+        year = _date.today().year
+        logos.prefetch([(ev["ticker"], names.get(ev["ticker"]) or "") for ev in rows])
+        cols = [{"key": "date", "label": t("ev.col.date"), "width": "1%", "nowrap": True},
+                {"key": "days", "label": t("ev.col.days_short"), "help": t("ev.col.days"), "width": "1%", "align": "right", "nowrap": True},
+                {"key": "logo", "label": "", "width": "30px"},
+                {"key": "name", "label": t("ev.col.name")},
+                {"key": "type", "label": t("ev.col.type"), "nowrap": True},
+                {"key": "detail", "label": t("ev.col.detail")}]
+        out = []
+        for ev in rows:
+            name = names.get(ev["ticker"]) or ev["ticker"]
+            when = _short_date(ev["date"], year) + ("–" + _short_date(ev["date_end"], year) if ev.get("date_end") else "")
+            out.append({
+                "date": {"text": when, "title": ev["date"] + (" – " + ev["date_end"] if ev.get("date_end") else "")},
+                "days": ev["days"],
+                "logo": {"img": logos.logo_uri(ev["ticker"], name), "img_title": ev["ticker"]},
+                "name": {"text": name, "title": ev["ticker"], "href": html_table.detail_href(ev["ticker"])},
+                "type": {"text": ICONS.get(ev["type"], "•") + " " + t("ev.type." + ev["type"]), "title": t("ev.desc." + ev["type"])},
+                "detail": t("ev.eps_est", v="%.2f" % ev["eps_avg"]) if ev.get("eps_avg") is not None else "",
+            })
+        html_table.render(cols, out)
+    with st.expander(t("ev.legend")):
+        for k in events.TYPES:
+            st.markdown(f"{ICONS.get(k, '•')} **{t('ev.type.' + k)}** — {t('ev.desc.' + k)}")
+        st.caption(t("ev.legend_hint"))
     st.caption(t("ev.source"))
 
 

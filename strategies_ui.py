@@ -326,38 +326,32 @@ def render_strategies_tab(vdf):
         st.info(t("st.empty"))
         return
 
-    df = pd.DataFrame(rows).drop(columns=["_pos", "_neg", "_known"])
-    score_col = lambda lens: st.column_config.Column(t("st.lens." + lens), help=t("st.lens_help." + lens))
+    import html_table
+    import logos
+    logos.prefetch([(r["ticker"], r["name"]) for r in rows])
     # lentilele din afara profilului raman vizibile, dar estompate (nu intra in convergenta)
     inside = [x for x in strategies.LENSES if x in plenses]
     outside = [x for x in strategies.LENSES if x not in plenses]
-    styled = df.style.format({lens: "{:.0f}/100" for lens in strategies.LENSES} | {"ddm_margin": "{:+.0f}%"},
-                             na_rep="—").map(_shade, subset=inside)
-    if outside:
-        styled = styled.map(lambda v: "color: #8a8a8a", subset=outside)
-    event = st.dataframe(
-        styled, hide_index=True, width="stretch", on_select="rerun", selection_mode="single-row",
-        key="st_table_%d" % st.session_state.get("table_nonce", 0),
-        column_config={
-            "ticker": st.column_config.TextColumn(t("st.col.ticker"), help=t("st.col.ticker_help")),
-            "name": st.column_config.TextColumn(t("st.col.name"), help=t("st.col.name_help")),
-            "value": score_col("value"), "growth": score_col("growth"), "ddm": score_col("ddm"),
-            "div_growth": score_col("div_growth"), "sentiment": score_col("sentiment"), "events": score_col("events"),
-            "trend": score_col("trend"),
-            "ddm_margin": st.column_config.Column(t("st.col.ddm_margin"), help=t("st.col.ddm_margin_help")),
-            "conv": st.column_config.TextColumn(t("st.col.conv"), help=t("st.col.conv_help")),
-            "note": st.column_config.TextColumn(t("st.col.note"), help=t("st.col.note_help")),
-        })
-    sel = event.selection.rows if event and event.selection else []
-    if sel:
-        tk = rows[sel[0]]["ticker"]
-        detail = {r["ticker"]: r for r in st.session_state.get("_table_rows", [])}.get(tk)
-        if detail:
-            st.session_state["selected_ticker"] = tk
-            st.session_state["selected_row"] = detail
-            st.session_state["total_portfolio_value"] = st.session_state.get("_table_total")
-            st.session_state["scroll_to_top_detail"] = True
-            st.rerun()
+    cols = [{"key": "logo", "label": "", "width": "30px"},
+            {"key": "name", "label": t("st.col.name"), "help": t("st.col.name_help")}]
+    cols += [{"key": lens, "label": t("st.lens." + lens), "help": t("st.lens_help." + lens), "align": "right", "nowrap": True}
+             for lens in strategies.LENSES]
+    cols += [{"key": "ddm_margin", "label": t("st.col.ddm_margin"), "help": t("st.col.ddm_margin_help"), "align": "right", "nowrap": True},
+             {"key": "conv", "label": t("st.col.conv"), "help": t("st.col.conv_help"), "nowrap": True},
+             {"key": "note", "label": t("st.col.note"), "help": t("st.col.note_help")}]
+    out = []
+    for r in rows:
+        row = {"logo": {"img": logos.logo_uri(r["ticker"], r["name"]), "img_title": r["ticker"]},
+               "name": {"text": r["name"] or r["ticker"], "title": r["ticker"], "href": html_table.detail_href(r["ticker"])},
+               "ddm_margin": "{:+.0f}%".format(r["ddm_margin"]) if r["ddm_margin"] is not None else "—",
+               "conv": r["conv"], "note": r["note"]}
+        for lens in strategies.LENSES:
+            v = r[lens]
+            style = _shade(v) if lens in inside else "color: #8a8a8a"
+            row[lens] = {"text": "{:.0f}/100".format(v) if v is not None else "—", "style": style}
+        out.append(row)
+    html_table.render(cols, out)
+    st.caption(t("st.table_hint"))
     st.caption(t("st.scale"))
     if outside:
         st.caption(t("st.outside_note"))

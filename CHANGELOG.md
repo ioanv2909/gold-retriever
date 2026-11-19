@@ -1,3 +1,19 @@
+## 0.4.80 — 2026-11-19
+
+- Watchlist: each instrument shows its **logo and name**; the symbol column is gone — the symbol shows when hovering the name or the logo, and clicking the name opens the instrument page.
+
+## 0.4.79 — 2026-11-19
+
+- Calendar: narrow date and days columns (the full date on hover), the company **logo and name** instead of the ticker (the ticker on hover; clicking the name opens the position), a **symbol for each event type** (📊 earnings, ✂️ ex-dividend, 💰 dividend payment, explained on hover) and a collapsible **legend** below the table.
+
+## 0.4.78 — 2026-11-19
+
+- Strategies table: each position shows its **logo and full name**; the ticker column is gone — the ticker shows as a tooltip when hovering the name (or the logo), and clicking the name opens the position page. The table is now a plain HTML table (no column sorting) because the interactive table cannot show cell tooltips.
+
+## 0.4.77 — 2026-11-19
+
+- Exposure: countries and currencies are shown as **flags** instead of names (the name stays in the tooltip when hovering the bar); groups such as Others or ETF keep their text. Flags are small bundled images (flagcdn.com), since flag emojis do not show on Windows.
+
 ## 0.4.76 — 2026-11-19
 
 - Weekly e-mail report: the first report of each month adds a **monthly summary** — wealth (investments + pillars II/III), the net state pension and pillars at retirement, the investments at retirement with their 4% income, and the progress towards the wealth goal. A tick in Settings → Notifications → Weekly report turns it off; the preview shows it.
