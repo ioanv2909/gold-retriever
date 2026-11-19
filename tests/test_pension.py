@@ -157,3 +157,17 @@ def test_settings_form_keeps_the_payout_choice():
     import pension_ui
     src = inspect.getsource(pension_ui._form)
     assert "p2_upfront" in src and "p2_years" in src
+
+
+def test_totals_by_age_combine_the_pillars():
+    cfg = dict(BASE, p2_balance=100000, p2_monthly=0, p2_return=0, p3_balance=12000, p3_monthly=0, p3_return=0,
+               payout_years=10, p2_upfront=30, p2_years=8)
+    rows = {x["age"]: x for x in pension.totals_by_age(cfg, today=date(2025, 1, 1))}
+    assert not rows[55]["allowed"] and rows[55]["monthly"] is None          # prea devreme pentru pensie
+    r65 = rows[65]
+    assert r65["state"] == pytest.approx(pension.project(cfg, today=date(2025, 1, 1))["pension_at_retire"])
+    assert r65["p2_lump"] == pytest.approx(30000) and r65["p2_month"] == pytest.approx(70000 / 96)
+    assert r65["p3_month"] == pytest.approx(100)
+    assert r65["monthly"] == pytest.approx(r65["state"] + r65["p2_month"] + 100)
+    assert r65["after_p2"] == pytest.approx(r65["state"] + 100)
+    assert rows[60]["allowed"] and rows[60]["penalty"] > 0

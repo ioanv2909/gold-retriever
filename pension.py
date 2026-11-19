@@ -158,6 +158,28 @@ def p2_payout(value, upfront_pct, years):
     return value * pct, value * (1 - pct) / months
 
 
+def totals_by_age(cfg, today=None):
+    """Venitul lunar din cei trei piloni daca iesi la pensie la fiecare varsta (lucrand pana atunci).
+    Pilonul II se plateste odata cu pensia de stat (plata unica + rate pe p2_years ani); Pilonul III de la 60 de ani,
+    impartit orientativ pe payout_years ani. Sub limita legala pentru pensie (anticipata) nu se poate iesi."""
+    cfg = clean(cfg)
+    today = today or date.today()
+    p2 = {x["age"]: x for x in private_by_age(cfg, "p2", today=today)}
+    p3 = {x["age"]: x for x in private_by_age(cfg, "p3", today=today)}
+    rows = []
+    for age in sorted(p2):
+        r = project(dict(cfg, planned_age=age), today=today)
+        ok = r["planned_ok"] or age >= cfg["retire_age"] - 1e-9
+        state = r["pension_at_retire"] if ok else None
+        lump, p2_month = p2_payout(p2[age]["value"], cfg["p2_upfront"], cfg["p2_years"]) if ok else (None, None)
+        p3_month = p3[age]["value"] / (cfg["payout_years"] * 12) if p3[age]["available"] else None
+        monthly = (state or 0) + (p2_month or 0) + (p3_month or 0) if ok else None
+        rows.append({"age": age, "date": _ym(cfg, age), "allowed": ok, "penalty": r["penalty"] if ok else None,
+                     "state": state, "p2_lump": lump, "p2_month": p2_month, "p3_month": p3_month,
+                     "monthly": monthly, "after_p2": (state or 0) + (p3_month or 0) if ok else None})
+    return rows
+
+
 def scenarios(cfg, stop_ages=(55, 60, 65), today=None):
     """Ce pensie primesti daca te opresti din munca acum sau la varstele date (cu acelasi salariu pana atunci).
     Pensia poate incepe cel mai devreme cu 5 ani inainte de varsta standard, si doar daca stagiul complet e atins

@@ -107,7 +107,9 @@ def render_pension_tab():
         st.caption(t("pen.rate", ccy=ccy, rate=f"{1 / rate:.4f}" if rate else "?"))
 
     r = pension.project(cfg)
-    tab1, tab2, tab3 = st.tabs([t("pen.tab_p1"), t("pen.tab_p2"), t("pen.tab_p3")])
+    tab0, tab1, tab2, tab3 = st.tabs([t("pen.tab_total"), t("pen.tab_p1"), t("pen.tab_p2"), t("pen.tab_p3")])
+    with tab0:
+        _total(cfg, ccy, rate)
     with tab1:
         _scenarios(cfg, ccy, rate)
         _pillar1(r, ccy, rate)
@@ -115,6 +117,29 @@ def render_pension_tab():
         _private(cfg, r, "p2", ccy, rate)
     with tab3:
         _private(cfg, r, "p3", ccy, rate)
+
+
+def _total(cfg, ccy, rate):
+    """Toti pilonii la un loc: venitul lunar dupa varsta de iesire la pensie."""
+    st.markdown(f"**{t('pen.tot_title')}**")
+    no = t("pen.not_allowed")
+    chosen = cfg["planned_age"] or cfg["retire_age"]
+    yrs = f"{cfg['p2_years']:g}"
+    out = []
+    for x in pension.totals_by_age(cfg):
+        m = lambda v: _money(v, ccy, rate) if v is not None else "—"  # noqa: E731
+        out.append({
+            t("pen.col_age"): (f"▶ {x['age']:g}" if abs(x["age"] - chosen) < 1e-9 else f"{x['age']:g}"),
+            t("pen.col_year"): _ym(x["date"]),
+            t("pen.tot_col_state"): (m(x["state"]) + (f" (−{x['penalty'] * 100:.0f}%)" if x["penalty"] else "")) if x["allowed"] else no,
+            t("pen.tot_col_p2", years=yrs): m(x["p2_month"]) if x["allowed"] else no,
+            t("pen.tot_col_p3"): m(x["p3_month"]),
+            t("pen.tot_col_month", years=yrs): m(x["monthly"]) if x["allowed"] else no,
+            t("pen.tot_col_after", years=yrs): m(x["after_p2"]) if x["allowed"] else no,
+            t("pen.tot_col_lump", pct=f"{cfg['p2_upfront']:g}"): m(x["p2_lump"]) if x["allowed"] else no,
+        })
+    st.dataframe(pd.DataFrame(out), hide_index=True, width="content")
+    st.caption(t("pen.tot_note", years=yrs, payout=f"{cfg['payout_years']:g}"))
 
 
 def _private(cfg, r, key, ccy, rate):
