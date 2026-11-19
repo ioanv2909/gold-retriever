@@ -129,6 +129,24 @@ def _ym(cfg, age):
     return idx // 12, idx % 12 + 1
 
 
+def private_by_age(cfg, key, ages=(55, 60, 62, 65, 67), today=None):
+    """Pilonul II / III ("p2" / "p3"): soldul estimat daca iesi la pensie la fiecare varsta (contributii pana atunci).
+    Include si varsta standard si cea aleasa. Pilonul II se plateste odata cu pensia de stat; Pilonul III de la 60 de ani."""
+    cfg = clean(cfg)
+    today = today or date.today()
+    age_now = (today.year * 12 + today.month - 1 - (cfg["birth_year"] * 12 + cfg["birth_month"] - 1)) / 12
+    balance, monthly, ret = cfg[key + "_balance"], cfg[key + "_monthly"], cfg[key + "_return"]
+    wanted = set(ages) | {cfg["retire_age"]} | ({cfg["planned_age"]} if cfg["planned_age"] else set())
+    rows = []
+    for age in sorted(a for a in wanted if a > age_now):
+        months = max(0, round((age - age_now) * 12))
+        value = future_value(balance, monthly, ret, months)
+        paid = balance + monthly * months
+        rows.append({"age": age, "date": _ym(cfg, age), "months": months, "paid_in": paid, "value": value,
+                     "gain": value - paid, "available": key == "p3" and age >= 60 or key == "p2"})
+    return rows
+
+
 def scenarios(cfg, stop_ages=(55, 60, 65), today=None):
     """Ce pensie primesti daca te opresti din munca acum sau la varstele date (cu acelasi salariu pana atunci).
     Pensia poate incepe cel mai devreme cu 5 ani inainte de varsta standard, si doar daca stagiul complet e atins

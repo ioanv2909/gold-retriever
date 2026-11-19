@@ -131,6 +131,17 @@ def _private(cfg, r, key, ccy, rate):
     c3.metric(t("pen.m_return"), f"{ret:g}%")
     c4.metric(t("pen.m_at_retire"), _money(at_retire, ccy, rate),
               help=t("pen.m_at_retire_help", date=_ym(r["out_date"]), gain=_money(at_retire - paid_in, ccy, rate)))
+    st.markdown(f"**{t('pen.pv_title')}**")
+    chosen = cfg["planned_age"] or cfg["retire_age"]
+    out = [{t("pen.col_age"): (f"▶ {x['age']:g}" if abs(x["age"] - chosen) < 1e-9 else f"{x['age']:g}"),
+            t("pen.col_year"): _ym(x["date"]),
+            t("pen.pv_col_paid"): _money(x["paid_in"], ccy, rate),
+            t("pen.pv_col_value"): _money(x["value"], ccy, rate),
+            t("pen.pv_col_gain"): _money(x["gain"], ccy, rate),
+            t("pen.pv_col_month"): _money(x["value"] / (cfg["payout_years"] * 12), ccy, rate)}
+           for x in pension.private_by_age(cfg, key)]
+    st.dataframe(pd.DataFrame(out), hide_index=True, width="content")
+    st.caption(t("pen.pv_note_" + key, years=f"{cfg['payout_years']:g}"))
 
 
 def _scenarios(cfg, ccy, rate):

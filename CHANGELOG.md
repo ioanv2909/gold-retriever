@@ -1,3 +1,7 @@
+## 0.4.68 — 2026-11-19
+
+- Pension, pillars II and III: a table with the estimated value if you retire at 55, 60, 62, 65 or 67 (plus the standard and the chosen age): balance plus contributions, estimated value, gain and a monthly equivalent; with when each pillar can be paid out.
+
 ## 0.4.67 — 2026-11-19
 
 - Pension, pillar I: a **scenarios** table — the pension from the points earned so far if you stop working now, and if you keep the same salary until 55, 60 or 65: contribution years, points, the earliest (early) start with its reduction and the net pension, and the net pension at the standard age.

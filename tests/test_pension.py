@@ -131,3 +131,14 @@ def test_scenarios_stop_now_and_keep_working():
     assert at60["full_stage"] and at60["earliest_age"] == pytest.approx(60) and at60["penalty"] > 0
     assert at60["net_earliest"] < at60["net_std"]
     assert at65["penalty"] == 0 and at65["net_std"] > at60["net_std"]
+
+
+def test_private_pillar_values_by_age():
+    cfg = dict(BASE, p2_balance=1000, p2_monthly=100, p2_return=0, planned_age=62)
+    rows = pension.private_by_age(cfg, "p2", today=date(2025, 1, 1))
+    ages = [x["age"] for x in rows]
+    assert ages == sorted(ages) and 62 in ages and 65 in ages and all(a > 45 for a in ages)
+    at60 = next(x for x in rows if x["age"] == 60)
+    assert at60["months"] == 180 and at60["value"] == pytest.approx(1000 + 100 * 180) and at60["gain"] == pytest.approx(0)
+    p3 = pension.private_by_age(dict(cfg, p3_balance=500), "p3", today=date(2025, 1, 1))
+    assert not next(x for x in p3 if x["age"] == 55)["available"] and next(x for x in p3 if x["age"] == 60)["available"]
