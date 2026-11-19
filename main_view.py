@@ -449,6 +449,9 @@ def render_main_view(me, api_key_id, api_secret):
     if div_snapshot and div_snapshot.get("error"):
         st.caption(t("div.partial_err", e=div_snapshot["error"]))
 
+    if not detail_loading:
+        import quick_search
+        quick_search.render(df_display)
     _render_tabs(df, df_display, vdf, display_ccy, total_portfolio_value, compact, detail_loading)
 
     if "Trading 212" in sel_portfolios:

@@ -148,3 +148,8 @@ def test_summary_section_renders(tmp_path):
     assert any("Valoare estimată" in c for cols in out["columns"] for c in cols)  # proiectia investitiilor
     assert any("Investiții la bursă" in m[0] for m in out["metrics"])
     assert any("Total avere" in m[0] for m in out["metrics"])
+
+
+def test_quick_search_is_above_the_tabs(tmp_path):
+    out = _run(tmp_path, "t212_only")
+    assert "quick_search" in out["keys"]

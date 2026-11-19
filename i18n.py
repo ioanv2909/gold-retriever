@@ -620,6 +620,8 @@ _T = {
     "sum.inv_income_help": {"RO": 'Regula de 4%: retragi anual 4% din investiții ({value} în bani de azi la pensionare), o sumă considerată sustenabilă pe 30 de ani.', "EN": "The 4% rule: withdraw 4% of the investments a year ({value} in today's money at retirement), considered sustainable for 30 years."},
     "pen.tot_col_inv": {"RO": 'Investiții / lună (4%)', "EN": 'Investments / month (4%)'},
     "pen.tot_col_all": {"RO": 'Total cu investiții (primii {years} ani)', "EN": 'Total with investments (first {years} yrs)'},
+    "qs.label": {"RO": 'Caută o poziție', "EN": 'Find a position'},
+    "qs.placeholder": {"RO": '🔎 Caută o poziție după nume sau ticker (Ctrl+K)', "EN": '🔎 Find a position by name or ticker (Ctrl+K)'},
     "sum.pension_title": {"RO": 'La pensionare', "EN": 'At retirement'},
     "sum.state_net": {"RO": 'Pensia de stat netă / lună', "EN": 'State pension, net / month'},
     "sum.state_net_help": {"RO": 'Estimarea pentru ieșirea la pensie din {date} (vârsta {age}), în bani de azi.', "EN": "The estimate for retiring in {date} (age {age}), in today's money."},

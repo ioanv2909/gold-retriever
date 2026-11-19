@@ -1,3 +1,7 @@
+## 0.4.74 — 2026-11-19
+
+- Investments: a **quick search** field above the tabs (name or ticker; **Ctrl+K** jumps to it) that opens the position page directly.
+
 ## 0.4.72 — 2026-11-19
 
 - Summary: **road to retirement** chart (investments + pillars II/III in today's money up to 67, with a ±2% return band and the retirement age marked), a **wealth goal** (amount and age: the monthly deposit needed and whether you are on track), the change **vs a month ago and since 1 January** (market gain without new deposits), the **income from investments** by the 4% rule at retirement and in the age table; on the phone only the big figures and the chart.
