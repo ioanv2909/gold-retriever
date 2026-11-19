@@ -3,7 +3,8 @@ legaturi care deschid pagina pozitiei (?detail=<ticker>). In browser: sortare la
 butonul "⚙ Coloane" pentru ascunderea / afisarea coloanelor; ambele se tin minte in browser, per tabel.
 
 coloane: dict(key, label, help=None, width=None, align="left"|"right"|"center", nowrap=False, sortable=True)
-celule: text simplu sau dict(text=..., title=..., style=..., href=..., img=..., img_title=..., sort=...)
+celule: text simplu sau dict(text=..., tip=..., title=..., style=..., href=..., img=..., img_title=..., sort=...)
+        tip = eticheta aratata langa text cand mouse-ul e pe rand (de ex. tickerul; doar CSS, apare imediat)
         sort = valoarea dupa care se sorteaza (numar sau text, de ex. data ISO); implicit textul afisat.
 """
 import html
@@ -24,6 +25,10 @@ _CSS = """<style>
 .grtbl a:hover{text-decoration:underline}
 .grtbl img.grtbl-logo{width:22px;height:22px;border-radius:5px;object-fit:contain;display:block}
 .grtbl .nw{white-space:nowrap}
+.grtbl .grtbl-tip{display:none;margin-left:8px;padding:1px 7px;border-radius:5px;font-size:12px;font-weight:600;
+  background:rgba(74,158,255,.22);border:1px solid rgba(74,158,255,.55);white-space:nowrap;vertical-align:middle}
+.grtbl tr:hover .grtbl-tip{display:inline-block}
+.grtbl td.grtbl-logocell{position:relative}
 .grtbl-bar{display:flex;justify-content:flex-end;margin:0 0 4px}
 .grtbl-cols{position:relative;font-size:13px}
 .grtbl-cols summary{cursor:pointer;list-style:none;padding:2px 8px;border:1px solid rgba(128,128,128,.35);border-radius:6px}
@@ -145,6 +150,8 @@ def _cell(value, col):
             html.escape(value["img"], quote=True), html.escape(str(value.get("img_title") or ""), quote=True)) + inner
     if value.get("href"):
         inner = '<a href="%s" target="_self">%s</a>' % (html.escape(value["href"], quote=True), inner)
+    if value.get("tip"):
+        inner += '<span class="grtbl-tip">%s</span>' % html.escape(str(value["tip"]))
     attrs = []
     if value.get("title"):
         attrs.append('title="%s"' % html.escape(str(value["title"]), quote=True))

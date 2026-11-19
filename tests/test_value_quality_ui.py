@@ -90,7 +90,7 @@ def test_watchlist_is_default_portfolio_is_optional_and_result_appears_in_list(m
     at.button_group[0].set_value('list').run()
     assert not at.exception and calls==['FIX']
     html=next(m.value for m in at.markdown if 'grtbl' in m.value)
-    assert 'title="FIX"' in html and 'Watch fixture' in html and '>FIX<' not in html
+    assert '<span class="grtbl-tip">FIX</span>' in html and 'Watch fixture' in html and '<td>FIX</td>' not in html
     assert 'Candidată' in html
     at.button_group[0].set_value('value_quality').run()
     at.number_input(key='vq_ev').set_value(5.0).run()

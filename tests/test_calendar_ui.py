@@ -19,6 +19,7 @@ def test_calendar_shows_names_logos_icons_and_legend(monkeypatch):
     at = AppTest.from_function(_page).run()
     assert not at.exception
     html = next(m.value for m in at.markdown if "grtbl" in m.value)
-    assert "Alpha Corp" in html and 'title="AAA_US_EQ"' in html and ">AAA_US_EQ<" not in html
+    assert "Alpha Corp" in html and '<span class="grtbl-tip">AAA_US_EQ</span>' in html
+    assert "<td>AAA_US_EQ</td>" not in html  # tickerul nu mai e coloana, doar eticheta la mouse
     assert "📊" in html and "✂️" in html and "grtbl-logo" in html
     assert any("Ce înseamnă" in e.label for e in at.expander)

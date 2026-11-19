@@ -1,3 +1,7 @@
+## 0.4.80 — 2026-11-19
+
+- Strategies, Calendar and Watchlist: the ticker now appears **immediately** as a small label next to the name while the mouse is over the row (the browser tooltip appeared only after a delay, if at all).
+
 ## 0.4.79 — 2026-11-19
 
 - Strategies, Calendar and Watchlist tables: **sorting** again — click a column title (▲/▼; numbers, scores and dates sort as values) — and a **⚙ Columns** button to hide or show columns. Both are remembered in the browser for each table.

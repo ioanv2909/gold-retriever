@@ -58,7 +58,7 @@ def render_calendar_tab(names):
                          "sort": ev["date"]},
                 "days": ev["days"],
                 "logo": {"img": logos.logo_uri(ev["ticker"], name), "img_title": ev["ticker"]},
-                "name": {"text": name, "title": ev["ticker"], "href": html_table.detail_href(ev["ticker"])},
+                "name": {"text": name, "title": ev["ticker"], "tip": ev["ticker"], "href": html_table.detail_href(ev["ticker"])},
                 "type": {"text": ICONS.get(ev["type"], "•") + " " + t("ev.type." + ev["type"]), "title": t("ev.desc." + ev["type"])},
                 "detail": t("ev.eps_est", v="%.2f" % ev["eps_avg"]) if ev.get("eps_avg") is not None else "",
             })

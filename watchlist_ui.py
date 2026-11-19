@@ -125,7 +125,7 @@ def render_watchlist_tab(vdf=None):
             name = raw["Nume"] if raw["Nume"] != "n/a" else sym
             cells = {c: ({"text": "{:,.2f}".format(v), "sort": v} if isinstance(v, float) else v) for c, v in row.items()}
             cells["_logo"] = {"img": logos.logo_uri(sym, name), "img_title": sym}
-            cells[name_col] = {"text": name, "title": sym, "href": html_table.detail_href(sym)}
+            cells[name_col] = {"text": name, "title": sym, "tip": sym, "href": html_table.detail_href(sym)}
             out.append(cells)
         html_table.render(cols, out, tid="watchlist")
         st.caption(t("wl.table_hint"))

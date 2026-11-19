@@ -342,7 +342,7 @@ def render_strategies_tab(vdf):
     out = []
     for r in rows:
         row = {"logo": {"img": logos.logo_uri(r["ticker"], r["name"]), "img_title": r["ticker"]},
-               "name": {"text": r["name"] or r["ticker"], "title": r["ticker"], "href": html_table.detail_href(r["ticker"])},
+               "name": {"text": r["name"] or r["ticker"], "title": r["ticker"], "tip": r["ticker"], "href": html_table.detail_href(r["ticker"])},
                "ddm_margin": {"text": "{:+.0f}%".format(r["ddm_margin"]) if r["ddm_margin"] is not None else "—",
                               "sort": r["ddm_margin"] if r["ddm_margin"] is not None else ""},
                "conv": r["conv"], "note": r["note"]}

@@ -13,6 +13,11 @@ def test_build_escapes_and_adds_tooltips_links_and_images():
     assert 'src="data:image/png;base64,AAA"' in out and 'title="ajutor"' in out and "text-align:right" in out
 
 
+def test_tip_is_a_hover_label():
+    out = html_table.build([{"key": "n", "label": "Nume"}], [{"n": {"text": "Apple", "tip": "AAPL<x>"}}])
+    assert '<span class="grtbl-tip">AAPL&lt;x&gt;</span>' in out
+
+
 def test_detail_href_quotes_tickers():
     assert html_table.detail_href("A&B C") == "?detail=A%26B%20C"
 
