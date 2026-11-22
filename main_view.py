@@ -16,6 +16,7 @@ from history_ui import render_history
 from i18n import lang_button, t, x as _tx
 from navigation import open_detail_from_url
 from lang_prefs import load_pref, save_pref
+from market_sentiment import render_fear_and_greed
 from portfolio_model import build_rows, portfolio_options
 from position_alerts_ui import render_banner as _alerts_banner
 from positions_data import build_t212_frame, enrich_view, finish_t212_frame
@@ -99,6 +100,7 @@ def _render_header(me, compact, detail_loading):
             return section
 
     if not detail_loading:
+        render_fear_and_greed()
         _sum_t, _sum_eye = st.columns([5, 2], vertical_alignment="bottom")
         _sum_t.subheader(t("app.summary"))
         with _sum_eye:

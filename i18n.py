@@ -8,6 +8,13 @@ import streamlit as st
 LANGS = ["RO", "EN"]
 
 _T = {
+    "fear_greed.extreme fear": {"RO": "Frică extremă", "EN": "Extreme fear"},
+    "fear_greed.fear": {"RO": "Frică", "EN": "Fear"},
+    "fear_greed.neutral": {"RO": "Neutru", "EN": "Neutral"},
+    "fear_greed.greed": {"RO": "Lăcomie", "EN": "Greed"},
+    "fear_greed.extreme greed": {"RO": "Lăcomie extremă", "EN": "Extreme greed"},
+    "fear_greed.unavailable": {"RO": "Date indisponibile", "EN": "Data unavailable"},
+    "fear_greed.updated": {"RO": "Actualizat la {date}", "EN": "Updated {date}"},
     "app.title": {"RO": "GoldRetriever — Portfolio Analyzer", "EN": "GoldRetriever — Portfolio Analyzer"},
     "app.summary": {"RO": "📈 Sumar Portofoliu", "EN": "📈 Portfolio Summary"},
     "side.updates": {"RO": "🔄 Actualizări", "EN": "🔄 Updates"},
