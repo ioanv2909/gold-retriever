@@ -2,6 +2,10 @@
 
 - Main page chart: it now always opens with **current value** and **amount invested** selected; S&P 500 can still be added for the session.
 
+## 0.4.84 — 2026-11-23
+
+- Replaced the home page Fear & Greed text with a segmented gauge.
+
 ## 0.4.83 — 2026-11-22
 
 - Added CNN’s Fear & Greed Index to the Investments home page.

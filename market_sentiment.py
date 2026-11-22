@@ -42,4 +42,57 @@ def render_fear_and_greed():
     score, rating, updated = reading
     sentiment = t(f"fear_greed.{rating}")
     reading_date = t("fear_greed.updated", date=updated.isoformat())
-    st.markdown(f"{source} · **{score:.0f}/100** · {sentiment} · {reading_date}")
+    st.html(f"""
+        <style>
+          .gr-fear-greed {{
+            box-sizing: border-box;
+            max-width: 30rem;
+            padding: .75rem 1rem;
+            border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+            border-radius: .75rem;
+            margin-bottom: .25rem;
+          }}
+          .gr-fear-greed-header, .gr-fear-greed-footer {{
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: .25rem .75rem;
+          }}
+          .gr-fear-greed-header a {{ font-weight: 600; }}
+          .gr-fear-greed-score {{ font-size: 1.35rem; font-weight: 700; line-height: 1; }}
+          .gr-fear-greed-score small {{ font-size: .8rem; font-weight: 500; }}
+          .gr-fear-greed-track {{
+            position: relative;
+            height: .55rem;
+            margin: .7rem .25rem .5rem;
+            border-radius: .35rem;
+            background: linear-gradient(to right,
+              #db555c 0% 25%, #e88b55 25% 45%, #e3bd58 45% 55%,
+              #8cb978 55% 75%, #3c9b74 75% 100%);
+          }}
+          .gr-fear-greed-marker {{
+            position: absolute;
+            top: 50%;
+            width: .85rem;
+            height: .85rem;
+            border: 2px solid currentColor;
+            border-radius: 50%;
+            background: var(--st-background-color, var(--background-color, #fff));
+            transform: translate(-50%, -50%);
+          }}
+          .gr-fear-greed-footer {{ font-size: .8rem; }}
+        </style>
+        <div class="gr-fear-greed">
+          <div class="gr-fear-greed-header">
+            <a href="{_SOURCE}" target="_blank" rel="noopener noreferrer">CNN Fear &amp; Greed Index</a>
+            <span class="gr-fear-greed-score">{score:.0f}<small> / 100</small></span>
+          </div>
+          <div class="gr-fear-greed-track" aria-hidden="true">
+            <span class="gr-fear-greed-marker" style="left: {score:.2f}%"></span>
+          </div>
+          <div class="gr-fear-greed-footer">
+            <strong>{sentiment}</strong><span>{reading_date}</span>
+          </div>
+        </div>
+    """)
