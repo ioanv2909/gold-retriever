@@ -1,6 +1,6 @@
 """CNN's US stock market sentiment indicator."""
 import csv
-from datetime import date
+from datetime import date, datetime
 from io import StringIO
 
 import requests
@@ -9,12 +9,36 @@ import streamlit as st
 from i18n import t
 
 _SOURCE = "https://www.cnn.com/markets/fear-and-greed"
+_LIVE = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
+_CNN_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+    "Accept": "application/json, text/plain, */*",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Referer": "https://www.cnn.com/",
+    "Origin": "https://www.cnn.com",
+}
+_REFRESH_SECONDS = 60
 _ARCHIVE = "https://raw.githubusercontent.com/whit3rabbit/fear-greed-data/main/datasets/cnn_fear_greed.csv"
 _RATINGS = {"extreme fear", "fear", "neutral", "greed", "extreme greed"}
 
 
+def _load_live():
+    try:
+        response = requests.get(_LIVE, headers=_CNN_HEADERS, timeout=3)
+        response.raise_for_status()
+        reading = response.json()["fear_and_greed"]
+        score = float(reading["score"])
+        rating = reading["rating"].strip().lower()
+        updated = datetime.fromisoformat(reading["timestamp"])
+        if 0 <= score <= 100 and rating in _RATINGS and updated.tzinfo is not None:
+            return score, rating, updated
+    except (requests.RequestException, AttributeError, KeyError, TypeError, ValueError):
+        pass
+    return None
+
+
 @st.cache_data(ttl=900, show_spinner=False)
-def load_fear_and_greed():
+def _load_archive():
     try:
         response = requests.get(_ARCHIVE, timeout=3)
         response.raise_for_status()
@@ -32,6 +56,12 @@ def load_fear_and_greed():
     return None
 
 
+@st.cache_data(ttl=_REFRESH_SECONDS, show_spinner=False)
+def load_fear_and_greed():
+    return _load_live() or _load_archive()
+
+
+@st.fragment(run_every=_REFRESH_SECONDS)
 def render_fear_and_greed():
     reading = load_fear_and_greed()
     source = f"[CNN Fear & Greed Index]({_SOURCE})"
@@ -41,7 +71,10 @@ def render_fear_and_greed():
 
     score, rating, updated = reading
     sentiment = t(f"fear_greed.{rating}")
-    reading_date = t("fear_greed.updated", date=updated.isoformat())
+    if isinstance(updated, datetime):
+        reading_date = t("fear_greed.updated", date=updated.astimezone().strftime("%d.%m.%Y %H:%M %Z"))
+    else:
+        reading_date = t("fear_greed.archive", date=updated.strftime("%d.%m.%Y"))
     st.html(f"""
         <style>
           .gr-fear-greed {{

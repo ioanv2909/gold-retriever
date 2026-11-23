@@ -15,6 +15,7 @@ _T = {
     "fear_greed.extreme greed": {"RO": "Lăcomie extremă", "EN": "Extreme greed"},
     "fear_greed.unavailable": {"RO": "Date indisponibile", "EN": "Data unavailable"},
     "fear_greed.updated": {"RO": "Actualizat la {date}", "EN": "Updated {date}"},
+    "fear_greed.archive": {"RO": "Arhivă · {date}", "EN": "Archive · {date}"},
     "app.title": {"RO": "GoldRetriever — Portfolio Analyzer", "EN": "GoldRetriever — Portfolio Analyzer"},
     "app.summary": {"RO": "📈 Sumar Portofoliu", "EN": "📈 Portfolio Summary"},
     "side.updates": {"RO": "🔄 Actualizări", "EN": "🔄 Updates"},

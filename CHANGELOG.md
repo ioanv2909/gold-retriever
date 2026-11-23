@@ -2,6 +2,10 @@
 
 - Main page chart: it now always opens with **current value** and **amount invested** selected; S&P 500 can still be added for the session.
 
+## 0.4.86 — 2026-11-23
+
+- Refresh the CNN Fear & Greed Index every minute and label the daily archive fallback.
+
 ## 0.4.85 — 2026-11-23
 
 - Automatically refresh the portfolio chart after a new history point is saved.
