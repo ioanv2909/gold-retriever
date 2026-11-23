@@ -2,6 +2,10 @@
 
 - Main page chart: it now always opens with **current value** and **amount invested** selected; S&P 500 can still be added for the session.
 
+## 0.4.85 — 2026-11-23
+
+- Automatically refresh the portfolio chart after a new history point is saved.
+
 ## 0.4.84 — 2026-11-23
 
 - Replaced the home page Fear & Greed text with a segmented gauge.

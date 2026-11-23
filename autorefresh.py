@@ -11,6 +11,7 @@ from core import (DIVIDENDS_CACHE_FILE, PORTFOLIO_CACHE_FILE, WATCHLIST_CACHE_FI
 from userctx import UPath
 
 SETTINGS_FILE = UPath("autorefresh.json")
+HISTORY_FILE = UPath("portfolio_history_multi.json")
 POLL_SECONDS = 30
 WATCHED = (PORTFOLIO_CACHE_FILE, XTB_PRICES_FILE, DIVIDENDS_CACHE_FILE)
 _SIG = "_autorefresh_sig"
@@ -68,7 +69,11 @@ def watchlist_signature(cache=None, path=WATCHLIST_CACHE_FILE, status_path=WATCH
 
 
 def page_signature(cache):
-    return signature(cache) + (watchlist_signature(cache),)
+    try:
+        history_stamp = os.stat(HISTORY_FILE).st_mtime_ns
+    except OSError:
+        history_stamp = None
+    return signature(cache) + (watchlist_signature(cache), history_stamp)
 
 
 def _drop_detail_row():
