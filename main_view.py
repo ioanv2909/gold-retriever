@@ -212,7 +212,7 @@ def _peak_caption(col, sel_portfolios, display_ccy, native, current):
     from core import load_portfolio_history
     from history_multi import multi_history_records
     try:
-        records = multi_history_records(sel_portfolios, display_ccy)
+        records = multi_history_records(sel_portfolios, display_ccy, include_cost_basis=True)
         if native and len(records) < 2:
             records = load_portfolio_history()
         pk = peaks.portfolio_peak(records, current)
@@ -227,6 +227,12 @@ def _peak_caption(col, sel_portfolios, display_ccy, native, current):
         if current and current > 0:
             text += " · " + t("peak.below", p=f"{(1 - current / pk['value']) * 100:.1f}")
     col.caption(text, help=t("peak.portfolio_help"))
+    low = peaks.portfolio_low(records)
+    if low:
+        col.caption(
+            t("peak.portfolio_low", v=_mask(f"{low['value']:,.2f}"), d=peaks.peak_label(low["ts"])),
+            help=t("peak.portfolio_low_help", start=peaks.peak_label(low["start"])),
+        )
 
 
 def _render_metrics(native, vdf, cash, total_dividende, display_ccy, sel_portfolios=()):

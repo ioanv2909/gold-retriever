@@ -1058,6 +1058,11 @@ _T = {
         "EN": "How much of this portfolio's positions value this position represents. Rule of thumb: under 5–10% per position is considered reasonably diversified; above 20% means its performance strongly affects your whole portfolio.",
     },
     "peak.portfolio": {"RO": "🏔️ Maxim: {v} pe {d}", "EN": "🏔️ Peak: {v} on {d}"},
+    "peak.portfolio_low": {"RO": "Minim în interval: {v} pe {d}", "EN": "Interval low: {v} on {d}"},
+    "peak.portfolio_low_help": {
+        "RO": "Intervalul începe la {start}, prima citire la costul investit actual. Pentru a delimita intervalul, GR compară costul în moneda fiecărui cont, fără efectul cursului valutar.",
+        "EN": "The interval starts at {start}, the first reading at the latest invested cost. GR compares cost in each account’s currency to determine the interval without the effect of exchange rates.",
+    },
     "peak.portfolio_now": {"RO": "🏔️ Maxim atins acum", "EN": "🏔️ Peak reached now"},
     "peak.below": {"RO": "{p}% sub maxim", "EN": "{p}% below peak"},
     "peak.portfolio_help": {

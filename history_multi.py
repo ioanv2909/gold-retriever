@@ -153,7 +153,7 @@ def _complete_rates(rates, needed):
     return rates
 
 
-def multi_history_records(portfolios, display_ccy):
+def multi_history_records(portfolios, display_ccy, *, include_cost_basis=False):
     portfolios = list(portfolios or [])
     if not portfolios:
         return []
@@ -177,5 +177,8 @@ def multi_history_records(portfolios, display_ccy):
             val += e["value"] * rc / rd
             cost += e["cost"] * rc / rd
         if ok:
-            out.append({"ts": p["ts"], "date": p["ts"][:10], "market_value": round(val, 2), "invested": round(cost, 2)})
+            record = {"ts": p["ts"], "date": p["ts"][:10], "market_value": round(val, 2), "invested": round(cost, 2)}
+            if include_cost_basis:
+                record["cost_basis"] = tuple((entries[label]["ccy"], entries[label]["cost"]) for label in portfolios)
+            out.append(record)
     return out

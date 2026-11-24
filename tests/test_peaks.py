@@ -22,6 +22,33 @@ def test_portfolio_peak_history_and_current():
     assert peaks.portfolio_peak([], current=None) is None
 
 
+def test_portfolio_low_uses_latest_uninterrupted_native_cost_basis():
+    from history_multi import multi_history_records
+    from unittest.mock import patch
+
+    raw = [
+        {"ts": "2026-11-22T12:00:00", "entries": {"XTB": {"ccy": "USD", "cost": 500, "value": 20}}, "rates": {"EUR": 1, "USD": .9}},
+        {"ts": "2026-11-23T11:40:00", "entries": {"XTB": {"ccy": "USD", "cost": 100, "value": 120}}, "rates": {"EUR": 1, "USD": .9}},
+        {"ts": "2026-11-23T11:55:00", "entries": {"XTB": {"ccy": "USD", "cost": 500, "value": 520}}, "rates": {"EUR": 1, "USD": .9}},
+        {"ts": "2026-11-23T12:10:00", "entries": {"XTB": {"ccy": "USD", "cost": 500, "value": 560}}, "rates": {"EUR": 1, "USD": .92}},
+    ]
+    with patch("history_multi._merged_history", return_value=raw):
+        records = multi_history_records(["XTB"], "EUR", include_cost_basis=True)
+    assert records[-2]["invested"] != records[-1]["invested"]
+    assert peaks.portfolio_low(records) == {
+        "value": 468.0, "ts": "2026-11-23T11:55:00", "start": "2026-11-23T11:55:00",
+    }
+
+
+def test_portfolio_low_native_history_without_cost_basis():
+    records = [
+        {"date": "2026-11-22", "invested": 200, "market_value": 250},
+        {"date": "2026-11-23", "invested": 600, "market_value": 620},
+        {"date": "2026-11-24", "invested": 600, "market_value": 605},
+    ]
+    assert peaks.portfolio_low(records) == {"value": 605.0, "ts": "2026-11-24", "start": "2026-11-23"}
+
+
 def test_peak_label_daily_vs_intraday():
     # o zi reconstruita ramane ziua ei (nu trece in ziua urmatoare la conversia fusului)
     assert peaks.peak_label("2026-10-01T23:00:00") == "01.10.2026"

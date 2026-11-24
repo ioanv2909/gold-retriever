@@ -4,6 +4,8 @@ Portofoliul: din istoricul valorii (puncte la ~15 min in ultimele 30 de zile, ma
 Pozitiile: din reconstructia zilnica T212/XTB (inchideri Yahoo x cantitatea detinuta in ziua respectiva),
 in moneda contului; valoarea de acum o inlocuieste daca e mai mare (reconstructia se opreste la ieri).
 """
+from math import isfinite
+
 import pandas as pd
 
 PEAKS_V = 2  # 2: cu unitatile si pretul din ziua maximului (fisierele mai vechi se reconstruiesc)
@@ -41,6 +43,40 @@ def portfolio_peak(records, current=None, now=None):
     if current is not None and current > 0 and (best is None or current >= best["value"]):
         ts = (now or pd.Timestamp.now()).isoformat(timespec="seconds")
         best = {"value": float(current), "ts": ts, "now": True}
+    return best
+
+
+def portfolio_low(records):
+    """Lowest recorded market value in the latest uninterrupted cost basis interval."""
+    if not records:
+        return None
+    from history_multi import to_local
+
+    ordered = sorted(
+        (r for r in records if r.get("ts") or r.get("date")),
+        key=lambda r: to_local(r.get("ts") or r["date"]),
+    )
+    if not ordered:
+        return None
+    last = ordered[-1]
+    basis = last.get("cost_basis", last.get("invested"))
+    if not basis:
+        return None
+
+    best = None
+    start = None
+    for record in reversed(ordered):
+        if record.get("cost_basis", record.get("invested")) != basis:
+            break
+        start = record.get("ts") or record["date"]
+        try:
+            value = float(record.get("market_value"))
+        except (TypeError, ValueError):
+            continue
+        if isfinite(value) and value > 0 and (best is None or value <= best["value"]):
+            best = {"value": value, "ts": start}
+    if best is not None:
+        best["start"] = start
     return best
 
 
