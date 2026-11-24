@@ -2,6 +2,10 @@
 
 - Main page chart: it now always opens with **current value** and **amount invested** selected; S&P 500 can still be added for the session.
 
+## 0.4.88 — 2026-11-24
+
+- Add a selectable FTSE All-World (VWCE) benchmark to the portfolio chart.
+
 ## 0.4.87 — 2026-11-24
 
 - Show the portfolio low since the latest change in invested cost next to the peak.

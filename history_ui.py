@@ -23,44 +23,53 @@ HIST_RANGES_COMPACT = ("1D", "1W", "1M", "3M", "YTD", "1Y", "Max")
 _HIST_NEAR_COMPACT = {"3H": "1D", "6M": "3M", "3Y": "1Y", "5Y": "Max"}
 
 
-LINES = ("value", "sp500", "invested")
+LINES = ("value", "sp500", "ftse_all_world", "invested")
 # la fiecare deschidere a aplicatiei graficul porneste cu valoarea actuala si suma investita
 DEFAULT_LINES = ("value", "invested")
-_LINE_COLORS = {"value": "#4da3ff", "sp500": "#1baf7a", "invested": "#ff9f43"}
+_LINE_COLORS = {"value": "#4da3ff", "sp500": "#1baf7a", "ftse_all_world": "#b78cff", "invested": "#ff9f43"}
+_BENCHMARKS = {
+    "sp500": (benchmark.SYMBOL, "USD"),
+    "ftse_all_world": ("VWCE.DE", "EUR"),
+}
 
 
 @st.cache_data(ttl=900, show_spinner=False)
-def sp500_prices(range_choice, ccy):
-    """Pretul S&P 500 in moneda ccy (ora locala, fara fus orar), sau None daca Yahoo nu raspunde."""
+def benchmark_prices(line, range_choice, ccy):
+    """Benchmark prices in the display currency, indexed in local time."""
+    symbol, source_ccy = _BENCHMARKS[line]
     if not YFINANCE_AVAILABLE:
         return None
     period, interval = benchmark.YF_RANGE.get(range_choice, ("max", "1d"))
     try:
         px = benchmark.to_local_naive(
-            yf.Ticker(benchmark.SYMBOL).history(period=period, interval=interval, timeout=10)["Close"])
+            yf.Ticker(symbol).history(period=period, interval=interval, timeout=10)["Close"])
         if px.empty:
             return None
-        if ccy != "USD":
+        if ccy != source_ccy:
             fx = None
             try:
                 fx = benchmark.to_local_naive(
-                    yf.Ticker(f"USD{ccy}=X").history(period=period, interval=interval, timeout=10)["Close"])
+                    yf.Ticker(f"{source_ccy}{ccy}=X").history(period=period, interval=interval, timeout=10)["Close"])
             except Exception:
                 pass
             if fx is not None and not fx.empty:
                 px = px * benchmark.align(px.index, fx).to_numpy()
             else:
-                px = px * float(_fx("USD", ccy) or 1.0)
+                px = px * float(_fx(source_ccy, ccy) or 1.0)
         if interval == "1d":
-            # pretul zilnic e datat la miezul noptii la New York; il punem la ora inchiderii (22:00 la noi)
-            px.index = px.index.normalize() + pd.Timedelta(hours=22)
+            if line == "ftse_all_world":
+                # Yahoo labels daily bars at midnight in the exchange timezone.
+                xetra_close = (px.index.normalize() + pd.Timedelta(hours=17, minutes=30)).tz_localize("Europe/Berlin")
+                px.index = benchmark.to_local_naive(pd.Series(px.to_numpy(), index=xetra_close)).index
+            else:
+                px.index = px.index.normalize() + pd.Timedelta(hours=22)
         return px
     except Exception:
         return None
 
 
 def _line_label(k):
-    return {"value": "🔵 ", "sp500": "🟢 ", "invested": "🟠 "}[k] + t("hist.line." + k)
+    return {"value": "🔵 ", "sp500": "🟢 ", "ftse_all_world": "🟣 ", "invested": "🟠 "}[k] + t("hist.line." + k)
 
 
 def _history_dialog(fig):
@@ -218,16 +227,22 @@ def render_history(sel_portfolios, display_ccy, native, compact, right_extra, ma
     _ys = {}
     if "value" in (_lines or []):
         _ys["value"] = (_plot_df["x"], _plot_df["market_value"].tolist())
-    if "sp500" in (_lines or []):
-        _sp = None
-        _px = sp500_prices(range_choice, display_ccy)
-        if _px is not None:
-            _sp = benchmark.simulate(history_df["market_value"], history_df["invested"],
-                                     benchmark.align(history_df["x"], _px))
-        if _sp:
-            _ys["sp500"] = (history_df["x"], _sp)  # simularea porneste de la inceputul perioadei alese
+    for line in _BENCHMARKS:
+        if line not in (_lines or []):
+            continue
+        prices = benchmark_prices(line, range_choice, display_ccy)
+        simulation = None
+        if prices is not None:
+            frame = history_df
+            if line == "ftse_all_world":
+                frame = frame[frame["x"] >= prices.index[0]]
+            if len(frame) >= 2:
+                simulation = benchmark.simulate(frame["market_value"], frame["invested"],
+                                                benchmark.align(frame["x"], prices))
+        if simulation:
+            _ys[line] = (frame["x"], simulation)
         else:
-            st.caption(t("hist.sp500_missing"))
+            st.caption(t(f"hist.{line}_missing"))
     if "invested" in (_lines or []):
         _ys["invested"] = (_plot_df["x"], _plot_df["invested"].tolist())
     history_fig = go.Figure()

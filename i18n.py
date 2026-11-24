@@ -91,6 +91,8 @@ _T = {
     },
     "hist.lines": {"RO": "Linii pe grafic", "EN": "Chart lines"},
     "hist.line.value": {"RO": "Valoare de piață", "EN": "Market value"},
+    "hist.line.ftse_all_world": {"RO": "FTSE All-World", "EN": "FTSE All-World"},
+    "hist.ftse_all_world_missing": {"RO": "Nu sunt suficiente cotații FTSE All-World (VWCE) pentru perioada aleasă.", "EN": "There are not enough FTSE All-World (VWCE) prices for the selected period."},
     "hist.line.sp500": {"RO": "S&P 500", "EN": "S&P 500"},
     "hist.line.invested": {"RO": "Investit", "EN": "Invested"},
     "hist.no_lines": {"RO": "Nicio linie selectată: alege cel puțin una dintre Valoare de piață, S&P 500 și Investit ca să apară graficul.", "EN": "No line selected: pick at least one of Market value, S&P 500 and Invested to show the chart."},
