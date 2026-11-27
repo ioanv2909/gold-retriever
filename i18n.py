@@ -990,8 +990,8 @@ _T = {
     "xtb.allow_delete": {"RO": "Permite ștergerea unui cont XTB", "EN": "Allow deleting an XTB account"},
     "xtb.delete_account": {"RO": "Șterge contul", "EN": "Delete account"},
     "alert.loss_to_profit": {
-        "RO": "⚠️ **{name} ({ticker})** — ținută de {days} zile, tocmai a trecut de pe pierdere pe profit (+{pct}%). Merită să decizi acum dacă o mai ții sau o vinzi.",
-        "EN": "⚠️ **{name} ({ticker})** — held for {days} days, has just moved from a loss to a profit (+{pct}%). Worth deciding now whether to keep or sell it.",
+        "RO": "⚠️ **{name} ({ticker})** — ținută de {days} zile, tocmai a trecut de pe pierdere pe profit (+{pct}%). Valorează {value}.",
+        "EN": "⚠️ **{name} ({ticker})** — held for {days} days, has just moved from a loss to a profit (+{pct}%). Worth {value}.",
     },
     "main.table_note": {
         "RO": "Costul, valoarea, P/L și dividendele sunt în {ccy} (conversie la cursul curent); prețurile și cantitățile sunt în moneda instrumentului. Pozițiile XTB au prețuri de la Yahoo Finance, iar cantitatea și costul vin din ultimul export XTB.",

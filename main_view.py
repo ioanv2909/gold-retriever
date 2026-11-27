@@ -22,7 +22,7 @@ from position_alerts_ui import render_banner as _alerts_banner
 from positions_data import build_t212_frame, enrich_view, finish_t212_frame
 from positions_table_ui import render_positions_table
 from privacy import mask as _mask
-from t212_api import fetch_account_currency, load_cached_dividends, load_cached_ratings, load_cached_snapshot
+from t212_api import fetch_account_currency, fetch_fx_rate, load_cached_dividends, load_cached_ratings, load_cached_snapshot
 from url_tabs import url_tabs
 from watchlist_ui import render_watchlist_tab
 from xtb import accounts_summary
@@ -38,6 +38,24 @@ def _watch_background_jobs():
     busy = load_dividends_status().get("in_progress") or load_ratings_status().get("in_progress")
     if not busy:
         auto_rerun()
+
+
+def _position_value(ticker, positions, ccy_by_ticker):
+    """Valoarea de piata curenta a pozitiei T212, in moneda de afisare salvata (text mascat), sau "—"."""
+    pos = next((p for p in positions if p.get("ticker") == ticker), None)
+    if not pos or pos.get("quantity") is None or pos.get("currentPrice") is None:
+        return "—"
+    value = float(pos["quantity"]) * float(pos["currentPrice"])
+    ccy = ccy_by_ticker.get(ticker) or ""
+    if ccy == "GBX":
+        value, ccy = value / 100, "GBP"
+    to_ccy = load_pref("display_ccy") or DEFAULT_DISPLAY_CCY
+    if ccy and ccy != to_ccy:
+        rate, err = fetch_fx_rate(ccy, to_ccy)
+        if err:
+            return _mask(f"{value:,.2f} {ccy}")
+        value, ccy = value * float(rate), to_ccy
+    return _mask(f"{value:,.2f} {ccy}".strip())
 
 
 def _render_header(me, compact, detail_loading):
@@ -81,13 +99,15 @@ def _render_header(me, compact, detail_loading):
 
     snapshot = load_cached_snapshot()
     if snapshot and snapshot.get("positions"):
-        instruments_by_ticker = {}
+        instruments_by_ticker, ccy_by_ticker = {}, {}
         if snapshot.get("instruments"):
             instruments_by_ticker = {i.get("ticker"): i.get("name", i.get("ticker")) for i in snapshot["instruments"]}
+            ccy_by_ticker = {i.get("ticker"): i.get("currencyCode") or "" for i in snapshot["instruments"]}
         active_alerts = [a for a in check_loss_to_profit_alerts(snapshot["positions"], instruments_by_ticker) if not a.get("dismissed")]
         for a in active_alerts:
             from position_alerts_ui import banner_row
-            _txt = t("alert.loss_to_profit", name=a["name"], ticker=a["ticker"], days=a["zile_detinut"], pct=f"{a['randament_%']:.2f}")
+            _txt = t("alert.loss_to_profit", name=a["name"], ticker=a["ticker"], days=a["zile_detinut"], pct=f"{a['randament_%']:.2f}",
+                     value=_position_value(a["ticker"], snapshot["positions"], ccy_by_ticker))
             if banner_row("profit", _txt.removeprefix("⚠️ "), t("alert.seen"),
                           f"dismiss_{a['ticker']}_{a['triggered_at']}", icon="📈 ",
                           ts=a.get("triggered_at"), detail=(a["ticker"], a["name"])):

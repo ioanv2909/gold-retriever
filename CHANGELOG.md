@@ -1,3 +1,7 @@
+## 0.4.89 — 2026-11-27
+
+- Loss-to-profit alert: show the current market value of the position instead of the keep-or-sell advice.
+
 ## 0.4.82 — 2026-11-19
 
 - Main page chart: it now always opens with **current value** and **amount invested** selected; S&P 500 can still be added for the session.
